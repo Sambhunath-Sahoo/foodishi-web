@@ -2,12 +2,16 @@
  * The catalogue against the live API: the kitchens, one kitchen, and the
  * cuisines.
  *
- * The three reads are the customer app's own public endpoints, not admin ones.
- * `GET /restaurants`, `GET /restaurants/{id}` and `GET /cuisines` are
+ * The LISTING is platform-scoped; the other two reads are the customer app's own
+ * public endpoints. `GET /restaurants/{id}` and `GET /cuisines` are
  * unauthenticated by design — the customer app searches before anybody signs in
- * — so these are the only calls in this console that work without a token. That
- * is worth knowing when a screen renders while everything around it 401s: the
- * kitchen names are not evidence the session is good.
+ * — so those two are the only calls in this console that work without a token.
+ * That is worth knowing when a kitchen's name renders while everything around it
+ * 401s: a name is not evidence the session is good.
+ *
+ * The listing used to be public too, and could not be: a console that cannot see
+ * a closed kitchen cannot reopen one, and cannot see a restaurant it has just
+ * approved. It reads `GET /admin/restaurants` now.
  *
  * The two writes are a different story, and the comments on them say so: the
  * routes exist, but their guard is scoped to the restaurant rather than to the
@@ -40,22 +44,20 @@ const CATALOGUE_LIMIT = 100;
 
 export const apiCatalog: CatalogService = {
   listRestaurants() {
-    // NOT the whole catalogue, and the interface says it should be: "active and
-    // deactivated alike". `GET /restaurants` opens with
-    // `where(Restaurant.is_active.is_(True))` unconditionally — it is the
-    // customer's discovery listing, and there is no `include_inactive` flag to
-    // pass and no platform-scoped equivalent under `/admin`. So against the real
-    // API a deactivated kitchen disappears from this list, the "switched off"
-    // tile reads zero, and an order placed before the switch shows "#12" in the
-    // directory instead of a name.
+    // `/admin/restaurants`, NOT `/restaurants`, and that is the whole point of
+    // this call. The comment here used to record the gap: this method promises
+    // "active and deactivated alike", the customer listing opens with
+    // `where(is_active.is_(True))` unconditionally, and there was no
+    // platform-scoped equivalent — so a switched-off kitchen vanished from the
+    // operations console, the "switched off" tile read zero, and an order placed
+    // before the switch showed "#12" in the directory instead of a name.
     //
-    // Left as the plain call rather than papered over: the alternative shapes
-    // available today are all worse. `/admin/metrics/restaurants` does cover
-    // every kitchen that exists, but it answers `RestaurantMetrics` — no slug,
-    // no area, no rating, no cover — so composing this list out of it would
-    // fabricate a `RestaurantSummary` from fields the platform never sent. The
-    // real fix is a platform-scoped listing on the API.
-    return api.get<Page<RestaurantSummary>>("/restaurants", {
+    // Self-serve onboarding turned that from a rough edge into a daily one:
+    // approving an application creates the restaurant DORMANT, so the console
+    // could not show the kitchen it had just created on any screen. The route
+    // that fixes it answers the same `RestaurantSummary`, so nothing above this
+    // line changed — the shape was never the problem, the scope was.
+    return api.get<Page<RestaurantSummary>>("/admin/restaurants", {
       query: { limit: CATALOGUE_LIMIT, offset: 0 },
     });
   },

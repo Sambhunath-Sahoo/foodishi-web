@@ -47,6 +47,13 @@ export const queryKeys = {
   staff: (userId: string, restaurantId: string) =>
     ["staff", userId, restaurantId] as const,
 
+  /**
+   * The caller's own applications to join. Scoped to the person and NOT to a
+   * restaurant, which is the one key here that could not be: an application
+   * exists precisely because a restaurant does not.
+   */
+  myApplications: (userId: string) => ["applications", userId] as const,
+
   offers: (userId: string, restaurantId: string) =>
     ["offers", userId, restaurantId] as const,
   coupons: (userId: string, restaurantId: string) =>

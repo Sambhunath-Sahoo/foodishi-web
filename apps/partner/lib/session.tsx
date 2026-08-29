@@ -17,9 +17,26 @@ import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { services } from "./services";
 import { MEMBERSHIP_STALE_MS, queryKeys } from "./query-keys";
+import type { ProfileDetails, SignUpDetails } from "./services/types";
 import type { Membership, Profile } from "./types";
 
-export type SessionStatus = "loading" | "authenticated" | "unauthenticated";
+/**
+ * FOUR states, and `"unlinked"` is the one worth explaining.
+ *
+ * Supabase Auth and `public.users` are separate records joined by POST
+ * /auth/link, so a signed-in identity can have no Foodishi profile — which is
+ * the ordinary outcome of signing up on a project that confirms email
+ * addresses, because there is no session at sign-up for the link call to use.
+ *
+ * It is a status rather than an error because it is not a failure: nothing is
+ * broken, one form is unanswered. /apply offers that form; every other screen
+ * sends them there.
+ */
+export type SessionStatus =
+  | "loading"
+  | "authenticated"
+  | "unlinked"
+  | "unauthenticated";
 
 export interface SessionValue {
   readonly status: SessionStatus;
@@ -29,6 +46,16 @@ export interface SessionValue {
   readonly error: unknown;
   readonly isSigningIn: boolean;
   signIn(email: string, password: string): Promise<void>;
+  /**
+   * Create an account and sign in with it.
+   *
+   * Answers false when the source made the account but cannot hand back a
+   * session — a Supabase project that confirms addresses first. The caller sends
+   * them to their inbox rather than into a console that would 401 on every read.
+   */
+  signUp(details: SignUpDetails): Promise<boolean>;
+  /** Finish an `"unlinked"` account by giving it the profile it is missing. */
+  completeProfile(details: ProfileDetails): Promise<void>;
   signOut(): Promise<void>;
   /** Re-read the session — after editing your own profile, say. */
   refresh(): void;
@@ -63,15 +90,50 @@ export function SessionProvider({
     },
   });
 
+  const signUpMutation = useMutation({
+    mutationFn: (details: SignUpDetails) => services.identity.signUp(details),
+    onSuccess: (state) => {
+      // Seeded exactly as sign-in is. A null state is a real answer — the
+      // account exists and has no session yet — and writing it means the shell
+      // reads "signed out" rather than sitting on a spinner forever.
+      queryClient.setQueryData(queryKeys.auth(), state);
+    },
+  });
+
   // Depends on `mutateAsync`, which is stable, rather than on the mutation
   // object — that is a new reference every render and would churn the whole
   // context value with it.
   const { mutateAsync: runSignIn } = signInMutation;
+  const { mutateAsync: runSignUp } = signUpMutation;
   const signIn = React.useCallback(
     async (email: string, password: string): Promise<void> => {
       await runSignIn({ email, password });
     },
     [runSignIn],
+  );
+
+  const signUp = React.useCallback(
+    async (details: SignUpDetails): Promise<boolean> => {
+      const state = await runSignUp(details);
+      return state !== null;
+    },
+    [runSignUp],
+  );
+
+  const completeProfileMutation = useMutation({
+    mutationFn: (details: ProfileDetails) =>
+      services.identity.completeProfile(details),
+    onSuccess: (state) => {
+      queryClient.setQueryData(queryKeys.auth(), state);
+    },
+  });
+
+  const { mutateAsync: runCompleteProfile } = completeProfileMutation;
+  const completeProfile = React.useCallback(
+    async (details: ProfileDetails): Promise<void> => {
+      await runCompleteProfile(details);
+    },
+    [runCompleteProfile],
   );
 
   const signOut = React.useCallback(async (): Promise<void> => {
@@ -87,19 +149,36 @@ export function SessionProvider({
   }, [queryClient]);
 
   const value = React.useMemo<SessionValue>(() => {
+    const state = session.data;
     const status: SessionStatus = session.isPending
       ? "loading"
-      : session.data == null
+      : state == null
         ? "unauthenticated"
-        : "authenticated";
+        : state === "unlinked"
+          ? "unlinked"
+          : "authenticated";
+
+    // Narrowed on `typeof`, not on the literal: `AuthResult` carries a string
+    // sentinel beside an object, and `.profile` on the string is undefined at
+    // runtime rather than a compile error, which is exactly the mistake worth
+    // making impossible here.
+    const linked = typeof state === "object" && state !== null ? state : null;
 
     return {
       status,
-      profile: session.data?.profile ?? null,
-      memberships: session.data?.memberships ?? [],
+      profile: linked?.profile ?? null,
+      memberships: linked?.memberships ?? [],
       error: session.error,
-      isSigningIn: signInMutation.isPending,
+      // One flag for both: a screen that offers sign-in and sign-up disables
+      // the same form either way, and two booleans would be two chances to
+      // check the wrong one.
+      isSigningIn:
+        signInMutation.isPending ||
+        signUpMutation.isPending ||
+        completeProfileMutation.isPending,
       signIn,
+      signUp,
+      completeProfile,
       signOut,
       refresh,
     };
@@ -108,7 +187,11 @@ export function SessionProvider({
     session.data,
     session.error,
     signInMutation.isPending,
+    signUpMutation.isPending,
+    completeProfileMutation.isPending,
     signIn,
+    signUp,
+    completeProfile,
     signOut,
     refresh,
   ]);

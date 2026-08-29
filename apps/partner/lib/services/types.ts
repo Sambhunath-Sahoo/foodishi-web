@@ -25,6 +25,7 @@
  */
 import type {
   Address,
+  ApplicationSubmit,
   CancelResult,
   Coupon,
   CouponCreate,
@@ -55,6 +56,7 @@ import type {
   PopularItem,
   Profile,
   ReportWindow,
+  RestaurantApplication,
   RestaurantDetail,
   RestaurantPatch,
   RestaurantPolicy,
@@ -82,13 +84,78 @@ export type ProfilePatch = Partial<
   Pick<Profile, "name" | "phone" | "city" | "avatar_url">
 >;
 
+/**
+ * A brand-new account: the credentials, and the three things a Foodishi profile
+ * cannot be created without.
+ *
+ * The email is here as well as in the credentials because the profile and the
+ * identity are two different records — but only the API source is trusted to
+ * decide they match, and it takes the address from the verified token rather
+ * than from this object. See `api/identity.ts`.
+ */
+export interface SignUpDetails extends ProfileDetails {
+  readonly email: string;
+  readonly password: string;
+}
+
+/**
+ * The three things `public.users` requires beyond the verified address.
+ *
+ * Its own type because it is asked for twice: once inside sign-up, and again on
+ * the recovery path below when sign-up was interrupted between its two writes.
+ */
+export interface ProfileDetails {
+  readonly name: string;
+  readonly phone: string;
+  readonly city: string;
+}
+
+/**
+ * What a session read can answer.
+ *
+ * THREE states, not two, and the third one is not a nicety. Supabase Auth and
+ * `public.users` are separate records joined by POST /auth/link, so an identity
+ * can exist with no profile behind it — and it routinely does, because a project
+ * that confirms email addresses hands back no session at sign-up, which leaves
+ * the link call unmade until the person comes back and signs in.
+ *
+ * Reported rather than thrown. Before this existed, GET /me's 404 came back as a
+ * failed session read, which every screen shows as "could not check who is
+ * signed in" — a dead end for an account whose only problem is one unanswered
+ * form. `"unlinked"` is what lets /apply offer that form instead.
+ */
+export type AuthResult = AuthState | "unlinked" | null;
+
 export interface IdentityService {
   /**
    * The session this browser already has, or null. Never throws for "signed
    * out" — that is an answer, not a failure.
    */
-  getAuthState(): Promise<AuthState | null>;
+  getAuthState(): Promise<AuthResult>;
   signIn(email: string, password: string): Promise<AuthState>;
+  /**
+   * Create an account and its profile, and sign in.
+   *
+   * Answers an AuthState with NO memberships, which is the correct answer and
+   * not an empty one: a new account works at no restaurant until it applies for
+   * one and Foodishi approves it. The screens read `memberships.length === 0`
+   * and say so.
+   *
+   * Null means the source created the account but cannot hand back a session —
+   * a Supabase project that confirms email addresses before the first sign-in.
+   * The caller sends them to their inbox rather than into a console that would
+   * 401 on every read.
+   */
+  signUp(details: SignUpDetails): Promise<AuthState | null>;
+  /**
+   * Give a signed-in identity the profile it is missing, and answer the session
+   * it should have had.
+   *
+   * The recovery half of `"unlinked"`. Idempotent, because POST /auth/link is:
+   * a retry after a dropped response returns the same profile rather than
+   * creating a second one.
+   */
+  completeProfile(details: ProfileDetails): Promise<AuthState>;
   signOut(): Promise<void>;
   updateMyProfile(patch: ProfilePatch): Promise<Profile>;
   /**
@@ -306,8 +373,31 @@ export interface PaymentsService {
 
 /* ── The whole thing ───────────────────────────────────────────────────── */
 
+/* ── Joining Foodishi ──────────────────────────────────────────────────── */
+
+export interface ApplicationsService {
+  /**
+   * Every application this account has sent, newest first, pending first.
+   *
+   * Read by the screen an account with no restaurant lands on. "Nobody has
+   * given you access to a kitchen" and "your application is with Foodishi" are
+   * different sentences, and this is the only call that can tell them apart.
+   */
+  listMine(signal?: AbortSignal): Promise<readonly RestaurantApplication[]>;
+  /**
+   * Apply. Creates the request and nothing else — no restaurant, no menu, no
+   * login that reaches either. Approval is Foodishi's to grant.
+   *
+   * Throws 409 when this account already has one waiting, or when the web
+   * address is taken by a restaurant already trading. Both are refusals the
+   * applicant can act on, so both are shown verbatim.
+   */
+  submit(details: ApplicationSubmit): Promise<RestaurantApplication>;
+}
+
 export interface PartnerServices {
   readonly identity: IdentityService;
+  readonly applications: ApplicationsService;
   readonly orders: OrdersService;
   readonly menu: MenuService;
   readonly restaurant: RestaurantService;

@@ -380,3 +380,82 @@ export interface LedgerEntry {
   /** Signed: what it did to the restaurant's balance. */
   readonly amount: string;
 }
+
+/* ── Joining Foodishi ─────────────────────────────────────────────────── */
+
+/**
+ * Where a request to join has got to. Terminal in two of the three states.
+ *
+ * Declared by hand rather than aliased from `components["schemas"]`, and only
+ * because the generated types are a snapshot: the routes exist
+ * (POST /restaurant-applications and the /admin queue behind it), but
+ * `packages/api-client/src/types/api.d.ts` is regenerated from a RUNNING API
+ * with `pnpm --filter @repo/api-client gen`. Until somebody runs that against
+ * an API carrying these routes, aliasing them would not compile.
+ *
+ * Replace all three declarations below with the aliases once it has been run —
+ * same treatment `MyProfile` in @repo/api-client documents for `platform_role`.
+ */
+export type ApplicationStatus = "pending" | "approved" | "rejected";
+
+/** One application to put a restaurant on Foodishi, as its applicant sees it. */
+export interface RestaurantApplication {
+  readonly id: number;
+  readonly status: ApplicationStatus;
+
+  readonly name: string;
+  readonly slug: string;
+  readonly description: string | null;
+  readonly city: string;
+  readonly area: string;
+  readonly address_line: string;
+  readonly latitude: string;
+  readonly longitude: string;
+  readonly phone: string;
+  readonly price_for_two: string;
+  readonly avg_prep_minutes: number;
+  readonly opens_at: string;
+  readonly closes_at: string;
+  readonly note: string | null;
+
+  /**
+   * Why, in the operator's own words. Written for the applicant to read, so it
+   * is rendered verbatim and never summarised — on a rejection it is the only
+   * thing that tells them what to change.
+   */
+  readonly decision_note: string | null;
+  readonly reviewed_at: string | null;
+  /**
+   * The restaurant an approval created. Non-null is the applicant's signal that
+   * their console has something in it — and that the kitchen is theirs to open,
+   * because approval creates it dormant.
+   */
+  readonly restaurant_id: number | null;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
+/**
+ * What an applicant sends. Every field the `restaurants` table requires, which
+ * is why an approval needs nothing further from anybody.
+ *
+ * `is_active` is absent on purpose and is not an omission to fix later: whether
+ * a kitchen takes orders is not a description of it, and an applicant does not
+ * get to declare it. Approval creates the restaurant closed.
+ */
+export interface ApplicationSubmit {
+  readonly name: string;
+  readonly slug: string;
+  readonly description?: string | null;
+  readonly city: string;
+  readonly area: string;
+  readonly address_line: string;
+  readonly latitude: string;
+  readonly longitude: string;
+  readonly phone: string;
+  readonly price_for_two: string;
+  readonly avg_prep_minutes: number;
+  readonly opens_at: string;
+  readonly closes_at: string;
+  readonly note?: string | null;
+}

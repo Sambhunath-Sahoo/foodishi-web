@@ -50,6 +50,18 @@ const MANAGE_NAV: readonly NavItem[] = [
 ];
 
 const LOGIN_PATH = "/login";
+const APPLY_PATH = "/apply";
+
+/**
+ * The routes that must render for a signed-out browser.
+ *
+ * /apply is here because the person opening it does not have an account yet —
+ * that is the whole point of the screen. Putting it behind RequireSession would
+ * bounce every prospective restaurant to a sign-in form for credentials they
+ * have not been given, which is the one visitor this console cannot afford to
+ * turn away.
+ */
+const PUBLIC_PATHS: readonly string[] = [LOGIN_PATH, APPLY_PATH];
 
 function isCurrent(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -247,8 +259,9 @@ export function AppShell({
 }): React.JSX.Element {
   const pathname = usePathname();
 
-  // /login is the one route that must render for a signed-out tablet.
-  if (pathname === LOGIN_PATH) return <>{children}</>;
+  // The two routes that must render for a signed-out browser: signing in, and
+  // asking to join.
+  if (PUBLIC_PATHS.includes(pathname)) return <>{children}</>;
 
   return (
     <RequireSession>

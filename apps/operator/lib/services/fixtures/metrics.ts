@@ -20,6 +20,7 @@ import { meanPaise, sumPaise, toPaise, toRupees } from "./money";
 import { allOrderDetails, isLive } from "./orders";
 import { toWholePage } from "./paging";
 import {
+  allApplications,
   allCoupons,
   allCustomers,
   allDeliveries,
@@ -200,6 +201,9 @@ function buildWorkload(): Workload {
     ).length,
     refunds_breached: breached.length,
     refunds_owed: toRupees(sumPaise(breached, (refund) => refund.amount)),
+    applications_pending: allApplications().filter(
+      (application) => application.status === "pending",
+    ).length,
   };
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toUserMessage } from "@repo/api-client";
 import {
@@ -117,8 +118,13 @@ export function SignInPanel(): React.JSX.Element {
   const [error, setError] = React.useState<string | null>(null);
 
   // A tablet that is already signed in has no business on this screen.
+  //
+  // An account with no Foodishi profile goes to /apply instead of `destination`:
+  // every other screen needs a profile, so sending it onward would bounce it
+  // straight back here. /apply is the one screen that can finish it.
   React.useEffect(() => {
     if (status === "authenticated") router.replace(destination);
+    if (status === "unlinked") router.replace("/apply");
   }, [status, router, destination]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -201,6 +207,19 @@ export function SignInPanel(): React.JSX.Element {
           setPassword(nextPassword);
         }}
       />
+
+      {/* The one door out of this screen. A restaurateur who has never been
+          given credentials has no business guessing at this form, and without
+          this line the only way to find /apply is to be told the URL. */}
+      <p className="text-center text-[13px] text-ink-3">
+        Not on Foodishi yet?{" "}
+        <Link
+          href="/apply"
+          className="text-accent underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Put your restaurant on Foodishi
+        </Link>
+      </p>
 
       <p className="text-center text-[12px] text-ink-3">
         Reading {services.sourceName === "fixtures" ? "bundled sample data" : "the Foodishi API"}.

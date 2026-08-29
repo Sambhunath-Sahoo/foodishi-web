@@ -72,6 +72,21 @@ export class UnprocessableError extends FixtureError {
   }
 }
 
+/**
+ * The server's 409: the state the caller assumed is not the state here.
+ *
+ * Distinct from 422 because it is not the request that is wrong — it is the row,
+ * and usually because somebody else got there first. The application queue is
+ * the case that needed it: two operators working the same list, and the second
+ * one has to be told the answer was already given rather than overwrite it.
+ */
+export class ConflictError extends FixtureError {
+  constructor(detail: string) {
+    super(409, detail);
+    this.name = "ConflictError";
+  }
+}
+
 /** The server's 401: nobody is signed in, or the credentials were wrong. */
 export class UnauthorizedError extends FixtureError {
   constructor(detail: string) {

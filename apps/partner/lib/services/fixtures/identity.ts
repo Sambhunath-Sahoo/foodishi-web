@@ -15,9 +15,10 @@
 import { resolvePermissions } from "../../permissions";
 import type { Membership, Permission, Profile } from "../../types";
 import type { AuthState, IdentityService, PasswordChange, ProfilePatch } from "../types";
-import { UnauthorizedError, UnprocessableError, settle } from "./latency";
+import { ConflictError, UnauthorizedError, UnprocessableError, settle } from "./latency";
 import {
   allStaff,
+  createAccount,
   findAccount,
   findAccountByEmail,
   findRestaurant,
@@ -111,6 +112,46 @@ export const fixtureIdentity: IdentityService = {
       throw new UnauthorizedError("That account could not be opened.");
     }
     return settle(state);
+  },
+
+  async signUp({ email, password, name, phone, city }) {
+    // The API's own floor, applied here too: a fixture account created with a
+    // weaker password than Supabase would accept teaches whoever reviews this
+    // screen the wrong rule.
+    if (password.length < PASSWORD_MIN) {
+      throw new UnprocessableError(
+        `A password needs at least ${PASSWORD_MIN} characters.`,
+      );
+    }
+
+    const account = createAccount({ name, email, phone, city, password });
+    if (account === null) {
+      // What public.users' unique index on email produces, in the words
+      // /auth/link uses for it.
+      throw new ConflictError(
+        "That email address already belongs to an account. Sign in instead.",
+      );
+    }
+
+    // Signed in immediately: there is no address to confirm without an auth
+    // server, so the "check your inbox" branch the API source can return is not
+    // reachable here. A brand-new account works at no restaurant, so this state
+    // carries no memberships — which is the answer, not an empty one.
+    writeSessionUserId(account.id);
+    return settle(authStateFor(account.id));
+  },
+
+  completeProfile() {
+    // Unreachable by construction: this source has no auth server, so every
+    // account it knows about was created here WITH its profile — `getAuthState`
+    // can never answer "unlinked". Refused loudly rather than quietly
+    // succeeding, because a fixture that pretended to link a profile would be
+    // drawing a state this source cannot be in.
+    return Promise.reject(
+      new UnprocessableError(
+        "There is no unlinked account on the sample data — every account here already has a profile.",
+      ),
+    );
   },
 
   async signOut() {

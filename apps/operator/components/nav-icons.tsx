@@ -22,6 +22,7 @@ export type NavIconName =
   | "orders"
   | "deliveries"
   | "restaurants"
+  | "applications"
   | "customers"
   | "offers"
   | "payments"
@@ -61,6 +62,14 @@ const PATHS: Readonly<Record<NavIconName, React.ReactNode>> = {
       <path d="M2.5 6.5h11V13h-11z" />
       <path d="M2 6.5 3.6 3h8.8L14 6.5" />
       <path d="M6.4 13V9.5h3.2V13" />
+    </>
+  ),
+  /* A form on a clipboard: a restaurant asking, not yet a restaurant. */
+  applications: (
+    <>
+      <path d="M4 3.5h8v11H4z" />
+      <path d="M6.2 2.5h3.6v2H6.2z" />
+      <path d="M6.2 7.5h5.6M6.2 10h3.4" />
     </>
   ),
   customers: (

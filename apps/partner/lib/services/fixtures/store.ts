@@ -29,6 +29,7 @@ import type {
   OrderEvent,
   Permission,
   Profile,
+  RestaurantApplication,
   RestaurantDetail,
   Settlement,
   StaffMember,
@@ -63,6 +64,19 @@ const MS_PER_DAY = 86_400_000;
  */
 export interface FixtureAccount extends Profile {
   readonly password: string;
+}
+
+/**
+ * An application, plus the one field the wire shape does not carry.
+ *
+ * `ApplicationRead` deliberately omits the applicant: the API reads that from
+ * the bearer token, so telling the client whose row it is would be telling it
+ * something it cannot use. The fixture source has no token, so it has to
+ * remember — and this is the seam where that difference lives, rather than in a
+ * wire type that would then be wrong about the API.
+ */
+export interface StoredApplication extends RestaurantApplication {
+  readonly applicant_user_id: number;
 }
 
 /** Metadata for one payout. Its money is computed, never stored. */
@@ -219,7 +233,9 @@ type Sequence =
   | "option"
   | "staff"
   | "offer"
-  | "coupon";
+  | "coupon"
+  | "application"
+  | "account";
 
 function nextFrom(...values: readonly number[]): number {
   return Math.max(0, ...values) + 1;
@@ -242,6 +258,11 @@ const FIRST_ID: Readonly<Record<Sequence, number>> = {
   staff: nextFrom(...Object.values(SEED_STAFF).flat().map((row) => row.id)),
   offer: nextFrom(...SEED_OFFERS.offers.map((offer) => offer.id)),
   coupon: nextFrom(...SEED_OFFERS.coupons.map((coupon) => coupon.id)),
+  // Nothing seeds either of these: an application and a self-signed-up account
+  // only ever exist because somebody created one here. nextFrom() over nothing
+  // is 1.
+  application: nextFrom(),
+  account: nextFrom(...SEED_ACCOUNTS.map((account) => account.id)),
 };
 
 interface Overlay {
@@ -266,6 +287,13 @@ interface Overlay {
   readonly deletedOffers: readonly number[];
   readonly coupons: Readonly<Record<string, Coupon>>;
   readonly deletedCoupons: readonly number[];
+  /** Applications sent from this browser. Nothing seeds one. */
+  readonly applications: Readonly<Record<string, StoredApplication>>;
+  /**
+   * Accounts created here, by somebody applying to join. Whole rows rather than
+   * patches: these have no seeded original to be a diff against.
+   */
+  readonly createdAccounts: Readonly<Record<string, FixtureAccount>>;
   readonly sequences: Readonly<Record<string, number>>;
 }
 
@@ -288,6 +316,8 @@ const EMPTY: Overlay = {
   deletedOffers: [],
   coupons: {},
   deletedCoupons: [],
+  applications: {},
+  createdAccounts: {},
   sequences: {},
 };
 
@@ -346,11 +376,52 @@ export function resetFixtures(): void {
 
 export function listAccounts(): readonly FixtureAccount[] {
   const current = load();
-  return SEED_ACCOUNTS.map((account) => ({
+  const seeded = SEED_ACCOUNTS.map((account) => ({
     ...account,
     ...current.profiles[String(account.id)],
     password: current.passwords[String(account.id)] ?? account.password,
   }));
+  // Accounts created in this browser sit alongside the seeded ones and go
+  // through the same profile and password overlays, so somebody who applies to
+  // join can sign back in afterwards exactly as a seeded restaurateur does.
+  const created = Object.values(current.createdAccounts).map((account) => ({
+    ...account,
+    ...current.profiles[String(account.id)],
+    password: current.passwords[String(account.id)] ?? account.password,
+  }));
+  return [...seeded, ...created];
+}
+
+/**
+ * Register a new account. Refuses a duplicate address by answering null, so the
+ * caller reports it the way the API's unique index makes it report.
+ */
+export function createAccount(details: {
+  readonly name: string;
+  readonly email: string;
+  readonly phone: string;
+  readonly city: string;
+  readonly password: string;
+}): FixtureAccount | null {
+  const email = details.email.trim().toLowerCase();
+  if (findAccountByEmail(email) !== null) return null;
+  const account: FixtureAccount = {
+    id: takeId("account"),
+    name: details.name,
+    email,
+    phone: details.phone,
+    city: details.city,
+    avatar_url: null,
+    password: details.password,
+  };
+  update((current) => ({
+    ...current,
+    createdAccounts: {
+      ...current.createdAccounts,
+      [String(account.id)]: account,
+    },
+  }));
+  return account;
 }
 
 export function findAccountByEmail(email: string): FixtureAccount | null {
@@ -384,6 +455,41 @@ export function writePassword(userId: number, password: string): void {
   update((current) => ({
     ...current,
     passwords: { ...current.passwords, [String(userId)]: password },
+  }));
+}
+
+/* ── Applications to join ──────────────────────────────────────────────── */
+
+/** One applicant's own applications. Pending first, then newest. */
+export function applicationsFor(
+  userId: number,
+): readonly RestaurantApplication[] {
+  return Object.values(load().applications)
+    .filter((application) => application.applicant_user_id === userId)
+    .sort((left, right) => {
+      const pending = Number(right.status === "pending") - Number(left.status === "pending");
+      return pending !== 0 ? pending : right.created_at.localeCompare(left.created_at);
+    });
+}
+
+/** Whether a slug is already spoken for, by a restaurant or a pending request. */
+export function isSlugTaken(slug: string): boolean {
+  const wanted = slug.trim().toLowerCase();
+  return (
+    allRestaurants().some((restaurant) => restaurant.slug === wanted) ||
+    Object.values(load().applications).some(
+      (application) => application.slug === wanted && application.status === "pending",
+    )
+  );
+}
+
+export function writeApplication(application: StoredApplication): void {
+  update((current) => ({
+    ...current,
+    applications: {
+      ...current.applications,
+      [String(application.id)]: application,
+    },
   }));
 }
 

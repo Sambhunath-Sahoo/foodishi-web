@@ -29,6 +29,7 @@ type Schemas = components["schemas"];
 
 import type {
   AddressRead,
+  ApplicationStatus,
   DeliveryStatus,
   CouponRead,
   CouponScope,
@@ -49,6 +50,7 @@ import type {
   RefundDetail,
   RefundRead,
   RefundStatus,
+  RestaurantApplicationRow,
   RestaurantDetail,
   RestaurantMetrics,
   RestaurantSummary,
@@ -101,6 +103,14 @@ export interface Workload {
   readonly refunds_breached: number;
   /** What those refunds are worth — the money the platform is holding. */
   readonly refunds_owed: string;
+  /**
+   * Restaurants asking to join, still unanswered.
+   *
+   * The only figure here that cannot resolve itself. A late order becomes a
+   * delivered one whether anybody looks or not; an application waits until a
+   * person decides, which is exactly why it belongs in the chrome.
+   */
+  readonly applications_pending: number;
 }
 
 export interface MetricsService {
@@ -571,8 +581,52 @@ export interface SessionService {
 
 /* ------------------------------------------------------------------ bundle */
 
+/* --------------------------------------- restaurants asking to join */
+
+export interface ApplicationQuery extends PageQuery {
+  /** null means every state — including the ones already answered. */
+  readonly status: ApplicationStatus | null;
+}
+
+export interface ApplicationsService {
+  /**
+   * The queue, oldest first.
+   *
+   * Oldest and not newest, because this is a worklist rather than a feed:
+   * sorting the newest to the top buries the application that has been waiting
+   * longest, which is the one failure mode a queue must not have. The server
+   * orders it; this passes the page through.
+   */
+  listApplications(query: ApplicationQuery): Promise<Page<RestaurantApplicationRow>>;
+  /**
+   * Say yes. Creates the restaurant CLOSED and makes the applicant its admin —
+   * two rows, one act, and neither is this console's to assemble.
+   *
+   * Approving is not publishing. The kitchen stays invisible to customers until
+   * its own owner opens it, by which time they have had the chance to write a
+   * menu and a policy. Answers the application as it now stands, carrying the
+   * `restaurant_id` that was minted.
+   */
+  approveApplication(
+    applicationId: number,
+    note: string | null,
+  ): Promise<RestaurantApplicationRow>;
+  /**
+   * Say no, with a reason the applicant reads verbatim.
+   *
+   * The reason is required by the server and required here: a refusal nobody can
+   * act on produces an applicant who resends the same form, and an operator who
+   * answers it twice.
+   */
+  rejectApplication(
+    applicationId: number,
+    reason: string,
+  ): Promise<RestaurantApplicationRow>;
+}
+
 export interface OperatorServices {
   readonly metrics: MetricsService;
+  readonly applications: ApplicationsService;
   readonly catalog: CatalogService;
   readonly people: PeopleService;
   readonly orders: OrdersService;

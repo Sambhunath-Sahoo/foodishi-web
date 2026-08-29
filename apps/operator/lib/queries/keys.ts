@@ -94,6 +94,13 @@ export const keys = {
     all: ["settings"] as const,
     current: () => ["settings"] as const,
   },
+
+  applications: {
+    all: ["applications"] as const,
+    /** One page of the queue. The status filter is part of the key. */
+    page: (status: string, offset: number) =>
+      ["applications", "page", status, offset] as const,
+  },
 } as const;
 
 /**

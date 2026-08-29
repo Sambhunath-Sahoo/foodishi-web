@@ -17,6 +17,7 @@
  *    ./identity.ts.
  */
 import type { PartnerServices } from "../types";
+import { apiApplications } from "./applications";
 import { apiIdentity } from "./identity";
 import { apiMenu } from "./menu";
 import { apiOffers } from "./offers";
@@ -27,6 +28,7 @@ import { apiStaff } from "./staff";
 
 export const apiServices: PartnerServices = {
   identity: apiIdentity,
+  applications: apiApplications,
   orders: apiOrders,
   menu: apiMenu,
   restaurant: apiRestaurant,

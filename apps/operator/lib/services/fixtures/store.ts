@@ -21,11 +21,13 @@ import type {
   DeliveryDetail,
   OrderEventRead,
   RefundRead,
+  RestaurantApplicationRow,
   RestaurantDetail,
   UserRead,
 } from "../../api-types";
 import type { PlatformSettings } from "../types";
 import {
+  SEED_APPLICATIONS,
   SEED_COUPONS,
   SEED_CUSTOMERS,
   SEED_DELIVERIES,
@@ -52,12 +54,35 @@ interface Overlay {
   readonly events: Readonly<Record<string, readonly OrderEventRead[]>>;
   /** Null means "the shipped defaults", not "empty". */
   readonly settings: PlatformSettings | null;
+  /**
+   * Application id -> the decision taken on it here.
+   *
+   * A patch and not a whole row: an approval changes four fields and the
+   * fourteen describing the restaurant are the applicant's, unchanged by
+   * anybody at Foodishi. Storing the row whole would let a later seed edit be
+   * silently overwritten by a stale copy of itself.
+   */
+  readonly applications: Readonly<Record<string, Partial<RestaurantApplicationRow>>>;
+  /**
+   * Kitchens an approval created here, newest first — the same treatment
+   * `newCoupons` gets, for the same reason: there is no seeded row to patch.
+   *
+   * This is what makes the fixture approval honest rather than a status change.
+   * Approving on the live API mints a restaurant, and a source that answered
+   * "approved" while the catalogue stayed at 25 kitchens would be drawing a
+   * different act from the one the button performs.
+   */
+  readonly newRestaurants: readonly RestaurantDetail[];
+  readonly nextRestaurantId: number;
   readonly nextCouponId: number;
   readonly nextEventId: number;
 }
 
 /** Above every seeded id, so nothing the console creates can collide. */
 const FIRST_NEW_COUPON_ID = Math.max(0, ...SEED_COUPONS.map((row) => row.id)) + 1;
+
+const FIRST_NEW_RESTAURANT_ID =
+  Math.max(0, ...SEED_RESTAURANTS.map((row) => row.id)) + 1;
 
 const FIRST_NEW_EVENT_ID =
   Math.max(
@@ -74,6 +99,9 @@ const EMPTY: Overlay = {
   refunds: {},
   events: {},
   settings: null,
+  applications: {},
+  newRestaurants: [],
+  nextRestaurantId: FIRST_NEW_RESTAURANT_ID,
   nextCouponId: FIRST_NEW_COUPON_ID,
   nextEventId: FIRST_NEW_EVENT_ID,
 };
@@ -99,6 +127,10 @@ function load(): Overlay {
         // ids that seed now ships with.
         nextCouponId: Math.max(parsed.nextCouponId ?? 0, FIRST_NEW_COUPON_ID),
         nextEventId: Math.max(parsed.nextEventId ?? 0, FIRST_NEW_EVENT_ID),
+        nextRestaurantId: Math.max(
+          parsed.nextRestaurantId ?? 0,
+          FIRST_NEW_RESTAURANT_ID,
+        ),
       };
     }
   } catch {
@@ -124,15 +156,75 @@ function update(next: (current: Overlay) => Overlay): Overlay {
   return commit(next(load()));
 }
 
+/* --------------------------------------- restaurants asking to join */
+
+/** The queue as it stands: the seed with every decision taken here applied. */
+export function allApplications(): readonly RestaurantApplicationRow[] {
+  const current = load();
+  return SEED_APPLICATIONS.map((application) => ({
+    ...application,
+    ...current.applications[String(application.id)],
+  }));
+}
+
+export function findApplication(
+  applicationId: number,
+): RestaurantApplicationRow | null {
+  return allApplications().find((row) => row.id === applicationId) ?? null;
+}
+
+export function patchApplication(
+  applicationId: number,
+  patch: Partial<RestaurantApplicationRow>,
+): void {
+  update((current) => ({
+    ...current,
+    applications: {
+      ...current.applications,
+      [String(applicationId)]: {
+        ...current.applications[String(applicationId)],
+        ...patch,
+      },
+    },
+  }));
+}
+
 /* ------------------------------------------------------------ restaurants */
 
 /** The catalogue as it stands: the seed with every local edit applied. */
 export function allRestaurants(): readonly RestaurantDetail[] {
-  const patches = load().restaurants;
-  return SEED_RESTAURANTS.map((restaurant) => {
-    const patch = patches[String(restaurant.id)];
+  const current = load();
+  const seeded = SEED_RESTAURANTS.map((restaurant) => {
+    const patch = current.restaurants[String(restaurant.id)];
     return patch === undefined ? restaurant : { ...restaurant, ...patch };
   });
+  // Approved kitchens first, and they go through the same patch map: one that
+  // was approved and then switched off must read as switched off.
+  const created = current.newRestaurants.map((restaurant) => {
+    const patch = current.restaurants[String(restaurant.id)];
+    return patch === undefined ? restaurant : { ...restaurant, ...patch };
+  });
+  return [...created, ...seeded];
+}
+
+/**
+ * Add a kitchen the console itself created, and hand back the stored row.
+ *
+ * Takes a builder rather than a row so the id is minted inside the same update
+ * that stores it — two operators approving at once in two tabs cannot be given
+ * the same one.
+ */
+export function addRestaurant(
+  build: (id: number) => RestaurantDetail,
+): RestaurantDetail {
+  const current = load();
+  const restaurant = build(current.nextRestaurantId);
+  commit({
+    ...current,
+    newRestaurants: [restaurant, ...current.newRestaurants],
+    nextRestaurantId: current.nextRestaurantId + 1,
+  });
+  return restaurant;
 }
 
 export function findRestaurant(restaurantId: number): RestaurantDetail | null {

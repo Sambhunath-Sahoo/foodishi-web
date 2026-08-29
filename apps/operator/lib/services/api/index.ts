@@ -29,6 +29,7 @@
  * wire, `Page<T>` envelopes passed through untouched.
  */
 import type { OperatorServices } from "../types";
+import { apiApplications } from "./applications";
 import { apiCatalog } from "./catalog";
 import { apiDeliveries } from "./deliveries";
 import { apiFinance } from "./finance";
@@ -42,6 +43,7 @@ import { apiSettings } from "./settings";
 
 export const apiServices: OperatorServices = {
   metrics: apiMetrics,
+  applications: apiApplications,
   catalog: apiCatalog,
   people: apiPeople,
   orders: apiOrders,

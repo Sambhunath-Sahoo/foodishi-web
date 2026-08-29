@@ -19,6 +19,15 @@ import { useSession } from "../../lib/session";
  */
 const LOGIN_PATH = "/login";
 
+/**
+ * Where an account with no Foodishi profile is sent.
+ *
+ * /apply, not /login: signing in again would land them right back here, because
+ * the missing thing is a form and not a session. That screen owns both halves of
+ * sign-up, so it is the one place that can finish this.
+ */
+const APPLY_PATH = "/apply";
+
 export function RequireSession({
   children,
 }: {
@@ -33,7 +42,11 @@ export function RequireSession({
 
   // Redirecting during render is a React error; this is the effect that owns it.
   React.useEffect(() => {
-    if (status === "unauthenticated" && error == null) router.replace(destination);
+    if (error != null) return;
+    if (status === "unauthenticated") router.replace(destination);
+    // No `next` on this one: what they were reaching for needs a kitchen, and an
+    // account this far from having one would only bounce back.
+    if (status === "unlinked") router.replace(APPLY_PATH);
   }, [status, error, router, destination]);
 
   if (status === "loading") return <AuthSpinner label="Checking your session" />;
@@ -54,6 +67,10 @@ export function RequireSession({
 
   if (status === "unauthenticated") {
     return <AuthSpinner label="Taking you to sign in" />;
+  }
+
+  if (status === "unlinked") {
+    return <AuthSpinner label="Finishing your account" />;
   }
 
   return <>{children}</>;

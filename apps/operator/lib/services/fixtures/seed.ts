@@ -20,6 +20,7 @@ import type {
   OrderEventRead,
   PaymentRead,
   RefundRead,
+  RestaurantApplicationRow,
   RestaurantDetail,
   UserRead,
 } from "../../api-types";
@@ -27,6 +28,7 @@ import type { OperatorAccount, PlatformSettings } from "../types";
 import { shiftIso, shiftOptionalIso } from "./clock";
 
 import addressesJson from "../data/addresses.json";
+import applicationsJson from "../data/applications.json";
 import couponsJson from "../data/coupons.json";
 import cuisinesJson from "../data/cuisines.json";
 import deliveriesJson from "../data/deliveries.json";
@@ -126,6 +128,25 @@ export const SEED_COUPONS: readonly CouponRead[] = (
 /* ----------------------------------------------------------- platform */
 
 export const SEED_SETTINGS = settingsJson as PlatformSettings;
+
+/* ------------------------------------- restaurants asking to join */
+
+/**
+ * Three applications: two waiting and one already refused.
+ *
+ * The refused one is not filler. It carries a real reason, and it is the only
+ * way to review the two things this queue has to get right — that an answered
+ * application stays readable, and that the words an operator typed are the ones
+ * the applicant is shown.
+ */
+export const SEED_APPLICATIONS: readonly RestaurantApplicationRow[] = (
+  applicationsJson as unknown as readonly RestaurantApplicationRow[]
+).map((application) => ({
+  ...application,
+  created_at: shiftIso(application.created_at),
+  updated_at: shiftIso(application.updated_at),
+  reviewed_at: shiftOptionalIso(application.reviewed_at),
+}));
 
 export const SEED_STAFF: readonly OperatorAccount[] = (
   staffJson.accounts as unknown as readonly OperatorAccount[]

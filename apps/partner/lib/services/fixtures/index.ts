@@ -1,4 +1,5 @@
 import type { PartnerServices } from "../types";
+import { fixtureApplications } from "./applications";
 import { fixtureIdentity } from "./identity";
 import { fixtureMenu } from "./menu";
 import { fixtureOffers } from "./offers";
@@ -10,6 +11,7 @@ import { fixtureStaff } from "./staff";
 
 export const fixtureServices: PartnerServices = {
   identity: fixtureIdentity,
+  applications: fixtureApplications,
   orders: fixtureOrders,
   menu: fixtureMenu,
   restaurant: fixtureRestaurant,

@@ -121,6 +121,30 @@ const NAV_GROUPS: readonly NavGroup[] = [
                 hint: "These kitchens take longer end to end than the prep time they promise on, so every promise built on it runs late.",
               },
       },
+      {
+        href: "/applications",
+        label: "Applications",
+        icon: "applications",
+        figure: (workload) =>
+          // Not `=== 0`. An API that predates this figure sends no such field,
+          // and `formatCount(undefined)` printed "NaN WAITING" into the
+          // navigation on every page — a badge that cannot be acted on, beside
+          // eleven that can. Absent and zero are the same answer here: nothing
+          // to do.
+          !Number.isFinite(workload.applications_pending) ||
+          workload.applications_pending === 0
+            ? null
+            : {
+                count: workload.applications_pending,
+                unit: "waiting",
+                // Warn rather than crit: nobody's dinner is late and no money is
+                // held. It is a restaurant that cannot trade until somebody at
+                // Foodishi reads their form, which is a debt of attention rather
+                // than an emergency.
+                tone: "warn",
+                hint: "Restaurants asking to join. Each one is waiting on a person here — nothing about an application resolves itself.",
+              },
+      },
       { href: "/customers", label: "Customers", icon: "customers" },
     ],
   },

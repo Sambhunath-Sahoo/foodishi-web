@@ -1,4 +1,5 @@
 import type { OperatorServices } from "../types";
+import { fixtureApplications } from "./applications";
 import { fixtureCatalog } from "./catalog";
 import { fixtureDeliveries } from "./deliveries";
 import { fixtureFinance } from "./finance";
@@ -20,6 +21,7 @@ import { fixtureSettings } from "./settings";
  */
 export const fixtureServices: OperatorServices = {
   metrics: fixtureMetrics,
+  applications: fixtureApplications,
   catalog: fixtureCatalog,
   people: fixturePeople,
   orders: fixtureOrders,
