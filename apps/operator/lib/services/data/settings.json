@@ -1,0 +1,42 @@
+{
+ "delivery": {
+  "base_fee": "25.00",
+  "per_km_fee": "5.00",
+  "free_delivery_above": "599.00",
+  "surge_multiplier": "1.4",
+  "surge_after_minutes_late": 20,
+  "max_distance_km": "14.0",
+  "packaging_fee": "20.00"
+ },
+ "commission": {
+  "default_percent": 18,
+  "settlement_days": 7,
+  "overrides": [
+   {
+    "restaurant_id": 4,
+    "percent": 22,
+    "note": "Renegotiated at launch of the biryani tie-up"
+   },
+   {
+    "restaurant_id": 18,
+    "percent": 12,
+    "note": "Breakfast-only kitchen, lower basket"
+   }
+  ]
+ },
+ "tax": {
+  "gst_percent": 5,
+  "is_packaging_taxable": true,
+  "is_delivery_taxable": false,
+  "gstin": "29AABCT1332L1ZQ"
+ },
+ "order_rules": {
+  "min_order_value": "79.00",
+  "max_items_per_order": 30,
+  "free_cancellation_minutes": 5,
+  "late_cancellation_fee_percent": 15,
+  "refund_sla_hours": 24,
+  "auto_cancel_unconfirmed_minutes": 12,
+  "prep_buffer_minutes": 5
+ }
+}

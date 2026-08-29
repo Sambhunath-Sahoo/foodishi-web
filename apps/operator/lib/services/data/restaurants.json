@@ -1,0 +1,1022 @@
+[
+ {
+  "id": 1,
+  "name": "Tandoori Nights",
+  "slug": "tandoori-nights",
+  "city": "Bengaluru",
+  "area": "Koramangala",
+  "rating": "3.7",
+  "rating_count": 919,
+  "price_for_two": "1000.00",
+  "avg_prep_minutes": 35,
+  "opens_at": "07:00:00",
+  "closes_at": "23:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/1/cover/f366926ca84359739a41b25e9b52e66b.jpg",
+  "description": "North Indian favourites from Koramangala.",
+  "address_line": "164, Koramangala Main Road, Bengaluru",
+  "latitude": "12.925872",
+  "longitude": "77.630297",
+  "phone": "9362950628",
+  "cuisines": [
+   {
+    "id": 4,
+    "name": "Biryani",
+    "slug": "biryani"
+   },
+   {
+    "id": 1,
+    "name": "North Indian",
+    "slug": "north-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 1,
+   "cancellation_window_mins": 3,
+   "cancellation_fee_percent": "10.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "25.00",
+   "delivery_fee_per_km": "4.00",
+   "free_delivery_above": null,
+   "packaging_fee": "25.00",
+   "min_order_value": "79.00",
+   "max_delivery_distance_km": "15.0"
+  }
+ },
+ {
+  "id": 2,
+  "name": "Dakshin Diaries",
+  "slug": "dakshin-diaries",
+  "city": "Bengaluru",
+  "area": "Indiranagar",
+  "rating": "4.5",
+  "rating_count": 3538,
+  "price_for_two": "800.00",
+  "avg_prep_minutes": 14,
+  "opens_at": "11:00:00",
+  "closes_at": "23:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/2/cover/ec0dcae92f37b30ff695f50a16a60ebc.jpg",
+  "description": "South Indian favourites from Indiranagar.",
+  "address_line": "13, Indiranagar Main Road, Bengaluru",
+  "latitude": "12.987066",
+  "longitude": "77.632468",
+  "phone": "9271779360",
+  "cuisines": [
+   {
+    "id": 2,
+    "name": "South Indian",
+    "slug": "south-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 2,
+   "cancellation_window_mins": 10,
+   "cancellation_fee_percent": "20.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "19.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": null,
+   "packaging_fee": "20.00",
+   "min_order_value": "49.00",
+   "max_delivery_distance_km": "12.0"
+  }
+ },
+ {
+  "id": 3,
+  "name": "Wok This Way",
+  "slug": "wok-this-way",
+  "city": "Bengaluru",
+  "area": "Jayanagar",
+  "rating": "4.3",
+  "rating_count": 3668,
+  "price_for_two": "800.00",
+  "avg_prep_minutes": 26,
+  "opens_at": "07:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/3/cover/8acb19d92cecc2b5323982250e12ccff.jpg",
+  "description": "Chinese favourites from Jayanagar.",
+  "address_line": "177, Jayanagar Main Road, Bengaluru",
+  "latitude": "12.917828",
+  "longitude": "77.589281",
+  "phone": "9821218382",
+  "cuisines": [
+   {
+    "id": 3,
+    "name": "Chinese",
+    "slug": "chinese"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 3,
+   "cancellation_window_mins": 3,
+   "cancellation_fee_percent": "20.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "25.00",
+   "delivery_fee_per_km": "5.00",
+   "free_delivery_above": "599.00",
+   "packaging_fee": "10.00",
+   "min_order_value": "79.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 4,
+  "name": "Paradise Biryani House",
+  "slug": "paradise-biryani-house",
+  "city": "Bengaluru",
+  "area": "HSR Layout",
+  "rating": "3.5",
+  "rating_count": 200,
+  "price_for_two": "300.00",
+  "avg_prep_minutes": 36,
+  "opens_at": "08:00:00",
+  "closes_at": "22:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/4/cover/bebd3d8969d2d55a28a117545390e83e.jpg",
+  "description": "Biryani favourites from HSR Layout.",
+  "address_line": "20, HSR Layout Main Road, Bengaluru",
+  "latitude": "12.910235",
+  "longitude": "77.656072",
+  "phone": "9690907304",
+  "cuisines": [
+   {
+    "id": 4,
+    "name": "Biryani",
+    "slug": "biryani"
+   },
+   {
+    "id": 1,
+    "name": "North Indian",
+    "slug": "north-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 4,
+   "cancellation_window_mins": 8,
+   "cancellation_fee_percent": "25.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "35.00",
+   "delivery_fee_per_km": "4.00",
+   "free_delivery_above": "399.00",
+   "packaging_fee": "25.00",
+   "min_order_value": "99.00",
+   "max_delivery_distance_km": "15.0"
+  }
+ },
+ {
+  "id": 5,
+  "name": "Crust & Coal",
+  "slug": "crust---coal",
+  "city": "Bengaluru",
+  "area": "Whitefield",
+  "rating": "3.5",
+  "rating_count": 2812,
+  "price_for_two": "400.00",
+  "avg_prep_minutes": 32,
+  "opens_at": "10:00:00",
+  "closes_at": "22:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/5/cover/173f7951a58dfe1744bdff0c9ed58c4d.jpg",
+  "description": "Pizza favourites from Whitefield.",
+  "address_line": "14, Whitefield Main Road, Bengaluru",
+  "latitude": "12.960015",
+  "longitude": "77.748166",
+  "phone": "9397083132",
+  "cuisines": [
+   {
+    "id": 5,
+    "name": "Pizza",
+    "slug": "pizza"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 5,
+   "cancellation_window_mins": 10,
+   "cancellation_fee_percent": "25.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "19.00",
+   "delivery_fee_per_km": "4.00",
+   "free_delivery_above": null,
+   "packaging_fee": "15.00",
+   "min_order_value": "49.00",
+   "max_delivery_distance_km": "12.0"
+  }
+ },
+ {
+  "id": 6,
+  "name": "Sugar Theory",
+  "slug": "sugar-theory",
+  "city": "Hyderabad",
+  "area": "Banjara Hills",
+  "rating": "3.7",
+  "rating_count": 3850,
+  "price_for_two": "500.00",
+  "avg_prep_minutes": 21,
+  "opens_at": "08:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/6/cover/1fa7ae09ee72f3220d99ac762a4329a0.jpg",
+  "description": "Desserts favourites from Banjara Hills.",
+  "address_line": "180, Banjara Hills Main Road, Hyderabad",
+  "latitude": "17.403194",
+  "longitude": "78.448132",
+  "phone": "9605399561",
+  "cuisines": [
+   {
+    "id": 7,
+    "name": "Beverages",
+    "slug": "beverages"
+   },
+   {
+    "id": 6,
+    "name": "Desserts",
+    "slug": "desserts"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 6,
+   "cancellation_window_mins": 15,
+   "cancellation_fee_percent": "15.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "29.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": null,
+   "packaging_fee": "20.00",
+   "min_order_value": "99.00",
+   "max_delivery_distance_km": "15.0"
+  }
+ },
+ {
+  "id": 7,
+  "name": "Chai Point Cafe",
+  "slug": "chai-point-cafe",
+  "city": "Hyderabad",
+  "area": "Gachibowli",
+  "rating": "3.8",
+  "rating_count": 3601,
+  "price_for_two": "800.00",
+  "avg_prep_minutes": 31,
+  "opens_at": "10:00:00",
+  "closes_at": "23:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/7/cover/61966a3d6b62e9150ebdf8263542b3e4.jpg",
+  "description": "Beverages favourites from Gachibowli.",
+  "address_line": "78, Gachibowli Main Road, Hyderabad",
+  "latitude": "17.437846",
+  "longitude": "78.356909",
+  "phone": "9426283245",
+  "cuisines": [
+   {
+    "id": 7,
+    "name": "Beverages",
+    "slug": "beverages"
+   },
+   {
+    "id": 8,
+    "name": "Street Food",
+    "slug": "street-food"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 7,
+   "cancellation_window_mins": 8,
+   "cancellation_fee_percent": "15.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "25.00",
+   "delivery_fee_per_km": "4.00",
+   "free_delivery_above": "599.00",
+   "packaging_fee": "20.00",
+   "min_order_value": "49.00",
+   "max_delivery_distance_km": "10.0"
+  }
+ },
+ {
+  "id": 8,
+  "name": "Chaat Chowk",
+  "slug": "chaat-chowk",
+  "city": "Hyderabad",
+  "area": "Jubilee Hills",
+  "rating": "3.5",
+  "rating_count": 1315,
+  "price_for_two": "400.00",
+  "avg_prep_minutes": 24,
+  "opens_at": "08:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/8/cover/1f8fb865c2ce225dc24f613aefd48513.jpg",
+  "description": "Street Food favourites from Jubilee Hills.",
+  "address_line": "61, Jubilee Hills Main Road, Hyderabad",
+  "latitude": "17.427121",
+  "longitude": "78.402773",
+  "phone": "9679984033",
+  "cuisines": [
+   {
+    "id": 8,
+    "name": "Street Food",
+    "slug": "street-food"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 8,
+   "cancellation_window_mins": 8,
+   "cancellation_fee_percent": "25.00",
+   "refund_sla_hours": 48,
+   "delivery_fee_base": "35.00",
+   "delivery_fee_per_km": "8.00",
+   "free_delivery_above": "499.00",
+   "packaging_fee": "25.00",
+   "min_order_value": "49.00",
+   "max_delivery_distance_km": "15.0"
+  }
+ },
+ {
+  "id": 9,
+  "name": "Punjab Grill Express",
+  "slug": "punjab-grill-express",
+  "city": "Hyderabad",
+  "area": "Madhapur",
+  "rating": "3.7",
+  "rating_count": 2757,
+  "price_for_two": "500.00",
+  "avg_prep_minutes": 36,
+  "opens_at": "11:00:00",
+  "closes_at": "23:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/9/cover/bc5f3ac312088097e92737fd52f8afab.jpg",
+  "description": "North Indian favourites from Madhapur.",
+  "address_line": "119, Madhapur Main Road, Hyderabad",
+  "latitude": "17.440661",
+  "longitude": "78.385744",
+  "phone": "9451492250",
+  "cuisines": [
+   {
+    "id": 1,
+    "name": "North Indian",
+    "slug": "north-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 9,
+   "cancellation_window_mins": 5,
+   "cancellation_fee_percent": "10.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "19.00",
+   "delivery_fee_per_km": "4.00",
+   "free_delivery_above": null,
+   "packaging_fee": "20.00",
+   "min_order_value": "79.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 10,
+  "name": "Idli Factory",
+  "slug": "idli-factory",
+  "city": "Pune",
+  "area": "Koregaon Park",
+  "rating": "4.4",
+  "rating_count": 2278,
+  "price_for_two": "500.00",
+  "avg_prep_minutes": 39,
+  "opens_at": "08:00:00",
+  "closes_at": "22:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/10/cover/1179ffdc9bfc5cf88a04978af8f0004b.jpg",
+  "description": "South Indian favourites from Koregaon Park.",
+  "address_line": "138, Koregaon Park Main Road, Pune",
+  "latitude": "18.542791",
+  "longitude": "73.893057",
+  "phone": "9986625773",
+  "cuisines": [
+   {
+    "id": 2,
+    "name": "South Indian",
+    "slug": "south-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 10,
+   "cancellation_window_mins": 8,
+   "cancellation_fee_percent": "15.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "35.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": "499.00",
+   "packaging_fee": "15.00",
+   "min_order_value": "149.00",
+   "max_delivery_distance_km": "10.0"
+  }
+ },
+ {
+  "id": 11,
+  "name": "Dragon Bowl",
+  "slug": "dragon-bowl",
+  "city": "Pune",
+  "area": "Baner",
+  "rating": "3.7",
+  "rating_count": 1943,
+  "price_for_two": "500.00",
+  "avg_prep_minutes": 17,
+  "opens_at": "10:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/11/cover/25fa6fb9063b432758f728a68ee44f64.jpg",
+  "description": "Chinese favourites from Baner.",
+  "address_line": "135, Baner Main Road, Pune",
+  "latitude": "18.561323",
+  "longitude": "73.798332",
+  "phone": "9994027897",
+  "cuisines": [
+   {
+    "id": 3,
+    "name": "Chinese",
+    "slug": "chinese"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 11,
+   "cancellation_window_mins": 5,
+   "cancellation_fee_percent": "10.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "29.00",
+   "delivery_fee_per_km": "5.00",
+   "free_delivery_above": null,
+   "packaging_fee": "25.00",
+   "min_order_value": "49.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 12,
+  "name": "Hyderabadi Dum",
+  "slug": "hyderabadi-dum",
+  "city": "Pune",
+  "area": "Viman Nagar",
+  "rating": "3.8",
+  "rating_count": 745,
+  "price_for_two": "400.00",
+  "avg_prep_minutes": 19,
+  "opens_at": "08:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/12/cover/2d41adb1b49fa83feaa6735767c51969.jpg",
+  "description": "Biryani favourites from Viman Nagar.",
+  "address_line": "26, Viman Nagar Main Road, Pune",
+  "latitude": "18.578642",
+  "longitude": "73.907287",
+  "phone": "9326586581",
+  "cuisines": [
+   {
+    "id": 4,
+    "name": "Biryani",
+    "slug": "biryani"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 12,
+   "cancellation_window_mins": 3,
+   "cancellation_fee_percent": "25.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "35.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": "499.00",
+   "packaging_fee": "20.00",
+   "min_order_value": "149.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 13,
+  "name": "Napoli Slice",
+  "slug": "napoli-slice",
+  "city": "Bengaluru",
+  "area": "Koramangala",
+  "rating": "3.5",
+  "rating_count": 249,
+  "price_for_two": "1000.00",
+  "avg_prep_minutes": 38,
+  "opens_at": "10:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/13/cover/3c148a77d995e1638ae06b9b22572ed4.jpg",
+  "description": "Pizza favourites from Koramangala.",
+  "address_line": "111, Koramangala Main Road, Bengaluru",
+  "latitude": "12.940829",
+  "longitude": "77.626989",
+  "phone": "9127772220",
+  "cuisines": [
+   {
+    "id": 5,
+    "name": "Pizza",
+    "slug": "pizza"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 13,
+   "cancellation_window_mins": 8,
+   "cancellation_fee_percent": "25.00",
+   "refund_sla_hours": 48,
+   "delivery_fee_base": "25.00",
+   "delivery_fee_per_km": "8.00",
+   "free_delivery_above": null,
+   "packaging_fee": "25.00",
+   "min_order_value": "49.00",
+   "max_delivery_distance_km": "15.0"
+  }
+ },
+ {
+  "id": 14,
+  "name": "The Dessert Room",
+  "slug": "the-dessert-room",
+  "city": "Bengaluru",
+  "area": "Indiranagar",
+  "rating": "4.0",
+  "rating_count": 4050,
+  "price_for_two": "300.00",
+  "avg_prep_minutes": 12,
+  "opens_at": "08:00:00",
+  "closes_at": "22:30:00",
+  "is_active": false,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/14/cover/e0aecc2dd6c1fba1ede74d44ae458aa5.jpg",
+  "description": "Desserts favourites from Indiranagar.",
+  "address_line": "14, Indiranagar Main Road, Bengaluru",
+  "latitude": "12.971285",
+  "longitude": "77.641981",
+  "phone": "9409268943",
+  "cuisines": [
+   {
+    "id": 6,
+    "name": "Desserts",
+    "slug": "desserts"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 14,
+   "cancellation_window_mins": 10,
+   "cancellation_fee_percent": "10.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "19.00",
+   "delivery_fee_per_km": "5.00",
+   "free_delivery_above": null,
+   "packaging_fee": "10.00",
+   "min_order_value": "149.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 15,
+  "name": "Filter Coffee Co",
+  "slug": "filter-coffee-co",
+  "city": "Bengaluru",
+  "area": "Jayanagar",
+  "rating": "4.1",
+  "rating_count": 1297,
+  "price_for_two": "600.00",
+  "avg_prep_minutes": 29,
+  "opens_at": "11:00:00",
+  "closes_at": "23:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/15/cover/0dcb8bb93454beededb6fdf81275efd0.jpg",
+  "description": "Beverages favourites from Jayanagar.",
+  "address_line": "77, Jayanagar Main Road, Bengaluru",
+  "latitude": "12.933099",
+  "longitude": "77.595718",
+  "phone": "9808605988",
+  "cuisines": [
+   {
+    "id": 7,
+    "name": "Beverages",
+    "slug": "beverages"
+   },
+   {
+    "id": 2,
+    "name": "South Indian",
+    "slug": "south-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 15,
+   "cancellation_window_mins": 10,
+   "cancellation_fee_percent": "25.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "29.00",
+   "delivery_fee_per_km": "5.00",
+   "free_delivery_above": null,
+   "packaging_fee": "15.00",
+   "min_order_value": "149.00",
+   "max_delivery_distance_km": "10.0"
+  }
+ },
+ {
+  "id": 16,
+  "name": "Mumbai Vada Pav",
+  "slug": "mumbai-vada-pav",
+  "city": "Bengaluru",
+  "area": "HSR Layout",
+  "rating": "4.3",
+  "rating_count": 3844,
+  "price_for_two": "500.00",
+  "avg_prep_minutes": 33,
+  "opens_at": "07:00:00",
+  "closes_at": "23:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/16/cover/b33883107f32f4f1c6fd928668dadad1.jpg",
+  "description": "Street Food favourites from HSR Layout.",
+  "address_line": "128, HSR Layout Main Road, Bengaluru",
+  "latitude": "12.921508",
+  "longitude": "77.638835",
+  "phone": "9595155950",
+  "cuisines": [
+   {
+    "id": 8,
+    "name": "Street Food",
+    "slug": "street-food"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 16,
+   "cancellation_window_mins": 15,
+   "cancellation_fee_percent": "15.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "35.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": null,
+   "packaging_fee": "20.00",
+   "min_order_value": "149.00",
+   "max_delivery_distance_km": "12.0"
+  }
+ },
+ {
+  "id": 17,
+  "name": "Curry Leaf Kitchen",
+  "slug": "curry-leaf-kitchen",
+  "city": "Bengaluru",
+  "area": "Whitefield",
+  "rating": "4.6",
+  "rating_count": 875,
+  "price_for_two": "1000.00",
+  "avg_prep_minutes": 32,
+  "opens_at": "07:00:00",
+  "closes_at": "23:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/cover/383fe4211e7891db44e177fd212f318e.jpg",
+  "description": "North Indian favourites from Whitefield.",
+  "address_line": "174, Whitefield Main Road, Bengaluru",
+  "latitude": "12.975934",
+  "longitude": "77.756419",
+  "phone": "9831062591",
+  "cuisines": [
+   {
+    "id": 1,
+    "name": "North Indian",
+    "slug": "north-indian"
+   },
+   {
+    "id": 2,
+    "name": "South Indian",
+    "slug": "south-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 17,
+   "cancellation_window_mins": 3,
+   "cancellation_fee_percent": "20.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "19.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": "499.00",
+   "packaging_fee": "15.00",
+   "min_order_value": "79.00",
+   "max_delivery_distance_km": "10.0"
+  }
+ },
+ {
+  "id": 18,
+  "name": "Anna's Tiffin Room",
+  "slug": "anna-s-tiffin-room",
+  "city": "Hyderabad",
+  "area": "Banjara Hills",
+  "rating": "3.4",
+  "rating_count": 1265,
+  "price_for_two": "400.00",
+  "avg_prep_minutes": 29,
+  "opens_at": "10:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/18/cover/fc62c84ca1581b671a8aa939799f2ba5.jpg",
+  "description": "South Indian favourites from Banjara Hills.",
+  "address_line": "60, Banjara Hills Main Road, Hyderabad",
+  "latitude": "17.408485",
+  "longitude": "78.430741",
+  "phone": "9739930411",
+  "cuisines": [
+   {
+    "id": 2,
+    "name": "South Indian",
+    "slug": "south-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 18,
+   "cancellation_window_mins": 15,
+   "cancellation_fee_percent": "10.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "19.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": null,
+   "packaging_fee": "15.00",
+   "min_order_value": "99.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 19,
+  "name": "Sichuan Street",
+  "slug": "sichuan-street",
+  "city": "Hyderabad",
+  "area": "Gachibowli",
+  "rating": "4.2",
+  "rating_count": 1841,
+  "price_for_two": "600.00",
+  "avg_prep_minutes": 26,
+  "opens_at": "08:00:00",
+  "closes_at": "23:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/19/cover/4328ac6679f5360a54c8ffb2cbdeecdb.jpg",
+  "description": "Chinese favourites from Gachibowli.",
+  "address_line": "30, Gachibowli Main Road, Hyderabad",
+  "latitude": "17.448567",
+  "longitude": "78.352522",
+  "phone": "9925667446",
+  "cuisines": [
+   {
+    "id": 3,
+    "name": "Chinese",
+    "slug": "chinese"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 19,
+   "cancellation_window_mins": 8,
+   "cancellation_fee_percent": "25.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "19.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": "599.00",
+   "packaging_fee": "20.00",
+   "min_order_value": "99.00",
+   "max_delivery_distance_km": "10.0"
+  }
+ },
+ {
+  "id": 20,
+  "name": "Lucknowi Handi",
+  "slug": "lucknowi-handi",
+  "city": "Hyderabad",
+  "area": "Jubilee Hills",
+  "rating": "4.3",
+  "rating_count": 295,
+  "price_for_two": "800.00",
+  "avg_prep_minutes": 33,
+  "opens_at": "10:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/20/cover/c7ff1f6514180b98f295bc080c6c7a61.jpg",
+  "description": "Biryani favourites from Jubilee Hills.",
+  "address_line": "110, Jubilee Hills Main Road, Hyderabad",
+  "latitude": "17.440884",
+  "longitude": "78.418489",
+  "phone": "9978779150",
+  "cuisines": [
+   {
+    "id": 4,
+    "name": "Biryani",
+    "slug": "biryani"
+   },
+   {
+    "id": 1,
+    "name": "North Indian",
+    "slug": "north-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 20,
+   "cancellation_window_mins": 5,
+   "cancellation_fee_percent": "20.00",
+   "refund_sla_hours": 48,
+   "delivery_fee_base": "29.00",
+   "delivery_fee_per_km": "4.00",
+   "free_delivery_above": "399.00",
+   "packaging_fee": "25.00",
+   "min_order_value": "49.00",
+   "max_delivery_distance_km": "10.0"
+  }
+ },
+ {
+  "id": 21,
+  "name": "Cheese Republic",
+  "slug": "cheese-republic",
+  "city": "Hyderabad",
+  "area": "Madhapur",
+  "rating": "3.9",
+  "rating_count": 2808,
+  "price_for_two": "400.00",
+  "avg_prep_minutes": 14,
+  "opens_at": "07:00:00",
+  "closes_at": "22:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/21/cover/30354f75bcbb6771ac40158895f98579.jpg",
+  "description": "Pizza favourites from Madhapur.",
+  "address_line": "135, Madhapur Main Road, Hyderabad",
+  "latitude": "17.438188",
+  "longitude": "78.400393",
+  "phone": "9900801837",
+  "cuisines": [
+   {
+    "id": 6,
+    "name": "Desserts",
+    "slug": "desserts"
+   },
+   {
+    "id": 5,
+    "name": "Pizza",
+    "slug": "pizza"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 21,
+   "cancellation_window_mins": 5,
+   "cancellation_fee_percent": "15.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "19.00",
+   "delivery_fee_per_km": "5.00",
+   "free_delivery_above": "399.00",
+   "packaging_fee": "15.00",
+   "min_order_value": "49.00",
+   "max_delivery_distance_km": "10.0"
+  }
+ },
+ {
+  "id": 22,
+  "name": "Gulab Junction",
+  "slug": "gulab-junction",
+  "city": "Pune",
+  "area": "Koregaon Park",
+  "rating": "3.9",
+  "rating_count": 2397,
+  "price_for_two": "600.00",
+  "avg_prep_minutes": 25,
+  "opens_at": "10:00:00",
+  "closes_at": "22:30:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/22/cover/882992560ce6605e26bf9f43d97b43f7.jpg",
+  "description": "Desserts favourites from Koregaon Park.",
+  "address_line": "113, Koregaon Park Main Road, Pune",
+  "latitude": "18.536778",
+  "longitude": "73.896535",
+  "phone": "9490732457",
+  "cuisines": [
+   {
+    "id": 6,
+    "name": "Desserts",
+    "slug": "desserts"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 22,
+   "cancellation_window_mins": 3,
+   "cancellation_fee_percent": "20.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "35.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": "599.00",
+   "packaging_fee": "15.00",
+   "min_order_value": "99.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 23,
+  "name": "Nimbu Soda Bar",
+  "slug": "nimbu-soda-bar",
+  "city": "Pune",
+  "area": "Baner",
+  "rating": "3.7",
+  "rating_count": 1206,
+  "price_for_two": "400.00",
+  "avg_prep_minutes": 14,
+  "opens_at": "10:00:00",
+  "closes_at": "22:00:00",
+  "is_active": false,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/23/cover/0d23429aa7c75a165c865811de908bff.jpg",
+  "description": "Beverages favourites from Baner.",
+  "address_line": "55, Baner Main Road, Pune",
+  "latitude": "18.555202",
+  "longitude": "73.793188",
+  "phone": "9306164050",
+  "cuisines": [
+   {
+    "id": 7,
+    "name": "Beverages",
+    "slug": "beverages"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 23,
+   "cancellation_window_mins": 15,
+   "cancellation_fee_percent": "20.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "35.00",
+   "delivery_fee_per_km": "5.00",
+   "free_delivery_above": "599.00",
+   "packaging_fee": "15.00",
+   "min_order_value": "149.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 24,
+  "name": "Kathi Roll Corner",
+  "slug": "kathi-roll-corner",
+  "city": "Pune",
+  "area": "Viman Nagar",
+  "rating": "4.2",
+  "rating_count": 920,
+  "price_for_two": "1000.00",
+  "avg_prep_minutes": 39,
+  "opens_at": "07:00:00",
+  "closes_at": "23:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/24/cover/7da3c90cb10e7c4f4489876348a1ebe4.jpg",
+  "description": "Street Food favourites from Viman Nagar.",
+  "address_line": "65, Viman Nagar Main Road, Pune",
+  "latitude": "18.557152",
+  "longitude": "73.913834",
+  "phone": "9498585961",
+  "cuisines": [
+   {
+    "id": 8,
+    "name": "Street Food",
+    "slug": "street-food"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 24,
+   "cancellation_window_mins": 5,
+   "cancellation_fee_percent": "20.00",
+   "refund_sla_hours": 72,
+   "delivery_fee_base": "25.00",
+   "delivery_fee_per_km": "8.00",
+   "free_delivery_above": "399.00",
+   "packaging_fee": "25.00",
+   "min_order_value": "99.00",
+   "max_delivery_distance_km": "8.0"
+  }
+ },
+ {
+  "id": 25,
+  "name": "Spice Route Deli",
+  "slug": "spice-route-deli",
+  "city": "Bengaluru",
+  "area": "Koramangala",
+  "rating": "3.5",
+  "rating_count": 3519,
+  "price_for_two": "1000.00",
+  "avg_prep_minutes": 37,
+  "opens_at": "11:00:00",
+  "closes_at": "22:00:00",
+  "is_active": true,
+  "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/25/cover/9d33311c149e3b408f74fa2175c22578.jpg",
+  "description": "North Indian favourites from Koramangala.",
+  "address_line": "29, Koramangala Main Road, Bengaluru",
+  "latitude": "12.941828",
+  "longitude": "77.618203",
+  "phone": "9230833665",
+  "cuisines": [
+   {
+    "id": 3,
+    "name": "Chinese",
+    "slug": "chinese"
+   },
+   {
+    "id": 1,
+    "name": "North Indian",
+    "slug": "north-indian"
+   }
+  ],
+  "policy": {
+   "restaurant_id": 25,
+   "cancellation_window_mins": 8,
+   "cancellation_fee_percent": "10.00",
+   "refund_sla_hours": 24,
+   "delivery_fee_base": "25.00",
+   "delivery_fee_per_km": "6.00",
+   "free_delivery_above": "599.00",
+   "packaging_fee": "20.00",
+   "min_order_value": "79.00",
+   "max_delivery_distance_km": "15.0"
+  }
+ }
+]

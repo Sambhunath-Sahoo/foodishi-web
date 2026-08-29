@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Foodishi Customer">
+  <!--
+       ONE mark, three grounds.
+
+       The three consoles sit in adjacent browser tabs, so at 16px they have to
+       be told apart at a glance. The glyph is identical in all three (same
+       product); only the ground changes (different surface), taken from the
+       accent, ok and ink tokens in packages/ui/src/styles/tokens.css:
+
+         customer  #33456b   the consumer brand
+         partner   #2f6b4f   the kitchen side
+         operator  #16181d   platform control
+
+       Deliberately not a letter: at 16px an "F" collapses into a smudge, where a
+       bowl keeps a silhouette. The steam is two S-curves rather than two arcs,
+       because arcs read as quotation marks at small sizes. Checked by
+       rasterising to 16px, not assumed.
+
+       Note for editors: an XML comment cannot contain a double hyphen, so token
+       names appear here without their CSS prefix. A double hyphen here is a
+       parse error and the whole icon silently fails to render.
+  -->
+  <rect width="32" height="32" rx="7" fill="#33456b"/>
+  <g fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" opacity="0.9">
+    <path d="M13 6.4c-1.5 1.1-1.5 2.3 0 3.4s1.5 2.3 0 3.4"/>
+    <path d="M19.6 7.6c-1.2 0.9-1.2 1.9 0 2.8s1.2 1.9 0 2.8"/>
+  </g>
+  <path d="M6.4 17.2h19.2a9.6 9.6 0 0 1-19.2 0z" fill="#ffffff"/>
+  <rect x="4.6" y="15.1" width="22.8" height="2.7" rx="1.35" fill="#ffffff"/>
+</svg>

@@ -1,0 +1,31 @@
+/* Storybook only. The apps self-host IBM Plex through next/font, which does
+ * not run here — so tokens.css falls through to the literal family names and
+ * the canvas needs them fetched. This remote @import is the one place in the
+ * repo that still reaches fonts.googleapis.com, and it ships to nobody.
+ * It must stay above every other rule to remain a valid @import. */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+/* Tailwind, then the Neel preset that maps tokens.css onto utility names —
+ * the same two imports every app's globals.css makes. tokens.css itself is
+ * imported from preview.ts.
+ *
+ * @source is required here and not in the apps: Tailwind scans from the config
+ * root, and in this package the components and stories live one level up. */
+@import "tailwindcss";
+@source "../src";
+@import "../src/styles/theme.css";
+
+/* The story canvas rides on the tokens, so a dark theme never leaves dark ink
+ * on a dark ground. Both are token reads — no literal colour here. */
+html,
+body,
+.sb-show-main,
+#storybook-root {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+#storybook-root {
+  font-family: var(--font-ui);
+  padding: 24px;
+}

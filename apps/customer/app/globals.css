@@ -1,0 +1,55 @@
+/* Tailwind first, then the Neel preset that maps tokens.css to utility names.
+ * tokens.css itself is imported from layout.tsx, because it must land on the
+ * same element next/font stamps its --font-plex-* variables onto. */
+@import "tailwindcss";
+@import "@repo/ui/styles/theme.css";
+
+/* Keyboard focus must be visible everywhere, including on elements a browser
+ * would otherwise leave bare. The ring is the accent token, never a hex. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Someone who has asked the OS for less motion gets none of ours. Animations
+ * are reduced to a single frame rather than removed, so anything driven by an
+ * animationend event still completes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* The body never scrolls sideways (DESIGN.md non-negotiable #4). Wide content
+ * carries its own overflow-x container. */
+body {
+  overflow-x: hidden;
+}
+
+/**
+ * Print, for the receipt screen. The app chrome — sticky header, bottom tab
+ * bar, buttons — is navigation, not part of the document someone is filing, so
+ * it drops away and the receipt gets the full page.
+ */
+@media print {
+  header,
+  nav {
+    display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* A card's border reads as clutter on paper; the rules inside it are enough. */
+  [data-print-plain] {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

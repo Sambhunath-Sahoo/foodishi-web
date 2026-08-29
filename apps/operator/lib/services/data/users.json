@@ -1,0 +1,902 @@
+[
+ {
+  "id": 1,
+  "name": "Sanjana Shetty",
+  "email": "sanjana.shetty10@example.com",
+  "phone": "9628802659",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2024-11-19T12:30:00.000Z"
+ },
+ {
+  "id": 2,
+  "name": "Ishaan Verma",
+  "email": "ishaan.verma66@example.com",
+  "phone": "9156222422",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2024-11-26T17:10:00.000Z"
+ },
+ {
+  "id": 3,
+  "name": "Kavya Desai",
+  "email": "kavya.desai54@example.com",
+  "phone": "9963979625",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-1.jpg",
+  "created_at": "2024-12-03T17:50:00.000Z"
+ },
+ {
+  "id": 4,
+  "name": "Nisha Iyer",
+  "email": "nisha.iyer27@example.com",
+  "phone": "9682433826",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-4.jpg",
+  "created_at": "2024-12-10T19:30:00.000Z"
+ },
+ {
+  "id": 5,
+  "name": "Rajesh Joshi",
+  "email": "rajesh.joshi87@example.com",
+  "phone": "9812531306",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-4.jpg",
+  "created_at": "2024-12-17T19:10:00.000Z"
+ },
+ {
+  "id": 6,
+  "name": "Deepak Iyer",
+  "email": "deepak.iyer31@example.com",
+  "phone": "9242283161",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-1.jpg",
+  "created_at": "2024-12-25T01:50:00.000Z"
+ },
+ {
+  "id": 7,
+  "name": "Vikram Iyer",
+  "email": "vikram.iyer70@example.com",
+  "phone": "9882063710",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2025-01-01T00:30:00.000Z"
+ },
+ {
+  "id": 8,
+  "name": "Kabir Desai",
+  "email": "kabir.desai90@example.com",
+  "phone": "9170582389",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-5.jpg",
+  "created_at": "2025-01-08T09:10:00.000Z"
+ },
+ {
+  "id": 9,
+  "name": "Shreya Menon",
+  "email": "shreya.menon87@example.com",
+  "phone": "9946337651",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-01-15T06:50:00.000Z"
+ },
+ {
+  "id": 10,
+  "name": "Aditi Bhat",
+  "email": "aditi.bhat77@example.com",
+  "phone": "9459042467",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-01-22T15:30:00.000Z"
+ },
+ {
+  "id": 11,
+  "name": "Pooja Chandra",
+  "email": "pooja.chandra88@example.com",
+  "phone": "9964845761",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-6.jpg",
+  "created_at": "2025-01-29T12:10:00.000Z"
+ },
+ {
+  "id": 12,
+  "name": "Pranav Desai",
+  "email": "pranav.desai52@example.com",
+  "phone": "9453172781",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-3.jpg",
+  "created_at": "2025-02-05T11:50:00.000Z"
+ },
+ {
+  "id": 13,
+  "name": "Vikram Agarwal",
+  "email": "vikram.agarwal83@example.com",
+  "phone": "9833188080",
+  "city": "Bengaluru",
+  "is_active": false,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2025-02-12T19:30:00.000Z"
+ },
+ {
+  "id": 14,
+  "name": "Gauri Reddy",
+  "email": "gauri.reddy38@example.com",
+  "phone": "9343962932",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-3.jpg",
+  "created_at": "2025-02-20T03:10:00.000Z"
+ },
+ {
+  "id": 15,
+  "name": "Priya Chandra",
+  "email": "priya.chandra91@example.com",
+  "phone": "9573510248",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-02-26T19:50:00.000Z"
+ },
+ {
+  "id": 16,
+  "name": "Siddharth Agarwal",
+  "email": "siddharth.agarwal46@example.com",
+  "phone": "9115959609",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-5.jpg",
+  "created_at": "2025-03-06T04:30:00.000Z"
+ },
+ {
+  "id": 17,
+  "name": "Ananya Nair",
+  "email": "ananya.nair25@example.com",
+  "phone": "9192231568",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-5.jpg",
+  "created_at": "2025-03-13T06:10:00.000Z"
+ },
+ {
+  "id": 18,
+  "name": "Arjun Pillai",
+  "email": "arjun.pillai98@example.com",
+  "phone": "9226171951",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2025-03-20T05:50:00.000Z"
+ },
+ {
+  "id": 19,
+  "name": "Deepak Bhat",
+  "email": "deepak.bhat38@example.com",
+  "phone": "9945237516",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-03-27T17:30:00.000Z"
+ },
+ {
+  "id": 20,
+  "name": "Deepak Reddy",
+  "email": "deepak.reddy56@example.com",
+  "phone": "9446257508",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-6.jpg",
+  "created_at": "2025-04-03T16:10:00.000Z"
+ },
+ {
+  "id": 21,
+  "name": "Bhavna Sharma",
+  "email": "bhavna.sharma70@example.com",
+  "phone": "9512730299",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-04-10T14:50:00.000Z"
+ },
+ {
+  "id": 22,
+  "name": "Meera Shetty",
+  "email": "meera.shetty41@example.com",
+  "phone": "9954868998",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-04-17T22:30:00.000Z"
+ },
+ {
+  "id": 23,
+  "name": "Shreya Chandra",
+  "email": "shreya.chandra31@example.com",
+  "phone": "9717974628",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-5.jpg",
+  "created_at": "2025-04-24T23:10:00.000Z"
+ },
+ {
+  "id": 24,
+  "name": "Manish Reddy",
+  "email": "manish.reddy99@example.com",
+  "phone": "9111065297",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-5.jpg",
+  "created_at": "2025-05-01T19:50:00.000Z"
+ },
+ {
+  "id": 25,
+  "name": "Sanjana Rao",
+  "email": "sanjana.rao92@example.com",
+  "phone": "9471849802",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-05-09T03:30:00.000Z"
+ },
+ {
+  "id": 26,
+  "name": "Sneha Pillai",
+  "email": "sneha.pillai60@example.com",
+  "phone": "9961151145",
+  "city": "Hyderabad",
+  "is_active": false,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2025-05-16T10:10:00.000Z"
+ },
+ {
+  "id": 27,
+  "name": "Pranav Joshi",
+  "email": "pranav.joshi28@example.com",
+  "phone": "9148659317",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-3.jpg",
+  "created_at": "2025-05-23T08:50:00.000Z"
+ },
+ {
+  "id": 28,
+  "name": "Harsha Menon",
+  "email": "harsha.menon82@example.com",
+  "phone": "9965249894",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-05-30T14:30:00.000Z"
+ },
+ {
+  "id": 29,
+  "name": "Tarun Reddy",
+  "email": "tarun.reddy44@example.com",
+  "phone": "9852919264",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-06-06T13:10:00.000Z"
+ },
+ {
+  "id": 30,
+  "name": "Aditi Patel",
+  "email": "aditi.patel85@example.com",
+  "phone": "9925579039",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2025-06-13T16:50:00.000Z"
+ },
+ {
+  "id": 31,
+  "name": "Omkar Patel",
+  "email": "omkar.patel24@example.com",
+  "phone": "9941999819",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-06-20T19:30:00.000Z"
+ },
+ {
+  "id": 32,
+  "name": "Aditi Verma",
+  "email": "aditi.verma58@example.com",
+  "phone": "9440334075",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-06-28T01:10:00.000Z"
+ },
+ {
+  "id": 33,
+  "name": "Harsha Iyer",
+  "email": "harsha.iyer56@example.com",
+  "phone": "9813896502",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2025-07-04T22:50:00.000Z"
+ },
+ {
+  "id": 34,
+  "name": "Deepak Gupta",
+  "email": "deepak.gupta85@example.com",
+  "phone": "9619070571",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-07-11T23:30:00.000Z"
+ },
+ {
+  "id": 35,
+  "name": "Rohan Reddy",
+  "email": "rohan.reddy63@example.com",
+  "phone": "9884079457",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-3.jpg",
+  "created_at": "2025-07-19T02:10:00.000Z"
+ },
+ {
+  "id": 36,
+  "name": "Ananya Joshi",
+  "email": "ananya.joshi85@example.com",
+  "phone": "9864772280",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-07-26T04:50:00.000Z"
+ },
+ {
+  "id": 37,
+  "name": "Aarav Bhat",
+  "email": "aarav.bhat44@example.com",
+  "phone": "9164599661",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2025-08-02T17:30:00.000Z"
+ },
+ {
+  "id": 38,
+  "name": "Rekha Iyer",
+  "email": "rekha.iyer59@example.com",
+  "phone": "9451593539",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-6.jpg",
+  "created_at": "2025-08-09T19:10:00.000Z"
+ },
+ {
+  "id": 39,
+  "name": "Aditi Shetty",
+  "email": "aditi.shetty32@example.com",
+  "phone": "9142894660",
+  "city": "Bengaluru",
+  "is_active": false,
+  "avatar_url": null,
+  "created_at": "2025-08-16T19:50:00.000Z"
+ },
+ {
+  "id": 40,
+  "name": "Rohan Pillai",
+  "email": "rohan.pillai93@example.com",
+  "phone": "9136170978",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-08-24T00:30:00.000Z"
+ },
+ {
+  "id": 41,
+  "name": "Shreya Gupta",
+  "email": "shreya.gupta89@example.com",
+  "phone": "9560667065",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2025-08-30T17:10:00.000Z"
+ },
+ {
+  "id": 42,
+  "name": "Kavya Rao",
+  "email": "kavya.rao88@example.com",
+  "phone": "9976962137",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-4.jpg",
+  "created_at": "2025-09-07T02:50:00.000Z"
+ },
+ {
+  "id": 43,
+  "name": "Deepak Verma",
+  "email": "deepak.verma20@example.com",
+  "phone": "9778549399",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2025-09-13T22:30:00.000Z"
+ },
+ {
+  "id": 44,
+  "name": "Ishaan Verma",
+  "email": "ishaan.verma79@example.com",
+  "phone": "9322706896",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-09-21T02:10:00.000Z"
+ },
+ {
+  "id": 45,
+  "name": "Kavya Bhat",
+  "email": "kavya.bhat45@example.com",
+  "phone": "9487141528",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-09-28T07:50:00.000Z"
+ },
+ {
+  "id": 46,
+  "name": "Tanvi Reddy",
+  "email": "tanvi.reddy88@example.com",
+  "phone": "9741945076",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-10-05T07:30:00.000Z"
+ },
+ {
+  "id": 47,
+  "name": "Shreya Nair",
+  "email": "shreya.nair55@example.com",
+  "phone": "9954292532",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-10-12T10:10:00.000Z"
+ },
+ {
+  "id": 48,
+  "name": "Deepak Reddy",
+  "email": "deepak.reddy75@example.com",
+  "phone": "9569134257",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-3.jpg",
+  "created_at": "2025-10-19T15:50:00.000Z"
+ },
+ {
+  "id": 49,
+  "name": "Bhavna Gupta",
+  "email": "bhavna.gupta55@example.com",
+  "phone": "9775222158",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2025-10-26T20:30:00.000Z"
+ },
+ {
+  "id": 50,
+  "name": "Vandana Menon",
+  "email": "vandana.menon45@example.com",
+  "phone": "9261070837",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-11-02T23:10:00.000Z"
+ },
+ {
+  "id": 51,
+  "name": "Aarav Nair",
+  "email": "aarav.nair91@example.com",
+  "phone": "9885420091",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-11-10T06:50:00.000Z"
+ },
+ {
+  "id": 52,
+  "name": "Manish Rao",
+  "email": "manish.rao44@example.com",
+  "phone": "9884025637",
+  "city": "Bengaluru",
+  "is_active": false,
+  "avatar_url": null,
+  "created_at": "2025-11-16T23:30:00.000Z"
+ },
+ {
+  "id": 53,
+  "name": "Rekha Pillai",
+  "email": "rekha.pillai12@example.com",
+  "phone": "9696351422",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2025-11-24T02:10:00.000Z"
+ },
+ {
+  "id": 54,
+  "name": "Manish Chandra",
+  "email": "manish.chandra39@example.com",
+  "phone": "9315656305",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2025-12-01T03:50:00.000Z"
+ },
+ {
+  "id": 55,
+  "name": "Meera Menon",
+  "email": "meera.menon73@example.com",
+  "phone": "9785401053",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2025-12-08T17:30:00.000Z"
+ },
+ {
+  "id": 56,
+  "name": "Uday Bhat",
+  "email": "uday.bhat93@example.com",
+  "phone": "9802714907",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2025-12-15T16:10:00.000Z"
+ },
+ {
+  "id": 57,
+  "name": "Shreya Chandra",
+  "email": "shreya.chandra49@example.com",
+  "phone": "9666711723",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-1.jpg",
+  "created_at": "2025-12-22T15:50:00.000Z"
+ },
+ {
+  "id": 58,
+  "name": "Lakshmi Chandra",
+  "email": "lakshmi.chandra58@example.com",
+  "phone": "9304721025",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-3.jpg",
+  "created_at": "2025-12-29T14:30:00.000Z"
+ },
+ {
+  "id": 59,
+  "name": "Ishaan Bhat",
+  "email": "ishaan.bhat34@example.com",
+  "phone": "9448839528",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2026-01-05T18:10:00.000Z"
+ },
+ {
+  "id": 60,
+  "name": "Arjun Menon",
+  "email": "arjun.menon42@example.com",
+  "phone": "9927193705",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-01-13T00:50:00.000Z"
+ },
+ {
+  "id": 61,
+  "name": "Ishaan Nair",
+  "email": "ishaan.nair61@example.com",
+  "phone": "9750631143",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-1.jpg",
+  "created_at": "2026-01-20T02:30:00.000Z"
+ },
+ {
+  "id": 62,
+  "name": "Sneha Kulkarni",
+  "email": "sneha.kulkarni87@example.com",
+  "phone": "9325374500",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2026-01-27T05:10:00.000Z"
+ },
+ {
+  "id": 63,
+  "name": "Uday Menon",
+  "email": "uday.menon77@example.com",
+  "phone": "9787625058",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-02-03T06:50:00.000Z"
+ },
+ {
+  "id": 64,
+  "name": "Farhan Menon",
+  "email": "farhan.menon83@example.com",
+  "phone": "9828077976",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-02-10T15:30:00.000Z"
+ },
+ {
+  "id": 65,
+  "name": "Tarun Agarwal",
+  "email": "tarun.agarwal69@example.com",
+  "phone": "9143927019",
+  "city": "Bengaluru",
+  "is_active": false,
+  "avatar_url": null,
+  "created_at": "2026-02-17T13:10:00.000Z"
+ },
+ {
+  "id": 66,
+  "name": "Varun Chandra",
+  "email": "varun.chandra66@example.com",
+  "phone": "9784908675",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2026-02-24T20:50:00.000Z"
+ },
+ {
+  "id": 67,
+  "name": "Yash Singh",
+  "email": "yash.singh10@example.com",
+  "phone": "9632142230",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-03-03T17:30:00.000Z"
+ },
+ {
+  "id": 68,
+  "name": "Pooja Rao",
+  "email": "pooja.rao48@example.com",
+  "phone": "9596012523",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-03-11T00:10:00.000Z"
+ },
+ {
+  "id": 69,
+  "name": "Siddharth Joshi",
+  "email": "siddharth.joshi15@example.com",
+  "phone": "9253700138",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-03-18T07:50:00.000Z"
+ },
+ {
+  "id": 70,
+  "name": "Sanjana Bhat",
+  "email": "sanjana.bhat58@example.com",
+  "phone": "9476898968",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-03-25T08:30:00.000Z"
+ },
+ {
+  "id": 71,
+  "name": "Nikhil Shetty",
+  "email": "nikhil.shetty99@example.com",
+  "phone": "9580909147",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-04-01T11:10:00.000Z"
+ },
+ {
+  "id": 72,
+  "name": "Ishaan Bhat",
+  "email": "ishaan.bhat55@example.com",
+  "phone": "9436849045",
+  "city": "Bengaluru",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-3.jpg",
+  "created_at": "2026-04-08T11:50:00.000Z"
+ },
+ {
+  "id": 73,
+  "name": "Deepak Pillai",
+  "email": "deepak.pillai72@example.com",
+  "phone": "9988146514",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2026-04-15T15:30:00.000Z"
+ },
+ {
+  "id": 74,
+  "name": "Divya Agarwal",
+  "email": "divya.agarwal54@example.com",
+  "phone": "9213181271",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-04-22T15:10:00.000Z"
+ },
+ {
+  "id": 75,
+  "name": "Divya Pillai",
+  "email": "divya.pillai44@example.com",
+  "phone": "9438828504",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-4.jpg",
+  "created_at": "2026-04-29T14:50:00.000Z"
+ },
+ {
+  "id": 76,
+  "name": "Kavya Verma",
+  "email": "kavya.verma70@example.com",
+  "phone": "9736403894",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-05-06T14:30:00.000Z"
+ },
+ {
+  "id": 77,
+  "name": "Arjun Rao",
+  "email": "arjun.rao56@example.com",
+  "phone": "9801147322",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2026-05-13T21:10:00.000Z"
+ },
+ {
+  "id": 78,
+  "name": "Kabir Kulkarni",
+  "email": "kabir.kulkarni16@example.com",
+  "phone": "9555383139",
+  "city": "Bengaluru",
+  "is_active": false,
+  "avatar_url": null,
+  "created_at": "2026-05-21T05:50:00.000Z"
+ },
+ {
+  "id": 79,
+  "name": "Gauri Singh",
+  "email": "gauri.singh36@example.com",
+  "phone": "9456309244",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-4.jpg",
+  "created_at": "2026-05-28T01:30:00.000Z"
+ },
+ {
+  "id": 80,
+  "name": "Vandana Chandra",
+  "email": "vandana.chandra42@example.com",
+  "phone": "9711807832",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-06-04T06:10:00.000Z"
+ },
+ {
+  "id": 81,
+  "name": "Arjun Singh",
+  "email": "arjun.singh88@example.com",
+  "phone": "9616301164",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2026-06-11T15:50:00.000Z"
+ },
+ {
+  "id": 82,
+  "name": "Sneha Menon",
+  "email": "sneha.menon51@example.com",
+  "phone": "9610415173",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2026-06-18T08:30:00.000Z"
+ },
+ {
+  "id": 83,
+  "name": "Kabir Sharma",
+  "email": "kabir.sharma66@example.com",
+  "phone": "9938130440",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-7.jpg",
+  "created_at": "2026-06-25T20:10:00.000Z"
+ },
+ {
+  "id": 84,
+  "name": "Manish Singh",
+  "email": "manish.singh45@example.com",
+  "phone": "9994641513",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-8.jpg",
+  "created_at": "2026-07-02T15:50:00.000Z"
+ },
+ {
+  "id": 85,
+  "name": "Divya Iyer",
+  "email": "divya.iyer46@example.com",
+  "phone": "9902152346",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2026-07-09T17:30:00.000Z"
+ },
+ {
+  "id": 86,
+  "name": "Bhavna Joshi",
+  "email": "bhavna.joshi49@example.com",
+  "phone": "9802760510",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-07-17T04:10:00.000Z"
+ },
+ {
+  "id": 87,
+  "name": "Uday Reddy",
+  "email": "uday.reddy18@example.com",
+  "phone": "9405472664",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-07-24T01:50:00.000Z"
+ },
+ {
+  "id": 88,
+  "name": "Varun Gupta",
+  "email": "varun.gupta30@example.com",
+  "phone": "9943164833",
+  "city": "Pune",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-4.jpg",
+  "created_at": "2026-07-31T03:30:00.000Z"
+ },
+ {
+  "id": 89,
+  "name": "Chetan Reddy",
+  "email": "chetan.reddy62@example.com",
+  "phone": "9240406285",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+  "created_at": "2026-08-07T12:10:00.000Z"
+ },
+ {
+  "id": 90,
+  "name": "Tanvi Patel",
+  "email": "tanvi.patel79@example.com",
+  "phone": "9833431759",
+  "city": "Hyderabad",
+  "is_active": true,
+  "avatar_url": null,
+  "created_at": "2026-08-14T07:50:00.000Z"
+ }
+]

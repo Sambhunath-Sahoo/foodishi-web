@@ -1,0 +1,206 @@
+[
+  {
+    "id": 1,
+    "restaurant_id": 1,
+    "name": "Portion",
+    "kind": "variant",
+    "min_select": 1,
+    "max_select": 1,
+    "sort_order": 1,
+    "options": [
+      {
+        "id": 101,
+        "group_id": 1,
+        "name": "Half plate",
+        "price_delta": "0.00",
+        "is_available": true,
+        "sort_order": 1
+      },
+      {
+        "id": 102,
+        "group_id": 1,
+        "name": "Full plate",
+        "price_delta": "160.00",
+        "is_available": true,
+        "sort_order": 2
+      }
+    ],
+    "menu_item_ids": [
+      2,
+      15,
+      16
+    ]
+  },
+  {
+    "id": 2,
+    "restaurant_id": 1,
+    "name": "Heat",
+    "kind": "variant",
+    "min_select": 1,
+    "max_select": 1,
+    "sort_order": 2,
+    "options": [
+      {
+        "id": 201,
+        "group_id": 2,
+        "name": "As the kitchen makes it",
+        "price_delta": "0.00",
+        "is_available": true,
+        "sort_order": 1
+      },
+      {
+        "id": 202,
+        "group_id": 2,
+        "name": "Less spicy",
+        "price_delta": "0.00",
+        "is_available": true,
+        "sort_order": 2
+      },
+      {
+        "id": 203,
+        "group_id": 2,
+        "name": "Extra spicy",
+        "price_delta": "0.00",
+        "is_available": true,
+        "sort_order": 3
+      }
+    ],
+    "menu_item_ids": [
+      4,
+      13,
+      14,
+      15
+    ]
+  },
+  {
+    "id": 3,
+    "restaurant_id": 1,
+    "name": "Add to the curry",
+    "kind": "addon",
+    "min_select": 0,
+    "max_select": 3,
+    "sort_order": 3,
+    "options": [
+      {
+        "id": 301,
+        "group_id": 3,
+        "name": "Extra gravy",
+        "price_delta": "60.00",
+        "is_available": true,
+        "sort_order": 1
+      },
+      {
+        "id": 302,
+        "group_id": 3,
+        "name": "Butter naan",
+        "price_delta": "60.00",
+        "is_available": true,
+        "sort_order": 2
+      },
+      {
+        "id": 303,
+        "group_id": 3,
+        "name": "Boiled egg",
+        "price_delta": "30.00",
+        "is_available": true,
+        "sort_order": 3
+      },
+      {
+        "id": 304,
+        "group_id": 3,
+        "name": "Extra cream",
+        "price_delta": "40.00",
+        "is_available": false,
+        "sort_order": 4
+      }
+    ],
+    "menu_item_ids": [
+      10,
+      11,
+      12,
+      13
+    ]
+  },
+  {
+    "id": 4,
+    "restaurant_id": 2,
+    "name": "Portion",
+    "kind": "variant",
+    "min_select": 1,
+    "max_select": 1,
+    "sort_order": 1,
+    "options": [
+      {
+        "id": 401,
+        "group_id": 4,
+        "name": "Single",
+        "price_delta": "0.00",
+        "is_available": true,
+        "sort_order": 1
+      },
+      {
+        "id": 402,
+        "group_id": 4,
+        "name": "Family pack",
+        "price_delta": "320.00",
+        "is_available": true,
+        "sort_order": 2
+      }
+    ],
+    "menu_item_ids": [
+      22,
+      23,
+      24,
+      25
+    ]
+  },
+  {
+    "id": 5,
+    "restaurant_id": 2,
+    "name": "Goes with the biryani",
+    "kind": "addon",
+    "min_select": 0,
+    "max_select": 4,
+    "sort_order": 2,
+    "options": [
+      {
+        "id": 501,
+        "group_id": 5,
+        "name": "Mirchi ka salan",
+        "price_delta": "60.00",
+        "is_available": true,
+        "sort_order": 1
+      },
+      {
+        "id": 502,
+        "group_id": 5,
+        "name": "Raita",
+        "price_delta": "40.00",
+        "is_available": true,
+        "sort_order": 2
+      },
+      {
+        "id": 503,
+        "group_id": 5,
+        "name": "Extra egg",
+        "price_delta": "30.00",
+        "is_available": true,
+        "sort_order": 3
+      },
+      {
+        "id": 504,
+        "group_id": 5,
+        "name": "Extra gravy",
+        "price_delta": "50.00",
+        "is_available": true,
+        "sort_order": 4
+      }
+    ],
+    "menu_item_ids": [
+      22,
+      23,
+      24,
+      25
+    ]
+  }
+]

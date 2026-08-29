@@ -1,0 +1,17 @@
+{
+ "anchor": "2026-08-21T18:30:00.000Z",
+ "note": "Every timestamp in this directory is anchored on the instant above. The fixture layer slides all of them so the anchor reads as 'now', which is what keeps the live board live whenever the console is opened. Regenerate with `pnpm --filter operator seed`.",
+ "counts": {
+  "restaurants": 25,
+  "customers": 90,
+  "addresses": 171,
+  "riders": 18,
+  "orders": 420,
+  "deliveries": 370,
+  "payments": 443,
+  "refunds": 60,
+  "coupons": 14,
+  "breached_refunds": 12,
+  "live_orders": 24
+ }
+}

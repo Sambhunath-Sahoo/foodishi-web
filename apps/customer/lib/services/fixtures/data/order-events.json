@@ -1,0 +1,196 @@
+{
+ "142": [
+  {
+   "id": 687,
+   "from_status": null,
+   "to_status": "pending",
+   "actor_type": "user",
+   "actor_id": 76,
+   "reason": null,
+   "created_at": "2026-07-19T16:51:08.383833Z"
+  },
+  {
+   "id": 688,
+   "from_status": "pending",
+   "to_status": "confirmed",
+   "actor_type": "restaurant",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-19T16:54:08.383833Z"
+  },
+  {
+   "id": 689,
+   "from_status": "confirmed",
+   "to_status": "preparing",
+   "actor_type": "restaurant",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-19T17:03:08.383833Z"
+  },
+  {
+   "id": 690,
+   "from_status": "preparing",
+   "to_status": "ready_for_pickup",
+   "actor_type": "restaurant",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-19T17:06:08.383833Z"
+  },
+  {
+   "id": 691,
+   "from_status": "ready_for_pickup",
+   "to_status": "out_for_delivery",
+   "actor_type": "system",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-19T17:09:08.383833Z"
+  },
+  {
+   "id": 692,
+   "from_status": "out_for_delivery",
+   "to_status": "delivered",
+   "actor_type": "system",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-19T17:11:08.383833Z"
+  }
+ ],
+ "175": [
+  {
+   "id": 839,
+   "from_status": null,
+   "to_status": "pending",
+   "actor_type": "user",
+   "actor_id": 76,
+   "reason": null,
+   "created_at": "2026-07-13T13:03:08.383833Z"
+  },
+  {
+   "id": 840,
+   "from_status": "pending",
+   "to_status": "confirmed",
+   "actor_type": "restaurant",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-13T13:12:08.383833Z"
+  },
+  {
+   "id": 841,
+   "from_status": "confirmed",
+   "to_status": "preparing",
+   "actor_type": "restaurant",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-13T13:18:08.383833Z"
+  },
+  {
+   "id": 842,
+   "from_status": "preparing",
+   "to_status": "ready_for_pickup",
+   "actor_type": "restaurant",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-13T13:26:08.383833Z"
+  },
+  {
+   "id": 843,
+   "from_status": "ready_for_pickup",
+   "to_status": "out_for_delivery",
+   "actor_type": "system",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-13T13:28:08.383833Z"
+  },
+  {
+   "id": 844,
+   "from_status": "out_for_delivery",
+   "to_status": "delivered",
+   "actor_type": "system",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-07-13T13:35:08.383833Z"
+  }
+ ],
+ "543": [
+  {
+   "id": 2685,
+   "from_status": null,
+   "to_status": "pending",
+   "actor_type": "user",
+   "actor_id": 76,
+   "reason": null,
+   "created_at": "2026-08-19T19:53:08.383833Z"
+  },
+  {
+   "id": 2686,
+   "from_status": "pending",
+   "to_status": "confirmed",
+   "actor_type": "restaurant",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-08-19T19:56:08.383833Z"
+  },
+  {
+   "id": 2687,
+   "from_status": "confirmed",
+   "to_status": "preparing",
+   "actor_type": "restaurant",
+   "actor_id": null,
+   "reason": null,
+   "created_at": "2026-08-19T20:03:08.383833Z"
+  }
+ ],
+ "656": [
+  {
+   "id": 3244,
+   "from_status": null,
+   "to_status": "pending",
+   "actor_type": "user",
+   "actor_id": 76,
+   "reason": "Order placed",
+   "created_at": "2026-08-19T18:56:39.536548Z"
+  },
+  {
+   "id": 3245,
+   "from_status": "pending",
+   "to_status": "cancelled",
+   "actor_type": "user",
+   "actor_id": 76,
+   "reason": "Cancelled by the customer",
+   "created_at": "2026-08-19T18:56:39.536548Z"
+  }
+ ],
+ "657": [
+  {
+   "id": 3249,
+   "from_status": null,
+   "to_status": "pending",
+   "actor_type": "user",
+   "actor_id": 76,
+   "reason": "Order placed",
+   "created_at": "2026-08-19T18:56:39.536548Z"
+  }
+ ],
+ "658": [
+  {
+   "id": 3250,
+   "from_status": null,
+   "to_status": "pending",
+   "actor_type": "user",
+   "actor_id": 76,
+   "reason": "Order placed",
+   "created_at": "2026-08-19T18:56:39.536548Z"
+  }
+ ],
+ "659": [
+  {
+   "id": 3251,
+   "from_status": null,
+   "to_status": "pending",
+   "actor_type": "user",
+   "actor_id": 76,
+   "reason": "Order placed",
+   "created_at": "2026-08-19T18:56:39.536548Z"
+  }
+ ]
+}

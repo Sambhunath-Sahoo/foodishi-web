@@ -1,0 +1,42 @@
+[
+ {
+  "id": 7,
+  "name": "Beverages",
+  "slug": "beverages"
+ },
+ {
+  "id": 4,
+  "name": "Biryani",
+  "slug": "biryani"
+ },
+ {
+  "id": 3,
+  "name": "Chinese",
+  "slug": "chinese"
+ },
+ {
+  "id": 6,
+  "name": "Desserts",
+  "slug": "desserts"
+ },
+ {
+  "id": 1,
+  "name": "North Indian",
+  "slug": "north-indian"
+ },
+ {
+  "id": 5,
+  "name": "Pizza",
+  "slug": "pizza"
+ },
+ {
+  "id": 2,
+  "name": "South Indian",
+  "slug": "south-indian"
+ },
+ {
+  "id": 8,
+  "name": "Street Food",
+  "slug": "street-food"
+ }
+]

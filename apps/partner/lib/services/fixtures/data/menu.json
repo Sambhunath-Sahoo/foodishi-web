@@ -1,0 +1,554 @@
+{
+ "1": [
+  {
+   "id": 1,
+   "restaurant_id": 1,
+   "name": "Kebabs & Starters",
+   "sort_order": 1,
+   "items": [
+    {
+     "id": 1,
+     "restaurant_id": 1,
+     "category_id": 1,
+     "name": "Murgh Malai Kebab",
+     "description": "Chicken thigh in cream, cheese and green cardamom, off the skewer.",
+     "price": "340.00",
+     "is_veg": false,
+     "spice_level": "mild",
+     "serves": 2,
+     "calories": 420,
+     "is_available": true,
+     "image_url": "https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=480&q=70"
+    },
+    {
+     "id": 2,
+     "restaurant_id": 1,
+     "category_id": 1,
+     "name": "Tandoori Chicken (Half)",
+     "description": "Overnight yoghurt marinade, charcoal oven, lemon and onion.",
+     "price": "320.00",
+     "is_veg": false,
+     "spice_level": "medium",
+     "serves": 2,
+     "calories": 510,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/207/0fb889898b3ccc5fcf9fc92c89e4f464.jpg"
+    },
+    {
+     "id": 3,
+     "restaurant_id": 1,
+     "category_id": 1,
+     "name": "Paneer Tikka",
+     "description": "Hung-curd marinade, capsicum and onion, cooked hard on the skewer.",
+     "price": "290.00",
+     "is_veg": true,
+     "spice_level": "medium",
+     "serves": 2,
+     "calories": 380,
+     "is_available": true,
+     "image_url": "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=480&q=70"
+    },
+    {
+     "id": 4,
+     "restaurant_id": 1,
+     "category_id": 1,
+     "name": "Seekh Kebab",
+     "description": "Minced lamb, green chilli and mint, hand-pressed onto the skewer.",
+     "price": "310.00",
+     "is_veg": false,
+     "spice_level": "hot",
+     "serves": 2,
+     "calories": 460,
+     "is_available": true,
+     "image_url": null
+    },
+    {
+     "id": 5,
+     "restaurant_id": 1,
+     "category_id": 1,
+     "name": "Hara Bhara Kebab",
+     "description": "Spinach, green peas and paneer, shallow-fried.",
+     "price": "240.00",
+     "is_veg": true,
+     "spice_level": "mild",
+     "serves": 2,
+     "calories": 300,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/205/caa73de0a72d84e2930f9eafbb42f3b4.jpg"
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "restaurant_id": 1,
+   "name": "Breads",
+   "sort_order": 2,
+   "items": [
+    {
+     "id": 6,
+     "restaurant_id": 1,
+     "category_id": 2,
+     "name": "Butter Naan",
+     "description": "Clay oven, finished with butter.",
+     "price": "60.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 210,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/215/2543d180cce8f0cac286839792f48a42.jpg"
+    },
+    {
+     "id": 7,
+     "restaurant_id": 1,
+     "category_id": 2,
+     "name": "Garlic Naan",
+     "description": "Garlic and coriander pressed into the dough.",
+     "price": "75.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 230,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/216/b164e2ce211c843c7303da08685c7126.jpg"
+    },
+    {
+     "id": 8,
+     "restaurant_id": 1,
+     "category_id": 2,
+     "name": "Laccha Paratha",
+     "description": "Layered, flaky, torn rather than cut.",
+     "price": "70.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 260,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/217/466025675cdf125c6fcb786cff050e25.jpg"
+    },
+    {
+     "id": 9,
+     "restaurant_id": 1,
+     "category_id": 2,
+     "name": "Tandoori Roti",
+     "description": "Wholewheat, no oil.",
+     "price": "40.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 140,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/218/adc8f900ae0d28ae9c98846a2108bd4f.jpg"
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "restaurant_id": 1,
+   "name": "Curries",
+   "sort_order": 3,
+   "items": [
+    {
+     "id": 10,
+     "restaurant_id": 1,
+     "category_id": 3,
+     "name": "Butter Chicken",
+     "description": "Tandoor chicken finished in tomato, butter and a little cream.",
+     "price": "420.00",
+     "is_veg": false,
+     "spice_level": "mild",
+     "serves": 2,
+     "calories": 640,
+     "is_available": true,
+     "image_url": "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=480&q=70"
+    },
+    {
+     "id": 11,
+     "restaurant_id": 1,
+     "category_id": 3,
+     "name": "Dal Makhani",
+     "description": "Black urad simmered overnight.",
+     "price": "300.00",
+     "is_veg": true,
+     "spice_level": "mild",
+     "serves": 2,
+     "calories": 480,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/209/ffe7d523e47f9a679ef0ae4a124c11ec.jpg"
+    },
+    {
+     "id": 12,
+     "restaurant_id": 1,
+     "category_id": 3,
+     "name": "Paneer Butter Masala",
+     "description": "Cashew and tomato gravy, mild by design.",
+     "price": "340.00",
+     "is_veg": true,
+     "spice_level": "mild",
+     "serves": 2,
+     "calories": 520,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/210/a31328e645e910ec4bbb3f43443f1029.jpg"
+    },
+    {
+     "id": 13,
+     "restaurant_id": 1,
+     "category_id": 3,
+     "name": "Rogan Josh",
+     "description": "Lamb on the bone, Kashmiri chilli, fennel.",
+     "price": "460.00",
+     "is_veg": false,
+     "spice_level": "hot",
+     "serves": 2,
+     "calories": 590,
+     "is_available": false,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/17/menu-items/213/9d67bbbc6fe6b021eefe59226b8aafc9.jpg"
+    },
+    {
+     "id": 14,
+     "restaurant_id": 1,
+     "category_id": 3,
+     "name": "Kadai Mushroom",
+     "description": "Button mushroom, peppers, crushed coriander seed.",
+     "price": "310.00",
+     "is_veg": true,
+     "spice_level": "medium",
+     "serves": 2,
+     "calories": 350,
+     "is_available": true,
+     "image_url": null
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "restaurant_id": 1,
+   "name": "Rice & Biryani",
+   "sort_order": 4,
+   "items": [
+    {
+     "id": 15,
+     "restaurant_id": 1,
+     "category_id": 4,
+     "name": "Chicken Dum Biryani",
+     "description": "Sealed handi, long-grain rice, bone-in chicken.",
+     "price": "380.00",
+     "is_veg": false,
+     "spice_level": "medium",
+     "serves": 2,
+     "calories": 720,
+     "is_available": true,
+     "image_url": null
+    },
+    {
+     "id": 16,
+     "restaurant_id": 1,
+     "category_id": 4,
+     "name": "Veg Dum Biryani",
+     "description": "Same handi, seasonal vegetables and fried onion.",
+     "price": "320.00",
+     "is_veg": true,
+     "spice_level": "medium",
+     "serves": 2,
+     "calories": 610,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/20/menu-items/257/74ebd3ff9438f638a6a39d83c03ca3cf.jpg"
+    },
+    {
+     "id": 17,
+     "restaurant_id": 1,
+     "category_id": 4,
+     "name": "Jeera Rice",
+     "description": "Basmati, cumin, ghee.",
+     "price": "180.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 2,
+     "calories": 340,
+     "is_available": true,
+     "image_url": null
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "restaurant_id": 1,
+   "name": "Sweets & Drinks",
+   "sort_order": 5,
+   "items": [
+    {
+     "id": 18,
+     "restaurant_id": 1,
+     "category_id": 5,
+     "name": "Gulab Jamun (2 pc)",
+     "description": "Warm, in cardamom syrup.",
+     "price": "120.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 320,
+     "is_available": true,
+     "image_url": null
+    },
+    {
+     "id": 19,
+     "restaurant_id": 1,
+     "category_id": 5,
+     "name": "Phirni",
+     "description": "Ground rice, milk, saffron. Served cold.",
+     "price": "140.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 290,
+     "is_available": false,
+     "image_url": null
+    },
+    {
+     "id": 20,
+     "restaurant_id": 1,
+     "category_id": 5,
+     "name": "Sweet Lassi",
+     "description": "Thick, lightly sweetened, no ice.",
+     "price": "110.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 220,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/15/menu-items/179/9fdc33bb50bf58470f92022474506248.jpg"
+    },
+    {
+     "id": 21,
+     "restaurant_id": 1,
+     "category_id": 5,
+     "name": "Masala Chai",
+     "description": "Boiled with ginger and cardamom.",
+     "price": "60.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 90,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/15/menu-items/176/113222dce01a044b34aa8f3e27fbd6a4.jpg"
+    }
+   ]
+  }
+ ],
+ "2": [
+  {
+   "id": 6,
+   "restaurant_id": 2,
+   "name": "Biryani",
+   "sort_order": 1,
+   "items": [
+    {
+     "id": 22,
+     "restaurant_id": 2,
+     "category_id": 6,
+     "name": "Hyderabadi Chicken Biryani",
+     "description": "Kacchi gosht method, sealed and cooked once.",
+     "price": "360.00",
+     "is_veg": false,
+     "spice_level": "hot",
+     "serves": 2,
+     "calories": 780,
+     "is_available": true,
+     "image_url": "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?w=480&q=70"
+    },
+    {
+     "id": 23,
+     "restaurant_id": 2,
+     "category_id": 6,
+     "name": "Mutton Dum Biryani",
+     "description": "Bone-in mutton, aged basmati, two hours on dum.",
+     "price": "480.00",
+     "is_veg": false,
+     "spice_level": "hot",
+     "serves": 2,
+     "calories": 860,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/20/menu-items/256/5fa4347b5b9679693179f0fcc0f39c23.jpg"
+    },
+    {
+     "id": 24,
+     "restaurant_id": 2,
+     "category_id": 6,
+     "name": "Veg Biryani",
+     "description": "Vegetables and paneer, same rice and same handi.",
+     "price": "300.00",
+     "is_veg": true,
+     "spice_level": "medium",
+     "serves": 2,
+     "calories": 640,
+     "is_available": true,
+     "image_url": null
+    },
+    {
+     "id": 25,
+     "restaurant_id": 2,
+     "category_id": 6,
+     "name": "Egg Biryani",
+     "description": "Two eggs, halved into the rice at the end.",
+     "price": "320.00",
+     "is_veg": true,
+     "spice_level": "medium",
+     "serves": 2,
+     "calories": 700,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/20/menu-items/258/2393ea9f3e9ac6a819f9732744e85f15.jpg"
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "restaurant_id": 2,
+   "name": "Kebabs",
+   "sort_order": 2,
+   "items": [
+    {
+     "id": 26,
+     "restaurant_id": 2,
+     "category_id": 7,
+     "name": "Chicken 65",
+     "description": "Curd, chilli and curry leaf, fried hard.",
+     "price": "300.00",
+     "is_veg": false,
+     "spice_level": "hot",
+     "serves": 2,
+     "calories": 520,
+     "is_available": true,
+     "image_url": null
+    },
+    {
+     "id": 27,
+     "restaurant_id": 2,
+     "category_id": 7,
+     "name": "Apollo Fish",
+     "description": "Boneless basa, Andhra batter, lemon.",
+     "price": "380.00",
+     "is_veg": false,
+     "spice_level": "hot",
+     "serves": 2,
+     "calories": 470,
+     "is_available": false,
+     "image_url": null
+    },
+    {
+     "id": 28,
+     "restaurant_id": 2,
+     "category_id": 7,
+     "name": "Mutton Seekh",
+     "description": "Minced mutton on the skewer.",
+     "price": "400.00",
+     "is_veg": false,
+     "spice_level": "medium",
+     "serves": 2,
+     "calories": 540,
+     "is_available": true,
+     "image_url": null
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "restaurant_id": 2,
+   "name": "Sides",
+   "sort_order": 3,
+   "items": [
+    {
+     "id": 29,
+     "restaurant_id": 2,
+     "category_id": 8,
+     "name": "Mirchi ka Salan",
+     "description": "Peanut, sesame and long green chilli. The salan the biryani needs.",
+     "price": "120.00",
+     "is_veg": true,
+     "spice_level": "hot",
+     "serves": 2,
+     "calories": 210,
+     "is_available": true,
+     "image_url": null
+    },
+    {
+     "id": 30,
+     "restaurant_id": 2,
+     "category_id": 8,
+     "name": "Raita",
+     "description": "Onion, tomato, cucumber in set curd.",
+     "price": "80.00",
+     "is_veg": true,
+     "spice_level": "mild",
+     "serves": 2,
+     "calories": 130,
+     "is_available": true,
+     "image_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/restaurants/20/menu-items/261/0c174015a6ef5913ed30877e2b5996b7.jpg"
+    },
+    {
+     "id": 31,
+     "restaurant_id": 2,
+     "category_id": 8,
+     "name": "Double ka Meetha",
+     "description": "Fried bread in saffron milk.",
+     "price": "160.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 420,
+     "is_available": true,
+     "image_url": null
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "restaurant_id": 2,
+   "name": "Drinks",
+   "sort_order": 4,
+   "items": [
+    {
+     "id": 32,
+     "restaurant_id": 2,
+     "category_id": 9,
+     "name": "Irani Chai",
+     "description": "Boiled long, strong, with khova.",
+     "price": "50.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 110,
+     "is_available": true,
+     "image_url": null
+    },
+    {
+     "id": 33,
+     "restaurant_id": 2,
+     "category_id": 9,
+     "name": "Osmania Biscuits (4 pc)",
+     "description": "Salt and sugar both. For the chai.",
+     "price": "70.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 240,
+     "is_available": true,
+     "image_url": null
+    },
+    {
+     "id": 34,
+     "restaurant_id": 2,
+     "category_id": 9,
+     "name": "Salt Lassi",
+     "description": "Buttermilk, roasted cumin, curry leaf.",
+     "price": "90.00",
+     "is_veg": true,
+     "spice_level": "none",
+     "serves": 1,
+     "calories": 120,
+     "is_available": true,
+     "image_url": null
+    }
+   ]
+  }
+ ]
+}

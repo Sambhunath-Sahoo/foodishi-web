@@ -1,0 +1,56 @@
+[
+  {
+    "id": 101,
+    "name": "Rohan Pillai",
+    "email": "rohan@foodishi.example",
+    "phone": "+919845012301",
+    "city": "Hyderabad",
+    "avatar_url": null,
+    "password": "kitchen123"
+  },
+  {
+    "id": 102,
+    "name": "Meera Joshi",
+    "email": "meera@foodishi.example",
+    "phone": "+919845012302",
+    "city": "Hyderabad",
+    "avatar_url": null,
+    "password": "kitchen123"
+  },
+  {
+    "id": 103,
+    "name": "Ishita Iyer",
+    "email": "ishita@foodishi.example",
+    "phone": "+919845012303",
+    "city": "Hyderabad",
+    "avatar_url": null,
+    "password": "kitchen123"
+  },
+  {
+    "id": 104,
+    "name": "Arjun Nair",
+    "email": "arjun@foodishi.example",
+    "phone": "+919845012304",
+    "city": "Hyderabad",
+    "avatar_url": null,
+    "password": "kitchen123"
+  },
+  {
+    "id": 105,
+    "name": "Kabir Rao",
+    "email": "kabir@foodishi.example",
+    "phone": "+919845012305",
+    "city": "Hyderabad",
+    "avatar_url": null,
+    "password": "kitchen123"
+  },
+  {
+    "id": 106,
+    "name": "Fatima Sheikh",
+    "email": "fatima@foodishi.example",
+    "phone": "+919845012306",
+    "city": "Hyderabad",
+    "avatar_url": null,
+    "password": "kitchen123"
+  }
+]

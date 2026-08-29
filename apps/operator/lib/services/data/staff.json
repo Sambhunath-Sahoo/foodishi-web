@@ -1,0 +1,35 @@
+{
+ "dev_passphrase": "foodishidev2026",
+ "accounts": [
+  {
+   "id": 9001,
+   "name": "Ops Admin",
+   "email": "ops.admin@foodishi.internal",
+   "phone": "9000000001",
+   "city": "Bengaluru",
+   "platform_role": "admin",
+   "avatar_url": null,
+   "created_at": "2025-07-17T18:30:00.000Z"
+  },
+  {
+   "id": 9002,
+   "name": "Meera Iyer",
+   "email": "meera.iyer@foodishi.internal",
+   "phone": "9000000002",
+   "city": "Hyderabad",
+   "platform_role": "admin",
+   "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-2.jpg",
+   "created_at": "2026-01-23T18:30:00.000Z"
+  },
+  {
+   "id": 9003,
+   "name": "Rohan Shetty",
+   "email": "rohan.shetty@foodishi.internal",
+   "phone": "9000000003",
+   "city": "Pune",
+   "platform_role": "admin",
+   "avatar_url": "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars/avatar-5.jpg",
+   "created_at": "2026-05-17T18:30:00.000Z"
+  }
+ ]
+}

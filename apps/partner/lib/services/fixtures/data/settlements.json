@@ -1,0 +1,112 @@
+[
+  {
+    "id": 1,
+    "restaurant_id": 1,
+    "reference": "TDK-TN-2601",
+    "period_from_offset": -34,
+    "period_to_offset": -28,
+    "status": "paid",
+    "paid_at_offset": -26,
+    "account_last4": "4471",
+    "commission_percent": "18.00"
+  },
+  {
+    "id": 2,
+    "restaurant_id": 1,
+    "reference": "TDK-TN-2602",
+    "period_from_offset": -27,
+    "period_to_offset": -21,
+    "status": "paid",
+    "paid_at_offset": -19,
+    "account_last4": "4471",
+    "commission_percent": "18.00"
+  },
+  {
+    "id": 3,
+    "restaurant_id": 1,
+    "reference": "TDK-TN-2603",
+    "period_from_offset": -20,
+    "period_to_offset": -14,
+    "status": "paid",
+    "paid_at_offset": -12,
+    "account_last4": "4471",
+    "commission_percent": "18.00"
+  },
+  {
+    "id": 4,
+    "restaurant_id": 1,
+    "reference": "TDK-TN-2604",
+    "period_from_offset": -13,
+    "period_to_offset": -7,
+    "status": "processing",
+    "paid_at_offset": null,
+    "account_last4": "4471",
+    "commission_percent": "18.00"
+  },
+  {
+    "id": 5,
+    "restaurant_id": 1,
+    "reference": "TDK-TN-2605",
+    "period_from_offset": -6,
+    "period_to_offset": 0,
+    "status": "scheduled",
+    "paid_at_offset": null,
+    "account_last4": "4471",
+    "commission_percent": "18.00"
+  },
+  {
+    "id": 6,
+    "restaurant_id": 2,
+    "reference": "TDK-PB-2606",
+    "period_from_offset": -34,
+    "period_to_offset": -28,
+    "status": "paid",
+    "paid_at_offset": -26,
+    "account_last4": "8802",
+    "commission_percent": "20.00"
+  },
+  {
+    "id": 7,
+    "restaurant_id": 2,
+    "reference": "TDK-PB-2607",
+    "period_from_offset": -27,
+    "period_to_offset": -21,
+    "status": "paid",
+    "paid_at_offset": -19,
+    "account_last4": "8802",
+    "commission_percent": "20.00"
+  },
+  {
+    "id": 8,
+    "restaurant_id": 2,
+    "reference": "TDK-PB-2608",
+    "period_from_offset": -20,
+    "period_to_offset": -14,
+    "status": "paid",
+    "paid_at_offset": -12,
+    "account_last4": "8802",
+    "commission_percent": "20.00"
+  },
+  {
+    "id": 9,
+    "restaurant_id": 2,
+    "reference": "TDK-PB-2609",
+    "period_from_offset": -13,
+    "period_to_offset": -7,
+    "status": "processing",
+    "paid_at_offset": null,
+    "account_last4": "8802",
+    "commission_percent": "20.00"
+  },
+  {
+    "id": 10,
+    "restaurant_id": 2,
+    "reference": "TDK-PB-2610",
+    "period_from_offset": -6,
+    "period_to_offset": 0,
+    "status": "scheduled",
+    "paid_at_offset": null,
+    "account_last4": "8802",
+    "commission_percent": "20.00"
+  }
+]

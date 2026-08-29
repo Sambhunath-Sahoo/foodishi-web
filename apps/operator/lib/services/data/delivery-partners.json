@@ -1,0 +1,128 @@
+[
+ {
+  "id": 1,
+  "name": "Tarun Agarwal",
+  "phone": "8890658490",
+  "vehicle_type": "bike",
+  "is_available": true
+ },
+ {
+  "id": 2,
+  "name": "Meera Shetty",
+  "phone": "8684724510",
+  "vehicle_type": "bike",
+  "is_available": false
+ },
+ {
+  "id": 3,
+  "name": "Sneha Pillai",
+  "phone": "8397451938",
+  "vehicle_type": "scooter",
+  "is_available": false
+ },
+ {
+  "id": 4,
+  "name": "Aditi Iyer",
+  "phone": "8282853135",
+  "vehicle_type": "bike",
+  "is_available": true
+ },
+ {
+  "id": 5,
+  "name": "Priya Kulkarni",
+  "phone": "8584689571",
+  "vehicle_type": "bike",
+  "is_available": true
+ },
+ {
+  "id": 6,
+  "name": "Meera Verma",
+  "phone": "8316331552",
+  "vehicle_type": "scooter",
+  "is_available": false
+ },
+ {
+  "id": 7,
+  "name": "Yash Joshi",
+  "phone": "8202033028",
+  "vehicle_type": "scooter",
+  "is_available": true
+ },
+ {
+  "id": 8,
+  "name": "Tanvi Iyer",
+  "phone": "8819070639",
+  "vehicle_type": "bike",
+  "is_available": true
+ },
+ {
+  "id": 9,
+  "name": "Meera Reddy",
+  "phone": "8938550966",
+  "vehicle_type": "bike",
+  "is_available": false
+ },
+ {
+  "id": 10,
+  "name": "Gauri Bhat",
+  "phone": "8154288375",
+  "vehicle_type": "scooter",
+  "is_available": false
+ },
+ {
+  "id": 11,
+  "name": "Ananya Iyer",
+  "phone": "8324666454",
+  "vehicle_type": "bike",
+  "is_available": false
+ },
+ {
+  "id": 12,
+  "name": "Gauri Shetty",
+  "phone": "8753720822",
+  "vehicle_type": "bike",
+  "is_available": true
+ },
+ {
+  "id": 13,
+  "name": "Kavya Nair",
+  "phone": "8498927503",
+  "vehicle_type": "scooter",
+  "is_available": true
+ },
+ {
+  "id": 14,
+  "name": "Sneha Agarwal",
+  "phone": "8137461160",
+  "vehicle_type": "scooter",
+  "is_available": true
+ },
+ {
+  "id": 15,
+  "name": "Aditi Gupta",
+  "phone": "8806343651",
+  "vehicle_type": "electric_scooter",
+  "is_available": false
+ },
+ {
+  "id": 16,
+  "name": "Pooja Nair",
+  "phone": "8857375337",
+  "vehicle_type": "electric_scooter",
+  "is_available": true
+ },
+ {
+  "id": 17,
+  "name": "Manish Menon",
+  "phone": "8788823012",
+  "vehicle_type": "bike",
+  "is_available": false
+ },
+ {
+  "id": 18,
+  "name": "Siddharth Gupta",
+  "phone": "8679841680",
+  "vehicle_type": "bike",
+  "is_available": true
+ }
+]

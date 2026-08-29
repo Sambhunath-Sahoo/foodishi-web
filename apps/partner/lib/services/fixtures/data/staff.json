@@ -1,0 +1,130 @@
+{
+  "1": [
+    {
+      "id": 1,
+      "user_id": 101,
+      "restaurant_id": 1,
+      "role": "manager",
+      "is_active": true,
+      "created_at": "2024-03-04T09:30:00+05:30",
+      "updated_at": "2024-03-04T09:30:00+05:30",
+      "user": {
+        "id": 101,
+        "name": "Rohan Pillai",
+        "email": "rohan@foodishi.example",
+        "phone": "+919845012301",
+        "avatar_url": null
+      },
+      "granted": []
+    },
+    {
+      "id": 2,
+      "user_id": 103,
+      "restaurant_id": 1,
+      "role": "staff",
+      "is_active": true,
+      "created_at": "2026-01-13T09:30:00+05:30",
+      "updated_at": "2026-08-03T09:30:00+05:30",
+      "user": {
+        "id": 103,
+        "name": "Ishita Iyer",
+        "email": "ishita@foodishi.example",
+        "phone": "+919845012303",
+        "avatar_url": null
+      },
+      "granted": [
+        "orders.reject"
+      ]
+    },
+    {
+      "id": 3,
+      "user_id": 104,
+      "restaurant_id": 1,
+      "role": "staff",
+      "is_active": true,
+      "created_at": "2026-05-18T09:30:00+05:30",
+      "updated_at": "2026-05-18T09:30:00+05:30",
+      "user": {
+        "id": 104,
+        "name": "Arjun Nair",
+        "email": "arjun@foodishi.example",
+        "phone": "+919845012304",
+        "avatar_url": null
+      },
+      "granted": []
+    },
+    {
+      "id": 4,
+      "user_id": 106,
+      "restaurant_id": 1,
+      "role": "staff",
+      "is_active": false,
+      "created_at": "2025-07-07T09:30:00+05:30",
+      "updated_at": "2026-04-03T09:30:00+05:30",
+      "user": {
+        "id": 106,
+        "name": "Fatima Sheikh",
+        "email": "fatima@foodishi.example",
+        "phone": "+919845012306",
+        "avatar_url": null
+      },
+      "granted": []
+    }
+  ],
+  "2": [
+    {
+      "id": 5,
+      "user_id": 102,
+      "restaurant_id": 2,
+      "role": "manager",
+      "is_active": true,
+      "created_at": "2022-07-13T09:30:00+05:30",
+      "updated_at": "2022-07-13T09:30:00+05:30",
+      "user": {
+        "id": 102,
+        "name": "Meera Joshi",
+        "email": "meera@foodishi.example",
+        "phone": "+919845012302",
+        "avatar_url": null
+      },
+      "granted": []
+    },
+    {
+      "id": 6,
+      "user_id": 101,
+      "restaurant_id": 2,
+      "role": "manager",
+      "is_active": true,
+      "created_at": "2025-10-25T09:30:00+05:30",
+      "updated_at": "2025-10-25T09:30:00+05:30",
+      "user": {
+        "id": 101,
+        "name": "Rohan Pillai",
+        "email": "rohan@foodishi.example",
+        "phone": "+919845012301",
+        "avatar_url": null
+      },
+      "granted": []
+    },
+    {
+      "id": 7,
+      "user_id": 105,
+      "restaurant_id": 2,
+      "role": "staff",
+      "is_active": true,
+      "created_at": "2026-06-22T09:30:00+05:30",
+      "updated_at": "2026-08-09T09:30:00+05:30",
+      "user": {
+        "id": 105,
+        "name": "Kabir Rao",
+        "email": "kabir@foodishi.example",
+        "phone": "+919845012305",
+        "avatar_url": null
+      },
+      "granted": [
+        "orders.reject",
+        "orders.cancel"
+      ]
+    }
+  ]
+}

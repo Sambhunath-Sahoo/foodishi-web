@@ -1,0 +1,95 @@
+/* Tailwind first, then the Neel preset that maps tokens.css to utility names.
+ * tokens.css itself is imported from layout.tsx, because it must land on the
+ * same element next/font stamps its --font-plex-* variables onto. */
+@import "tailwindcss";
+@import "@repo/ui/styles/theme.css";
+
+/* A focus ring is never optional in a console driven by keyboard. Components
+ * set their own; this is the floor for anything that does not. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- the section rail ---------------------------------------------------
+ *
+ * Width and label visibility are driven by an attribute on <html> that is
+ * stamped before first paint (lib/nav-collapse.ts), not by React state — so
+ * there is no frame where the rail is the wrong width and nothing for the
+ * server and the client to disagree about.
+ *
+ * Only two custom properties and two visibility rules. Everything else about
+ * the rail is Tailwind on the component, as the rest of the app is. */
+:root {
+  --nav-width: 15rem;
+  --nav-label: inline;
+}
+
+:root[data-nav-collapsed="true"] {
+  --nav-width: 3.5rem;
+  --nav-label: none;
+}
+
+@media (min-width: 48rem) {
+  .nav-rail {
+    width: var(--nav-width);
+    transition: width 140ms ease;
+  }
+}
+
+/* Below md the rail is a horizontal strip and the width does not apply, so the
+ * labels always show — a row of unlabelled icons across the top of a phone is
+ * a puzzle, not a navigation. */
+@media (min-width: 48rem) {
+  .nav-label {
+    display: var(--nav-label);
+  }
+
+  :root[data-nav-collapsed="true"] .nav-hide-collapsed {
+    display: none;
+  }
+
+  :root[data-nav-collapsed="true"] .nav-item {
+    justify-content: center;
+  }
+
+  /* The pip is the figure, reduced to the one thing 56px can carry. Beside a
+   * written figure it would be the same fact twice, so it only ever shows on
+   * the collapsed rail. */
+  .nav-pip {
+    display: none;
+  }
+
+  :root[data-nav-collapsed="true"] .nav-pip {
+    display: block;
+  }
+}
+
+/* The drawer slides in from the right edge it is attached to. */
+@keyframes sheet-in {
+  from {
+    transform: translateX(1.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.sheet-panel {
+  animation: sheet-in 160ms ease-out;
+}
+
+/* Motion is decoration here — every one of these conveys nothing on its own,
+ * so honouring the preference costs the interface nothing. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

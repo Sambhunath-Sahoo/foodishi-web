@@ -1,0 +1,82 @@
+/* Foodishi — Tailwind preset for the "Neel" design system.
+ *
+ * This is the only bridge between tokens.css and Tailwind. It maps each
+ * approved CSS variable onto a Tailwind colour name so an app can write
+ * `text-crit` instead of a literal hex. A literal hex in a component is a
+ * defect (DESIGN.md, non-negotiable #1).
+ *
+ * Usage, in an app's globals.css:
+ *     @import "tailwindcss";
+ *     @import "@repo/ui/styles/theme.css";
+ *
+ * tokens.css itself is imported from the app's root layout, not from here,
+ * because it must land on the same element next/font stamps its --font-plex-*
+ * variables onto (see packages/ui/src/fonts.ts).
+ *
+ * `@theme inline` means each utility emits `var(--crit)` rather than a frozen
+ * value, so light/dark switching keeps working through tokens.css alone.
+ */
+
+/* Component sources live outside the app, so name them for class detection. */
+@source "../";
+
+@theme inline {
+  /* ink */
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+
+  /* ground */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+
+  /* neel — accent, structure, links, primary actions */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+
+  /* semantics */
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-crit: var(--crit);
+  --color-crit-soft: var(--crit-soft);
+  --color-cool: var(--cool);
+  --color-cool-soft: var(--cool-soft);
+  --color-mute: var(--mute);
+  --color-mute-soft: var(--mute-soft);
+
+  /* severity tier 2 — "burnt", the tone DENSITY.md §3 puts between warn and
+     crit for an order that is one to six hours late. tokens.css owns the
+     palette and is not edited, and a literal hex in a component is a defect
+     (DESIGN.md #1), so the tone is derived from the two tokens it sits
+     between. Because both inputs are tokens it follows light/dark on its own.
+     Consumed only through SEVERITY_STRIPE / SEVERITY_TEXT in status/severity.ts. */
+  --color-burnt: color-mix(in srgb, var(--warn) 55%, var(--crit));
+  --color-burnt-soft: color-mix(in srgb, var(--warn-soft) 55%, var(--crit-soft));
+
+  /* type — `font-title` is IBM Plex Serif and belongs to page titles only.
+     All three utilities resolve through tokens.css.
+
+     Note the source names: --font-ui / --font-display / --font-code. Tailwind's
+     own theme keys are --font-sans / --font-title / --font-mono, so a token
+     called --font-mono would make the line below `var(--font-mono)` reading
+     itself. That is what used to happen: --font-mono existed in tokens.css but
+     was never mapped here, so every `font-mono` in the apps — order ids,
+     timestamps, money — silently rendered in the system monospace stack. */
+  --font-sans: var(--font-ui);
+  --font-title: var(--font-display);
+  --font-mono: var(--font-code);
+
+  /* scale — token names are --radius / --radius-sm / --radius-pill; these
+     utility names are deliberately different to avoid a self-reference. */
+  --radius-card: var(--radius);
+  --radius-chip: var(--radius-pill);
+  --shadow-card: var(--shadow);
+}

@@ -1,0 +1,38 @@
+[
+ {
+  "code": "FOODISHI50",
+  "description": "\u20b950 off orders over \u20b9300",
+  "discount_type": "flat",
+  "discount_value": "50.00",
+  "min_order_value": "300.00",
+  "max_discount": null,
+  "is_active": true
+ },
+ {
+  "code": "FIRST20",
+  "description": "20% off your first order, up to \u20b9120",
+  "discount_type": "percent",
+  "discount_value": "20.00",
+  "min_order_value": "249.00",
+  "max_discount": "120.00",
+  "is_active": true
+ },
+ {
+  "code": "BIRYANI15",
+  "description": "15% off, up to \u20b9100",
+  "discount_type": "percent",
+  "discount_value": "15.00",
+  "min_order_value": "399.00",
+  "max_discount": "100.00",
+  "is_active": true
+ },
+ {
+  "code": "EXPIRED",
+  "description": "No longer running",
+  "discount_type": "flat",
+  "discount_value": "75.00",
+  "min_order_value": "200.00",
+  "max_discount": null,
+  "is_active": false
+ }
+]

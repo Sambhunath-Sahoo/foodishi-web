@@ -1,0 +1,132 @@
+/* Foodishi — "Neel" design system. Approved 2026-08-20.
+ *
+ * Indigo carries structure so the warm spectrum stays free to mean something:
+ * green = fine, amber = watch this, red = act now. In an ops console a screen
+ * that is already orange has nothing left to say when an order runs late.
+ *
+ * Rules:
+ *  - Components read tokens. Never write a literal colour in a component.
+ *  - Never define a colour only inside a dark block; every token exists here first.
+ *  - Colour never carries meaning alone — pair it with a dot, stripe or label.
+ */
+
+:root {
+  /* ink */
+  --ink: #16181d;
+  --ink-2: #3e434e;
+  --ink-3: #6b7280;
+  --ink-4: #9ba1ac;
+
+  /* ground */
+  --bg: #f5f5f3;
+  --surface: #ffffff;
+  --surface-2: #efefec;
+  --line: #e0e0db;
+  --line-2: #cfcfc8;
+
+  /* neel — accent, structure, links, primary actions */
+  --accent: #33456b;
+  --accent-hover: #28375a;
+  --accent-soft: #e5e9f2;
+  --on-accent: #ffffff;
+
+  /* semantics — deliberately not the accent hue */
+  --ok: #2f6b4f;          /* curry leaf — delivered, captured, veg, available */
+  --ok-soft: #e2efe8;
+  --warn: #946200;        /* turmeric — preparing, SLA approaching */
+  --warn-soft: #f8eed6;
+  --crit: #9b1c2e;        /* kashmiri — late, breached, cancelled, failed */
+  --crit-soft: #f7e2e4;
+  --cool: #3f6070;        /* out for delivery */
+  --cool-soft: #e3edf1;
+  --mute: #6b7280;        /* pending */
+  --mute-soft: #ececd8;
+
+  /* type — one superfamily, three roles. The faces are self-hosted by
+     next/font (packages/ui/src/fonts.ts), which defines --font-plex-* on this
+     same element. The literal family name is the second step of each stack, so
+     a context without next/font — Storybook, a story rendered standalone —
+     still resolves to the right face rather than to a generic sans. */
+  --font-display: var(--font-plex-serif), "IBM Plex Serif", Georgia, serif;
+  --font-ui: var(--font-plex-sans), "IBM Plex Sans", system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  /* Named --font-code, not --font-mono: theme.css maps it onto Tailwind's
+     `font-mono` utility, whose theme key is itself --font-mono. A token of the
+     same name would make that mapping a self-reference and silently fall back
+     to the system stack — the same reason --radius is exposed as
+     --radius-card. */
+  --font-code: var(--font-plex-mono), "IBM Plex Mono", ui-monospace,
+    SFMono-Regular, Menlo, monospace;
+
+  /* scale */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+  --shadow: 0 1px 2px rgb(22 24 29 / 6%), 0 4px 14px rgb(22 24 29 / 5%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #ecedf1;
+    --ink-2: #b8bcc7;
+    --ink-3: #8a909d;
+    --ink-4: #666c79;
+    --bg: #14161c;
+    --surface: #1b1e26;
+    --surface-2: #22262f;
+    --line: #2c313c;
+    --line-2: #3a4050;
+    /* lifted, or the same indigo disappears against near-black */
+    --accent: #8fa6d4;
+    --accent-hover: #a6b8df;
+    --accent-soft: #212838;
+    --on-accent: #14161c;
+    --ok: #6dbf97;
+    --ok-soft: #1b2a23;
+    --warn: #d7a63f;
+    --warn-soft: #2c2517;
+    --crit: #e4808d;
+    --crit-soft: #2e1a1e;
+    --cool: #8fb2c2;
+    --cool-soft: #1a242a;
+    --mute: #8a909d;
+    --mute-soft: #242832;
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 14px rgb(0 0 0 / 30%);
+  }
+}
+
+[data-theme="dark"] {
+  --ink: #ecedf1;
+  --ink-2: #b8bcc7;
+  --ink-3: #8a909d;
+  --ink-4: #666c79;
+  --bg: #14161c;
+  --surface: #1b1e26;
+  --surface-2: #22262f;
+  --line: #2c313c;
+  --line-2: #3a4050;
+  --accent: #8fa6d4;
+  --accent-hover: #a6b8df;
+  --accent-soft: #212838;
+  --on-accent: #14161c;
+  --ok: #6dbf97;
+  --ok-soft: #1b2a23;
+  --warn: #d7a63f;
+  --warn-soft: #2c2517;
+  --crit: #e4808d;
+  --crit-soft: #2e1a1e;
+  --cool: #8fb2c2;
+  --cool-soft: #1a242a;
+  --mute: #8a909d;
+  --mute-soft: #242832;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 14px rgb(0 0 0 / 30%);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+/* Money and any column of digits. */
+.tabular { font-variant-numeric: tabular-nums; }

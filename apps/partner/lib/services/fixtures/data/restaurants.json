@@ -1,0 +1,95 @@
+{
+  "1": {
+    "id": 1,
+    "name": "Tandoori Nights",
+    "slug": "tandoori-nights",
+    "city": "Hyderabad",
+    "area": "Jubilee Hills",
+    "rating": "4.4",
+    "rating_count": 1284,
+    "price_for_two": "700.00",
+    "avg_prep_minutes": 28,
+    "opens_at": "11:00:00",
+    "closes_at": "23:30:00",
+    "is_active": true,
+    "image_url": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=640&q=70",
+    "description": "Charcoal grills, slow-cooked curries and breads out of a clay oven. Family-run since 1998.",
+    "address_line": "Plot 42, Road No. 36, Jubilee Hills",
+    "latitude": "17.4319",
+    "longitude": "78.4073",
+    "phone": "+914066778899",
+    "cuisines": [
+      {
+        "id": 1,
+        "name": "North Indian",
+        "slug": "north-indian"
+      },
+      {
+        "id": 2,
+        "name": "Mughlai",
+        "slug": "mughlai"
+      },
+      {
+        "id": 3,
+        "name": "Kebabs",
+        "slug": "kebabs"
+      }
+    ],
+    "policy": {
+      "restaurant_id": 1,
+      "cancellation_window_mins": 5,
+      "cancellation_fee_percent": "15.00",
+      "refund_sla_hours": 48,
+      "delivery_fee_base": "29.00",
+      "delivery_fee_per_km": "8.00",
+      "free_delivery_above": "499.00",
+      "packaging_fee": "20.00",
+      "min_order_value": "149.00",
+      "max_delivery_distance_km": "12.00"
+    }
+  },
+  "2": {
+    "id": 2,
+    "name": "Paradise Biryani House",
+    "slug": "paradise-biryani-house",
+    "city": "Hyderabad",
+    "area": "Secunderabad",
+    "rating": "4.6",
+    "rating_count": 3907,
+    "price_for_two": "600.00",
+    "avg_prep_minutes": 35,
+    "opens_at": "11:30:00",
+    "closes_at": "23:00:00",
+    "is_active": true,
+    "image_url": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=640&q=70",
+    "description": "Dum biryani in copper handis, and the salan that belongs with it.",
+    "address_line": "SD Road, Paradise Circle, Secunderabad",
+    "latitude": "17.4416",
+    "longitude": "78.4983",
+    "phone": "+914027845612",
+    "cuisines": [
+      {
+        "id": 4,
+        "name": "Hyderabadi",
+        "slug": "hyderabadi"
+      },
+      {
+        "id": 2,
+        "name": "Mughlai",
+        "slug": "mughlai"
+      }
+    ],
+    "policy": {
+      "restaurant_id": 2,
+      "cancellation_window_mins": 3,
+      "cancellation_fee_percent": "10.00",
+      "refund_sla_hours": 72,
+      "delivery_fee_base": "35.00",
+      "delivery_fee_per_km": "9.00",
+      "free_delivery_above": null,
+      "packaging_fee": "25.00",
+      "min_order_value": "199.00",
+      "max_delivery_distance_km": "10.00"
+    }
+  }
+}

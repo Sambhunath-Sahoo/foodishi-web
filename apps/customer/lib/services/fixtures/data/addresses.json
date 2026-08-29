@@ -1,0 +1,28 @@
+[
+ {
+  "id": 136,
+  "user_id": 76,
+  "label": "Home",
+  "line1": "274, Koregaon Park",
+  "line2": "Near Koregaon Park Metro",
+  "city": "Pune",
+  "pincode": "567039",
+  "latitude": "18.549194",
+  "longitude": "73.893689",
+  "is_default": true,
+  "created_at": "2026-08-19T20:29:33.013120Z"
+ },
+ {
+  "id": 137,
+  "user_id": 76,
+  "label": "Work",
+  "line1": "146, Baner",
+  "line2": "Near Baner Metro",
+  "city": "Pune",
+  "pincode": "569468",
+  "latitude": "18.544224",
+  "longitude": "73.800897",
+  "is_default": false,
+  "created_at": "2026-08-19T20:29:33.013120Z"
+ }
+]
