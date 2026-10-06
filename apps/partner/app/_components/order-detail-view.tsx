@@ -12,6 +12,7 @@ import {
   Skeleton,
   StatusChip,
   Timeline,
+  cn,
   getOrderStatusLabel,
   getOrderStatusTone,
   type TimelineEntry,
@@ -19,16 +20,17 @@ import {
 import { CancelOrderControl } from "./cancel-order-control";
 import { KitchenGate } from "./kitchen-gate";
 import { NextAction } from "./next-action";
-import { OrderClock } from "./order-clock";
+import { OrderClock, settledAtOf } from "./order-clock";
 import { OrderItems } from "./order-items";
-import { CardSkeletons, EmptyCard, LoadError, RefusedNote } from "./states";
+import { CardSkeletons, EmptyCard, LoadError } from "./states";
 import { TicketCard } from "./ticket-card";
-import { formatClock, formatMoney } from "../_lib/format";
+import { formatClock, formatMoney, formatSignedMoney } from "../_lib/format";
 import { readLateness } from "../_lib/lateness";
 import { isPermanentRefusal } from "../_lib/refusal";
 import { TICK_DETAIL_MS, useNow } from "../_lib/use-now";
 import { canRestaurantCancel } from "../../lib/order-flow";
 import { useDishFaces } from "../../lib/queries/menu";
+import { useCoupons } from "../../lib/queries/offers";
 import {
   useAddress,
   useCustomer,
@@ -59,14 +61,14 @@ const ACTOR_WORDS: Record<string, string> = {
   agent: "support",
 };
 
-function toTimeline(events: readonly OrderEvent[]): readonly TimelineEntry[] {
+function toTimeline(events: readonly OrderEvent[], now: number): readonly TimelineEntry[] {
   return events.map((event) => ({
     id: String(event.id),
     label:
       event.from_status === null
         ? getOrderStatusLabel(event.to_status)
         : `${getOrderStatusLabel(event.from_status)} → ${getOrderStatusLabel(event.to_status)}`,
-    timestamp: formatClock(event.created_at),
+    timestamp: formatClock(event.created_at, now),
     actor: ACTOR_WORDS[event.actor_type] ?? event.actor_type,
     detail: event.reason ?? undefined,
     tone: getOrderStatusTone(event.to_status),
@@ -77,11 +79,19 @@ function MoneyLine({
   label,
   amount,
   strong = false,
+  isDeduction = false,
 }: {
   readonly label: string;
   readonly amount: string;
   readonly strong?: boolean;
+  /**
+   * Taken off the total, not added to it. The wire sends the discount as a
+   * positive figure, and printed that way it read as one more charge: the
+   * subtotal only added up once you guessed which line was negative.
+   */
+  readonly isDeduction?: boolean;
 }): React.JSX.Element {
+  const value = isDeduction ? -Math.abs(Number(amount)) : Number(amount);
   return (
     <div className="flex items-baseline justify-between gap-4">
       <dt
@@ -92,37 +102,76 @@ function MoneyLine({
         {label}
       </dt>
       <dd
-        className={
-          strong
-            ? "font-mono text-[18px] font-semibold tabular-nums text-ink"
-            : "font-mono text-[14px] tabular-nums text-ink-2"
-        }
+        className={cn(
+          "font-mono tabular-nums",
+          strong ? "text-[18px] font-semibold text-ink" : "text-[14px]",
+          !strong && (isDeduction ? "text-ok" : "text-ink-2"),
+        )}
       >
-        {formatMoney(amount)}
+        {isDeduction ? formatSignedMoney(value) : formatMoney(amount)}
       </dd>
     </div>
   );
 }
 
-function AddressBlock({ address }: { readonly address: Address }): React.JSX.Element {
-  return (
-    <address className="text-[15px] leading-relaxed text-ink not-italic">
-      <span className="font-semibold">{address.label}</span>
-      <br />
-      {address.line1}
-      {address.line2 !== null && address.line2 !== "" ? (
-        <>
-          <br />
-          {address.line2}
-        </>
-      ) : null}
-      <br />
-      {address.city} <span className="font-mono tabular-nums">{address.pincode}</span>
-    </address>
+/** A coupon was used but its code is not ours to read, or no longer listed. */
+const COUPON_FALLBACK_LABEL = "Coupon discount";
+
+/**
+ * The discount line, named after the coupon when this person may read the
+ * coupon list. Its own component so the coupon read only happens for an order
+ * that used one, and never for a shift worker who would only be refused it.
+ */
+function DiscountLine({
+  order,
+  kitchen,
+}: {
+  readonly order: OrderDetail;
+  readonly kitchen: ReadyKitchen;
+}): React.JSX.Element {
+  const couponId = order.coupon_id;
+  const canReadCoupons = couponId !== null && kitchen.can("offers.view");
+  return canReadCoupons ? (
+    <NamedCouponLine order={order} kitchen={kitchen} couponId={couponId} />
+  ) : (
+    <MoneyLine
+      label={couponId === null ? "Discount" : COUPON_FALLBACK_LABEL}
+      amount={order.discount_amount}
+      isDeduction
+    />
   );
 }
 
-function DeliveryCard({
+function NamedCouponLine({
+  order,
+  kitchen,
+  couponId,
+}: {
+  readonly order: OrderDetail;
+  readonly kitchen: ReadyKitchen;
+  readonly couponId: number;
+}): React.JSX.Element {
+  const coupons = useCoupons(kitchen);
+  const code = coupons.data?.find((coupon) => coupon.id === couponId)?.code;
+  return (
+    <MoneyLine
+      label={code === undefined ? COUPON_FALLBACK_LABEL : `Discount (coupon ${code})`}
+      amount={order.discount_amount}
+      isDeduction
+    />
+  );
+}
+
+/**
+ * Who it is going to, as one muted line under the trail.
+ *
+ * It was a whole card, and for this restaurant it nearly always said "Not this
+ * restaurant's to see": the customer's name, phone and address are theirs and
+ * the API answers 403 every time. A card that exists to say it is empty pushed
+ * the action further down, so it is a line now — and when the API does share
+ * the details, they fit on the same line.
+ */
+function DeliveryLine({
   order,
   kitchen,
 }: {
@@ -132,71 +181,52 @@ function DeliveryCard({
   const address = useAddress(kitchen, order.address_id);
   const customer = useCustomer(kitchen, order.user_id);
 
-  // The customer's name, phone and address are the customer's, and the API says
-  // so with a 403 every time. Two red banners and two dead "Try again" buttons
-  // made a designed boundary look like a broken screen, so when both doors are
-  // shut the whole card becomes one quiet sentence.
-  const bothRefused =
-    isPermanentRefusal(customer.error) && isPermanentRefusal(address.error);
+  const isCustomerRefused = isPermanentRefusal(customer.error);
+  const isAddressRefused = isPermanentRefusal(address.error);
+
+  if (customer.isPending || address.isPending) {
+    return <Skeleton className="h-5 w-64" label="Loading who this is going to" />;
+  }
+
+  // A real failure, not the designed boundary, still gets its retry.
+  const failure =
+    customer.error !== null && !isCustomerRefused
+      ? { error: customer.error, retry: customer.refetch }
+      : address.error !== null && !isAddressRefused
+        ? { error: address.error, retry: address.refetch }
+        : null;
+  if (failure !== null) {
+    return (
+      <LoadError
+        error={failure.error}
+        title="Could not load who this is going to"
+        onRetry={() => {
+          void failure.retry();
+        }}
+      />
+    );
+  }
+
+  const parts = [
+    customer.data?.name,
+    customer.data?.phone,
+    address.data === undefined ? undefined : formatAddress(address.data),
+  ].filter((part): part is string => part !== undefined && part !== "");
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Delivering to</CardTitle>
-        {customer.data !== undefined ? (
-          <span className="font-mono text-[13px] tabular-nums text-ink-3">
-            {customer.data.phone}
-          </span>
-        ) : null}
-      </CardHeader>
-      <CardBody className="flex flex-col gap-3">
-        {bothRefused ? (
-          <RefusedNote
-            title="Not this restaurant's to see"
-            detail="The customer's name, phone and address stay with them."
-          />
-        ) : (
-          <>
-            {customer.isPending ? (
-              <Skeleton className="h-5 w-44" label="Loading the customer" />
-            ) : null}
-
-            {customer.error !== null ? (
-              <LoadError
-                error={customer.error}
-                title="Could not load who this is going to"
-                refusedTitle="The customer's name and phone stay with them"
-                onRetry={() => {
-                  void customer.refetch();
-                }}
-              />
-            ) : null}
-
-            {customer.data !== undefined ? (
-              <p className="text-[15px] text-ink-2">{customer.data.name}</p>
-            ) : null}
-
-            {address.isPending ? (
-              <Skeleton className="h-16 w-full" label="Loading the delivery address" />
-            ) : null}
-
-            {address.error !== null ? (
-              <LoadError
-                error={address.error}
-                title="Could not load the delivery address"
-                refusedTitle="The delivery address stays with the customer"
-                onRetry={() => {
-                  void address.refetch();
-                }}
-              />
-            ) : null}
-
-            {address.data !== undefined ? <AddressBlock address={address.data} /> : null}
-          </>
-        )}
-      </CardBody>
-    </Card>
+    <p className="text-[14px] leading-snug text-ink-3">
+      <span className="font-medium text-ink-2">Delivering to</span>{" "}
+      {parts.length === 0
+        ? "— the customer's name, phone and address stay with them."
+        : parts.join(" · ")}
+    </p>
   );
+}
+
+function formatAddress(address: Address): string {
+  return [address.label, address.line1, address.line2, `${address.city} ${address.pincode}`]
+    .filter((part): part is string => part !== null && part !== "")
+    .join(", ");
 }
 
 function OrderBody({
@@ -222,6 +252,15 @@ function OrderBody({
     promise === undefined
       ? null
       : readLateness(promise.status, promise.promised_at, now);
+  // When it settled, from the trail first: the trail is the record of the
+  // transition itself, and the clock line must never disagree with the
+  // "→ Delivered" row printed under it. The order's own stamp stands in until
+  // the trail loads.
+  const settledEvent =
+    data === undefined
+      ? undefined
+      : [...(events.data ?? [])].reverse().find((event) => event.to_status === data.status);
+  const settledAt = settledEvent?.created_at ?? (data === undefined ? null : settledAtOf(data));
 
   return (
     <div className="flex flex-col gap-5">
@@ -245,25 +284,17 @@ function OrderBody({
       ) : null}
 
       {data !== undefined ? (
-        <>
-          <TicketCard tier={late === null ? 0 : late.tier}>
-            {/* The graded headline runs large in the clock directly below, so
-                the header carries the status and nothing that repeats it. */}
-            <CardHeader className="flex-wrap items-center gap-2 pl-5">
-              <StatusChip status={data.status} />
-              <span className="font-mono text-[13px] tabular-nums text-ink-3">
-                #{data.id}
-              </span>
+        // One column on a portrait tablet, in the order a cook reads a ticket.
+        // From 1024px, two: what was ordered on the left (7/12), and the status,
+        // the move and the trail on the right (5/12), sticky — so on a long
+        // order the button stays on screen instead of falling below the fold
+        // under a 1140px-wide list of lines.
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-start">
+          <Card className="lg:col-span-7">
+            <CardHeader>
+              <CardTitle>What they ordered</CardTitle>
             </CardHeader>
-            <CardBody className="flex flex-col gap-4 pl-5">
-              <OrderClock
-                status={data.status}
-                placedAt={data.placed_at}
-                promisedAt={data.promised_at}
-                now={now}
-                prominent
-              />
-
+            <CardBody className="flex flex-col gap-4">
               <OrderItems items={data.items} faces={faces} maxLines={data.items.length} />
 
               <dl className="flex flex-col gap-1.5 border-t border-line pt-3">
@@ -272,77 +303,98 @@ function OrderBody({
                 <MoneyLine label="Delivery" amount={data.delivery_fee} />
                 <MoneyLine label="Tax" amount={data.tax_amount} />
                 {Number(data.discount_amount) > 0 ? (
-                  <MoneyLine label="Discount" amount={data.discount_amount} />
+                  <DiscountLine order={data} kitchen={kitchen} />
                 ) : null}
                 <div className="mt-1 border-t border-line pt-2">
                   <MoneyLine label="Total" amount={data.total_amount} strong />
                 </div>
               </dl>
-
-              {/*
-                What the customer asked for about the delivery itself — "leave
-                it at the gate", "ring the bell twice". Given the warn treatment
-                that per-item notes already get, because it changes what somebody
-                has to DO and is the one line on this screen a courier acts on.
-                Above the money on purpose: it is an instruction, not a figure.
-              */}
-              {data.delivery_note !== null && data.delivery_note !== "" ? (
-                <p className="rounded-card border border-warn/30 bg-warn-soft px-3 py-2 text-[14px] leading-snug text-warn">
-                  <span className="font-semibold">Delivery note:</span>{" "}
-                  {data.delivery_note}
-                </p>
-              ) : null}
-
-              {data.cancellation_reason !== null ? (
-                <p className="rounded-card border border-line bg-surface-2 px-3 py-2 text-[13px] leading-snug text-ink-2">
-                  <span className="font-semibold">Cancelled:</span>{" "}
-                  {data.cancellation_reason}
-                </p>
-              ) : null}
-
-              <div className="flex flex-col gap-3">
-                <NextAction order={data} kitchen={kitchen} now={now} />
-                {canRestaurantCancel(data.status) ? (
-                  <CancelOrderControl order={data} kitchen={kitchen} now={now} />
-                ) : null}
-              </div>
-            </CardBody>
-          </TicketCard>
-
-          <DeliveryCard order={data} kitchen={kitchen} />
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Status trail</CardTitle>
-            </CardHeader>
-            <CardBody>
-              {events.isPending ? (
-                <Skeleton className="h-24 w-full" label="Loading the status trail" />
-              ) : null}
-
-              {events.error !== null ? (
-                <LoadError
-                  error={events.error}
-                  title="Could not load the status trail"
-                  onRetry={() => {
-                    void events.refetch();
-                  }}
-                />
-              ) : null}
-
-              {events.data !== undefined && events.data.length === 0 ? (
-                <EmptyState
-                  title="No status trail for this order yet"
-                  detail="Every move — placed, accepted, preparing, handed over — is written here with the time it happened and who made it."
-                />
-              ) : null}
-
-              {events.data !== undefined && events.data.length > 0 ? (
-                <Timeline entries={toTimeline(events.data)} />
-              ) : null}
             </CardBody>
           </Card>
-        </>
+
+          <div className="flex flex-col gap-5 lg:sticky lg:top-[calc(var(--partner-header-h,96px)+16px)] lg:col-span-5">
+            <TicketCard tier={late === null ? 0 : late.tier}>
+              {/* The graded headline runs large in the clock directly below, so
+                  the header carries the status and nothing that repeats it. No
+                  order id either: the page title already says it. */}
+              <CardHeader className="flex-wrap items-center gap-2 pl-5">
+                <StatusChip status={data.status} />
+              </CardHeader>
+              <CardBody className="flex flex-col gap-4 pl-5">
+                <OrderClock
+                  status={data.status}
+                  placedAt={data.placed_at}
+                  promisedAt={data.promised_at}
+                  settledAt={settledAt}
+                  now={now}
+                  prominent
+                />
+
+                {/*
+                  What the customer asked for about the delivery itself — "leave
+                  it at the gate", "ring the bell twice". Given the warn treatment
+                  that per-item notes already get, because it changes what
+                  somebody has to DO and is the one line on this screen a courier
+                  acts on. Beside the move on purpose: it is an instruction.
+                */}
+                {data.delivery_note !== null && data.delivery_note !== "" ? (
+                  <p className="rounded-card border border-warn/30 bg-warn-soft px-3 py-2 text-[14px] leading-snug text-warn">
+                    <span className="font-semibold">Delivery note:</span>{" "}
+                    {data.delivery_note}
+                  </p>
+                ) : null}
+
+                {data.cancellation_reason !== null ? (
+                  <p className="rounded-card border border-line bg-surface-2 px-3 py-2 text-[14px] leading-snug text-ink-2">
+                    <span className="font-semibold">Cancelled:</span>{" "}
+                    {data.cancellation_reason}
+                  </p>
+                ) : null}
+
+                <div className="flex flex-col gap-3">
+                  <NextAction order={data} kitchen={kitchen} now={now} />
+                  {canRestaurantCancel(data.status) ? (
+                    <CancelOrderControl order={data} kitchen={kitchen} now={now} />
+                  ) : null}
+                </div>
+              </CardBody>
+            </TicketCard>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Status trail</CardTitle>
+              </CardHeader>
+              <CardBody>
+                {events.isPending ? (
+                  <Skeleton className="h-24 w-full" label="Loading the status trail" />
+                ) : null}
+
+                {events.error !== null ? (
+                  <LoadError
+                    error={events.error}
+                    title="Could not load the status trail"
+                    onRetry={() => {
+                      void events.refetch();
+                    }}
+                  />
+                ) : null}
+
+                {events.data !== undefined && events.data.length === 0 ? (
+                  <EmptyState
+                    title="No status trail for this order yet"
+                    detail="Every move — placed, accepted, preparing, handed over — is written here with the time it happened and who made it."
+                  />
+                ) : null}
+
+                {events.data !== undefined && events.data.length > 0 ? (
+                  <Timeline entries={toTimeline(events.data, now)} />
+                ) : null}
+              </CardBody>
+            </Card>
+
+            <DeliveryLine order={data} kitchen={kitchen} />
+          </div>
+        </div>
       ) : null}
     </div>
   );

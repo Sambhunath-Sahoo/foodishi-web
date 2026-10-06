@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import * as React from "react";
 import { AuthSpinner } from "@repo/api-client";
 import { SignInPanel } from "./sign-in-panel";
+
+export const metadata: Metadata = { title: "Sign in" };
 
 /**
  * The sign-in screen reads `?next=` to send the tablet back where it was, and

@@ -2,22 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import {
-  CardBody,
-  CardFooter,
-  CardHeader,
-  SEVERITY_TEXT,
-  Skeleton,
-  StatusChip,
-  cn,
-} from "@repo/ui";
+import { Skeleton, StatusChip } from "@repo/ui";
 import { CancelOrderControl } from "./cancel-order-control";
+import { LatenessChip } from "./lateness-chip";
 import { NextAction } from "./next-action";
-import { OrderClock } from "./order-clock";
+import { OrderClock, settledAtOf } from "./order-clock";
 import { OrderItems } from "./order-items";
 import { LoadError } from "./states";
 import { TicketCard } from "./ticket-card";
-import { formatMoney, pluralise } from "../_lib/format";
+import { formatMoney } from "../_lib/format";
 import { readLateness } from "../_lib/lateness";
 import { canRestaurantCancel } from "../../lib/order-flow";
 import { useDishFaces } from "../../lib/queries/menu";
@@ -47,74 +40,92 @@ export function OrderCard({ order, kitchen, now }: OrderCardProps): React.JSX.El
   const detail = useOrder(kitchen, orderId, { frozen: true });
   const faces = useDishFaces(kitchen);
 
-  const itemCount = detail.data?.items.length ?? 0;
-
   return (
-    <TicketCard tier={late.tier}>
-      <CardHeader className="flex-wrap items-center gap-x-3 gap-y-2 py-2.5 pl-5">
-        <span className="font-mono text-[19px] leading-none font-semibold tabular-nums text-ink">
+    // One padded column rather than header / body / footer bands: the two
+    // borders and four padding strips between them were a fifth of the card's
+    // height and carried nothing a cook reads.
+    <TicketCard
+      tier={late.tier}
+      data-order-card={order.id}
+      className="@container flex flex-col gap-1.5 py-2 pr-3 pl-4"
+    >
+      {/* The ticket's head: who it is, where it stands, how late. Details is
+          quiet, but still a 44px target — the negative margin lets the hit
+          area overhang the row instead of setting its height. */}
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        <span className="mr-0.5 font-mono text-[18px] leading-none font-semibold tabular-nums text-ink">
           #{order.id}
         </span>
         <StatusChip status={order.status} />
-        <span
-          className={cn("font-mono text-[15px] tabular-nums", SEVERITY_TEXT[late.tier])}
-        >
-          {late.headline}
-        </span>
-
+        <LatenessChip late={late} />
         <Link
           href={`/orders/${order.id}`}
-          className="ml-auto inline-flex min-h-11 items-center rounded-card px-3 font-sans text-[15px] font-medium text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="-my-2.5 -mr-2 ml-auto inline-flex min-h-11 shrink-0 items-center rounded-card px-2 font-sans text-[14px] font-medium text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           Details
         </Link>
-      </CardHeader>
+      </div>
 
-      <CardBody className="flex flex-col gap-2 py-2.5 pl-5">
+      {/* The clock and the money share one line. The total used to have a
+          row of its own under the dishes; on a three-dish ticket that row was
+          a tenth of the card, and the lines are counted by looking at them. */}
+      <div className="flex items-baseline gap-3">
         <OrderClock
           status={order.status}
           placedAt={order.placed_at}
           promisedAt={order.promised_at}
+          settledAt={settledAtOf(order)}
           now={now}
+          className="min-w-0 flex-1"
         />
-
-        {detail.isPending ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-5 w-2/3" label="Loading order lines" />
-            <Skeleton className="h-5 w-1/2" label="Loading order lines" />
-          </div>
-        ) : null}
-
-        {detail.error !== null ? (
-          <LoadError
-            error={detail.error}
-            title="Could not load the lines for this order"
-            onRetry={() => {
-              void detail.refetch();
-            }}
-          />
-        ) : null}
-
-        {detail.data !== undefined ? <OrderItems items={detail.data.items} faces={faces} /> : null}
-
-        <div className="flex items-baseline justify-between gap-4 border-t border-line pt-2">
-          <span className="text-[13px] text-ink-3">
-            {itemCount === 0
-              ? "Order total"
-              : `${pluralise(itemCount, "line", "lines")} · order total`}
+        <span className="flex shrink-0 items-baseline gap-1.5">
+          {/* Labelled wherever the card is wide enough; in a three-column
+              grid the word would push the clock line into truncating
+              "waiting", so it is left to screen readers there. */}
+          <span aria-hidden="true" className="hidden text-[13px] leading-4 text-ink-3 @md:inline">
+            Total
           </span>
-          <span className="font-mono text-[18px] font-semibold tabular-nums text-ink">
+          <span className="font-mono text-[16px] leading-4 font-semibold tabular-nums text-ink">
+            <span className="sr-only">Order total </span>
             {formatMoney(order.total_amount)}
           </span>
-        </div>
-      </CardBody>
+        </span>
+      </div>
 
-      <CardFooter className="flex-col items-stretch gap-2 py-2.5 pl-5">
+      {detail.isPending ? (
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-5 w-2/3" label="Loading order lines" />
+          <Skeleton className="h-5 w-1/2" label="Loading order lines" />
+        </div>
+      ) : null}
+
+      {detail.error !== null ? (
+        <LoadError
+          error={detail.error}
+          title="Could not load the lines for this order"
+          onRetry={() => {
+            void detail.refetch();
+          }}
+        />
+      ) : null}
+
+      {detail.data !== undefined ? <OrderItems items={detail.data.items} faces={faces} /> : null}
+
+      {/* 12px between the two, not 8: the refusal sits under the button tapped
+          forty times an hour, and the extra gap is what keeps a hurried thumb
+          on the right one. No refusal note here when it is not the reader's to
+          make — the list says that once, above every card. */}
+      <div className="flex flex-col items-stretch gap-3 border-t border-line pt-2">
         <NextAction order={order} kitchen={kitchen} now={now} />
         {canRestaurantCancel(order.status) ? (
-          <CancelOrderControl order={order} kitchen={kitchen} now={now} />
+          <CancelOrderControl
+            order={order}
+            kitchen={kitchen}
+            now={now}
+            explainsRefusal={false}
+          />
         ) : null}
-      </CardFooter>
+      </div>
     </TicketCard>
   );
 }

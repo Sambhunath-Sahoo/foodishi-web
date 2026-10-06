@@ -46,8 +46,16 @@ function Team({ kitchen }: { readonly kitchen: ReadyKitchen }): React.JSX.Elemen
 
   return (
     <div className="flex flex-col gap-4">
+      {/* A roster of one is the manager alone, and a kitchen that runs that
+          way never hears that shift workers can take the queue. So the prompt
+          says what adding someone is for, beside the button that does it. */}
       {kitchen.can("staff.manage") ? (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {members.length === 1 ? (
+            <p className="mr-auto text-[15px] text-ink-2">
+              Add your kitchen staff so they can run the queue.
+            </p>
+          ) : null}
           <Button className="min-h-11" onClick={() => setIsAdding(true)}>
             Give someone access
           </Button>

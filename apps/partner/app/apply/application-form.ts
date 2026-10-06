@@ -82,22 +82,86 @@ function isNumberInRange(value: string, low: number, high: number): boolean {
   return value.trim() !== "" && Number.isFinite(parsed) && parsed >= low && parsed <= high;
 }
 
-/** Whether the Send button may be pressed. Never whether the server will agree. */
+/**
+ * Each rule the Send button waits on, with the label of the field it reads and
+ * that field's id — so "Still needed" can name what is missing in the form's
+ * own words and a tap on Send can move focus to the first of them. A greyed-out
+ * button with no reason was the alternative, and applicants stalled on it.
+ */
+interface Requirement {
+  readonly label: string;
+  readonly fieldId: string;
+  readonly isMet: (form: ApplicationForm) => boolean;
+}
+
+const REQUIREMENTS: readonly Requirement[] = [
+  {
+    label: "Restaurant name",
+    fieldId: "apply-restaurant-name",
+    isMet: (form) => form.name.trim().length >= LIMITS.nameMin,
+  },
+  {
+    label: "Web address",
+    fieldId: "apply-slug",
+    isMet: (form) => SLUG_PATTERN.test(form.slug.trim()),
+  },
+  {
+    label: "City",
+    fieldId: "apply-restaurant-city",
+    isMet: (form) => form.city.trim().length >= LIMITS.cityMin,
+  },
+  {
+    label: "Area",
+    fieldId: "apply-area",
+    isMet: (form) => form.area.trim().length >= LIMITS.areaMin,
+  },
+  {
+    label: "Street address",
+    fieldId: "apply-address",
+    isMet: (form) => form.address_line.trim().length >= LIMITS.addressMin,
+  },
+  {
+    label: "Map pin",
+    fieldId: "apply-use-location",
+    isMet: (form) => isValidPin(form.latitude, form.longitude),
+  },
+  {
+    label: "Kitchen phone",
+    fieldId: "apply-restaurant-phone",
+    isMet: (form) => form.phone.trim().length >= LIMITS.phoneMin,
+  },
+  {
+    label: "Price for two",
+    fieldId: "apply-price",
+    isMet: (form) => Number(form.price_for_two) > 0,
+  },
+  {
+    label: "Typical prep time",
+    fieldId: "apply-prep",
+    isMet: (form) => isNumberInRange(form.avg_prep_minutes, LIMITS.prepMin, LIMITS.prepMax),
+  },
+  { label: "Opens", fieldId: "apply-opens", isMet: (form) => form.opens_at !== "" },
+  { label: "Closes", fieldId: "apply-closes", isMet: (form) => form.closes_at !== "" },
+];
+
+/** What is still missing, in the order the form asks for it. */
+export function missingFields(
+  form: ApplicationForm,
+): readonly { readonly label: string; readonly fieldId: string }[] {
+  return REQUIREMENTS.filter((rule) => !rule.isMet(form)).map(({ label, fieldId }) => ({
+    label,
+    fieldId,
+  }));
+}
+
+/** Whether the form may be sent. Never whether the server will agree. */
 export function isReady(form: ApplicationForm): boolean {
-  return (
-    form.name.trim().length >= LIMITS.nameMin &&
-    SLUG_PATTERN.test(form.slug.trim()) &&
-    form.city.trim().length >= LIMITS.cityMin &&
-    form.area.trim().length >= LIMITS.areaMin &&
-    form.address_line.trim().length >= LIMITS.addressMin &&
-    isNumberInRange(form.latitude, -90, 90) &&
-    isNumberInRange(form.longitude, -180, 180) &&
-    form.phone.trim().length >= LIMITS.phoneMin &&
-    Number(form.price_for_two) > 0 &&
-    isNumberInRange(form.avg_prep_minutes, LIMITS.prepMin, LIMITS.prepMax) &&
-    form.opens_at !== "" &&
-    form.closes_at !== ""
-  );
+  return missingFields(form).length === 0;
+}
+
+/** A coordinate pair is valid on its own, before the rest of the form is. */
+export function isValidPin(latitude: string, longitude: string): boolean {
+  return isNumberInRange(latitude, -90, 90) && isNumberInRange(longitude, -180, 180);
 }
 
 /**

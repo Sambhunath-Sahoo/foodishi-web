@@ -219,7 +219,7 @@ export function CategoryPanel({
                 const soldOut = category.items.filter((item) => !item.is_available).length;
                 return (
                   <DataTableRow key={category.id} className="h-[52px]">
-                    <DataTableCell numeric mono className="text-ink-4">
+                    <DataTableCell numeric mono className="text-ink-3">
                       {index + 1}
                     </DataTableCell>
                     <DataTableCell className="w-full text-[15px] text-ink">
@@ -231,7 +231,9 @@ export function CategoryPanel({
                     <DataTableCell
                       numeric
                       mono
-                      className={soldOut > 0 ? "text-crit" : "text-ink-4"}
+                      // Ink, not crit: a sold-out dish is a standing state the
+                      // number already states, not a failure.
+                      className={soldOut > 0 ? "font-semibold text-ink" : "text-ink-3"}
                     >
                       {formatCount(soldOut)}
                     </DataTableCell>
@@ -249,6 +251,8 @@ export function CategoryPanel({
                           <Button
                             variant="outline"
                             size="sm"
+                            // Outlined, never filled (DESIGN.md non-negotiable 5),
+                            // but still crit: a delete has to read as one.
                             className="min-h-11 text-crit hover:bg-crit-soft"
                             onClick={() => setDeleting(category)}
                           >

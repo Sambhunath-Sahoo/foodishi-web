@@ -101,6 +101,38 @@ function trimForm(form: ProfileForm): ProfileForm {
 }
 
 /**
+ * A unit drawn inside an input's edge — "₹" before a price, "min" after a
+ * duration — so "300.00" and "30" stop being bare numbers. aria-hidden, because
+ * each field's label and hint already name the unit for a screen reader.
+ */
+function WithUnit({
+  before,
+  after,
+  children,
+}: {
+  readonly before?: string;
+  readonly after?: string;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const unit = "pointer-events-none absolute inset-y-0 flex items-center font-mono text-[14px] text-ink-3";
+  return (
+    <div className="relative">
+      {before === undefined ? null : (
+        <span aria-hidden="true" className={`${unit} left-3`}>
+          {before}
+        </span>
+      )}
+      {children}
+      {after === undefined ? null : (
+        <span aria-hidden="true" className={`${unit} right-3`}>
+          {after}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
  * What a customer reads before ordering. Everything here is one PATCH, and the
  * bounds on the inputs are the API's own — the browser refuses a 300-minute
  * prep time before it is a request, and anything it lets through comes back as
@@ -118,6 +150,10 @@ export function ProfileCard({
 
   const saved = React.useMemo(() => toForm(restaurant), [restaurant]);
   const [form, setForm] = React.useState(saved);
+  // The cover's link field stays folded away until asked for: a 120-character
+  // storage URL in a text box was the loudest thing on the card, and nobody
+  // reads it — they look at the photo.
+  const [isPastingLink, setIsPastingLink] = React.useState(false);
 
   // Re-seeded from the server's answer, so a save — or switching kitchen in the
   // picker — never leaves another restaurant's address in the fields.
@@ -156,22 +192,34 @@ export function ProfileCard({
             {/* Larger than the picker's 48px: this is the one screen where the
                 cover is the subject rather than a way to tell rows apart. */}
             <Thumb src={form.imageUrl} name={restaurant.name} size={72} />
-            <div className="min-w-0 flex-1">
-              <Field
-                label="Cover photo"
-                htmlFor="profile-image-url"
-                hint="A link to the photo, not an upload — there is no upload route for a cover yet. Clear the field to go back to the initials."
-              >
-                <Input
-                  id="profile-image-url"
-                  type="url"
-                  value={form.imageUrl}
-                  disabled={!canEditRestaurant}
-                  placeholder="https://…"
-                  onChange={(event) => set("imageUrl", event.target.value)}
-                  className="min-h-11"
-                />
-              </Field>
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <span className="font-sans text-[13px] font-medium text-ink-2">Cover photo</span>
+              {canEditRestaurant && !isPastingLink ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-11 w-fit"
+                  onClick={() => setIsPastingLink(true)}
+                >
+                  Change photo
+                </Button>
+              ) : null}
+              {canEditRestaurant && isPastingLink ? (
+                <Field
+                  label="Paste a link"
+                  htmlFor="profile-image-url"
+                  hint="A link to the photo, not an upload — there is no upload route for a cover yet. Clear the field to go back to the initials."
+                >
+                  <Input
+                    id="profile-image-url"
+                    type="url"
+                    value={form.imageUrl}
+                    placeholder="https://…"
+                    onChange={(event) => set("imageUrl", event.target.value)}
+                    className="min-h-11"
+                  />
+                </Field>
+              ) : null}
             </div>
           </div>
 
@@ -254,20 +302,22 @@ export function ProfileCard({
               <Field
                 label="Price for two"
                 htmlFor="profile-price-for-two"
-                hint="What a customer browsing sees as this kitchen's usual bill."
+                hint="In rupees. What a customer browsing sees as this kitchen's usual bill."
               >
-                <Input
-                  id="profile-price-for-two"
-                  type="number"
-                  mono
-                  required
-                  min={PRICE_STEP}
-                  step={PRICE_STEP}
-                  value={form.priceForTwo}
-                  disabled={!canEditRestaurant}
-                  onChange={(event) => set("priceForTwo", event.target.value)}
-                  className="min-h-11"
-                />
+                <WithUnit before="₹">
+                  <Input
+                    id="profile-price-for-two"
+                    type="number"
+                    mono
+                    required
+                    min={PRICE_STEP}
+                    step={PRICE_STEP}
+                    value={form.priceForTwo}
+                    disabled={!canEditRestaurant}
+                    onChange={(event) => set("priceForTwo", event.target.value)}
+                    className="min-h-11 pl-7"
+                  />
+                </WithUnit>
               </Field>
             </div>
             <div className="min-w-[180px] flex-1">
@@ -276,19 +326,21 @@ export function ProfileCard({
                 htmlFor="profile-avg-prep-minutes"
                 hint={`Minutes, ${PREP_MIN}–${PREP_MAX}. Every promised time on the queue is built from this.`}
               >
-                <Input
-                  id="profile-avg-prep-minutes"
-                  type="number"
-                  mono
-                  required
-                  min={PREP_MIN}
-                  max={PREP_MAX}
-                  step={1}
-                  value={form.avgPrepMinutes}
-                  disabled={!canEditRestaurant}
-                  onChange={(event) => set("avgPrepMinutes", event.target.value)}
-                  className="min-h-11"
-                />
+                <WithUnit after="min">
+                  <Input
+                    id="profile-avg-prep-minutes"
+                    type="number"
+                    mono
+                    required
+                    min={PREP_MIN}
+                    max={PREP_MAX}
+                    step={1}
+                    value={form.avgPrepMinutes}
+                    disabled={!canEditRestaurant}
+                    onChange={(event) => set("avgPrepMinutes", event.target.value)}
+                    className="min-h-11 pr-12"
+                  />
+                </WithUnit>
               </Field>
             </div>
           </div>

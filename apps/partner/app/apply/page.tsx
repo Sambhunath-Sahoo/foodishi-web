@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import * as React from "react";
 import { AuthSpinner } from "@repo/api-client";
 import { ApplyView } from "./apply-view";
+
+export const metadata: Metadata = { title: "Apply to join" };
 
 /**
  * Where a restaurant asks to join Foodishi.

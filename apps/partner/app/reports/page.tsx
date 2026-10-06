@@ -32,6 +32,7 @@ import {
   formatMoney,
   formatMoneyRound,
   formatPercent,
+  formatRating,
   pluralise,
 } from "../_lib/format";
 import { RANGE_OPTIONS, daysIn, describeRange, windowFor, type RangeKey } from "../_lib/windows";
@@ -218,10 +219,7 @@ function Reports({ kitchen }: { readonly kitchen: ReadyKitchen }): React.JSX.Ele
                   <div className="flex justify-between gap-3">
                     <dt className="text-ink-3">Customer rating</dt>
                     <dd className="font-mono tabular-nums text-ink">
-                      {performance.data.rating}{" "}
-                      <span className="text-ink-3">
-                        from {formatCount(performance.data.rating_count)}
-                      </span>
+                      {formatRating(performance.data.rating, performance.data.rating_count)}
                     </dd>
                   </div>
                 </dl>
@@ -280,7 +278,7 @@ function Reports({ kitchen }: { readonly kitchen: ReadyKitchen }): React.JSX.Ele
                             <DataTableCell
                               numeric
                               mono
-                              className={day.cancelled > 0 ? "text-crit" : "text-ink-4"}
+                              className={day.cancelled > 0 ? "text-crit" : "text-ink-3"}
                             >
                               {formatCount(day.cancelled)}
                             </DataTableCell>

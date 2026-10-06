@@ -23,7 +23,7 @@ const KIND_OPTIONS: readonly { readonly value: ModifierKind; readonly label: str
 
 /** Said once, so the two words never drift between the dialog and the table. */
 export const KIND_HINT =
-  "A variant is one choice the customer must make — half plate or full, and never neither. Add-ons are optional extras and they can pick several.";
+  "A variant is one choice the customer must make — half plate or full, exactly one of the two. Add-ons are optional extras and they can pick several.";
 
 /**
  * Adding, editing and filling one group of choices.

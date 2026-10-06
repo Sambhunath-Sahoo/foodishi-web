@@ -22,10 +22,11 @@ import {
   formatMoney,
   formatMoneyRound,
   formatPercent,
+  formatRating,
   pluralise,
   toLocalDate,
 } from "../_lib/format";
-import { byUrgency, readLateness } from "../_lib/lateness";
+import { byUrgency, excludeStale, isPastPromised } from "../_lib/lateness";
 import { TICK_QUEUE_MS, useNow } from "../_lib/use-now";
 import { windowFor } from "../_lib/windows";
 import { SLOW_REFRESH_MS } from "../../lib/query-keys";
@@ -36,6 +37,23 @@ import type { SalesDay } from "../../lib/types";
 
 /** Two weeks is enough context to see today against, and still fits one row. */
 const TREND_DAYS = 13;
+
+/*
+ * The shared Stat is drawn for an operator at a desk: a 10px label and an 11px
+ * caption in a 60px band. This rail is read at two feet off a kitchen tablet,
+ * so the partner app lifts the label to 13px and the caption to 14px and lets
+ * the cell grow to fit. Child selectors rather than a fork of the component, so
+ * the tones, the rule between cells and the tooltip stay the shared ones.
+ */
+const STAT_AT_TWO_FEET =
+  "h-auto min-h-[76px] py-3 gap-1.5 [&>dt]:text-[13px] [&>dt]:tracking-[0.06em] [&>p]:text-[14px] [&>p]:leading-snug";
+
+/*
+ * The same lift for the chart and the usage bar, whose axis labels, caption
+ * and value read at 10-12px in the shared components.
+ */
+const CHART_AT_TWO_FEET = "[&_figcaption]:text-[13px] [&_p]:text-[13px] [&_span]:text-[13px]";
+const BAR_AT_TWO_FEET = "[&_span]:text-[13px]";
 
 function toPoints(days: readonly SalesDay[]): readonly AutoChartPoint[] {
   return days.map((day) => ({ label: formatDay(day.date), value: Number(day.revenue) }));
@@ -91,13 +109,18 @@ export function ManagerDashboard({
   const sales = useSalesReport(kitchen, fortnight);
   const performance = usePerformance(kitchen, today);
 
-  const liveOrders = queue.data === undefined ? [] : byUrgency(queue.data.items, now);
+  // The tiles and the late count leave out the stuck ones (over 6h past
+  // promise), as /orders' "All" does: they need closing, not cooking, and a
+  // tile saying 5 over a queue saying 0 read as five lost tickets.
+  const allLive = queue.data === undefined ? [] : queue.data.items;
+  const liveOrders = byUrgency(excludeStale(allLive, now), now);
   const isQueueLoaded = queue.data !== undefined;
   // The same `now` the board was ordered by, not a fresh Date.now() read during
   // render — so the tile and the ordering beneath it describe one instant.
-  const late = liveOrders.filter(
-    (order) => readLateness(order.status, order.promised_at, now).isLate,
-  ).length;
+  const late = liveOrders.filter((order) => isPastPromised(order, now)).length;
+  // Left out of "late" because they need closing, not cooking — but never out
+  // of the caption, or 7 tickets 44 days late would read "still in time".
+  const stuck = allLive.length - liveOrders.length;
 
   const days = sales.data ?? [];
   const todayRow = days.length === 0 ? undefined : days[days.length - 1];
@@ -109,7 +132,11 @@ export function ManagerDashboard({
 
   return (
     <div className="flex flex-col gap-5">
-      <ServiceBoard orders={liveOrders} isLoaded={isQueueLoaded} />
+      <ServiceBoard
+        orders={liveOrders}
+        isLoaded={isQueueLoaded}
+        canSeePickups={kitchen.can("handover.view")}
+      />
 
       {queue.error !== null ? (
         <LoadError
@@ -139,18 +166,21 @@ export function ManagerDashboard({
         <>
           <StatRail ariaLabel="Today so far">
             <Stat
+              className={STAT_AT_TWO_FEET}
               label="Revenue today"
               value={formatMoneyRound(todayRow.revenue)}
               caption={`${pluralise(todayRow.delivered, "delivered order", "delivered orders")}`}
               hint="Delivered orders only, since midnight. Cancelled and in-flight orders contribute nothing until they land."
             />
             <Stat
+              className={STAT_AT_TWO_FEET}
               label="Orders today"
               value={formatCount(todayRow.orders)}
               caption={`${formatCount(todayRow.delivered)} delivered · ${formatCount(todayRow.cancelled)} cancelled`}
               hint="Every ticket placed since midnight, however it ended."
             />
             <Stat
+              className={STAT_AT_TWO_FEET}
               label="Average order"
               value={
                 performance.data.delivered === 0
@@ -165,6 +195,7 @@ export function ManagerDashboard({
               hint="Today's delivered revenue divided by the number of delivered orders."
             />
             <Stat
+              className={STAT_AT_TWO_FEET}
               label="On time"
               value={
                 performance.data.delivered === 0
@@ -179,7 +210,9 @@ export function ManagerDashboard({
               caption={
                 late > 0
                   ? `${formatCount(late)} live ticket${late === 1 ? "" : "s"} already late`
-                  : "Every live ticket still in time"
+                  : stuck > 0
+                    ? `${pluralise(stuck, "ticket", "tickets")} stuck over 6 h past promise`
+                    : "Every live ticket still in time"
               }
               hint="Delivered on or before the time the customer was promised, as a share of today's delivered orders."
             />
@@ -195,6 +228,7 @@ export function ManagerDashboard({
               </CardHeader>
               <CardBody>
                 <AutoScaleChart
+                  className={CHART_AT_TWO_FEET}
                   points={toPoints(days)}
                   ariaLabel={`Delivered revenue per day over the last ${TREND_DAYS + 1} days`}
                   formatValue={(value) => formatMoneyRound(value)}
@@ -210,6 +244,7 @@ export function ManagerDashboard({
               </CardHeader>
               <CardBody className="flex flex-col gap-4">
                 <UsageBar
+                  className={BAR_AT_TWO_FEET}
                   label="Delivered on time"
                   value={Math.round(performance.data.on_time_rate * 100)}
                   max={100}
@@ -246,10 +281,7 @@ export function ManagerDashboard({
                   <div className="flex justify-between gap-3">
                     <dt className="text-ink-3">Customer rating</dt>
                     <dd className="font-mono tabular-nums text-ink">
-                      {performance.data.rating} ·{" "}
-                      <span className="text-ink-3">
-                        {formatCount(performance.data.rating_count)}
-                      </span>
+                      {formatRating(performance.data.rating, performance.data.rating_count)}
                     </dd>
                   </div>
                 </dl>
@@ -275,7 +307,7 @@ export function ManagerDashboard({
         />
       ) : null}
 
-      <p className="text-[12px] text-ink-3">
+      <p className="text-[13px] text-ink-3">
         The rail and the chart re-read every{" "}
         {Math.round(SLOW_REFRESH_MS / 1000)} seconds. The four service numbers
         above them re-read every ten.

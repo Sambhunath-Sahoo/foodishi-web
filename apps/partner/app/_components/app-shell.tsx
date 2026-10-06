@@ -36,10 +36,11 @@ const SERVICE_NAV: readonly NavItem[] = [
 ];
 
 /**
- * Running the business. Separated by a rule rather than mixed in, because for a
- * shift worker this half is empty — and an empty half with a visible divider is
- * a clearer statement about what their access is than five tabs silently
- * missing from one row.
+ * Running the business. Kept as its own group, set apart by a short 1px rule.
+ * It was a wider gap with no rule, and a 24px hole between Menu and Offers read
+ * as a misaligned tab rather than as "two kinds of work". The rule is 20px tall
+ * and sits mid-tab, so it reads as a divider, not a stray mark. For a shift
+ * worker this half is simply absent.
  */
 const MANAGE_NAV: readonly NavItem[] = [
   { href: "/offers", label: "Offers", requires: "offers.view" },
@@ -72,7 +73,7 @@ function isCurrent(pathname: string, href: string): boolean {
  *
  * Somebody who works in two restaurants can accept a ticket into the wrong one,
  * and that is a real mistake with a real customer on the other end. So the name
- * is set in the title face behind an accent rule, and when there is more than
+ * is set large in the title face beside its cover, and when there is more than
  * one to be in, the count and the way to change it sit directly beside it rather
  * than hiding at the end of the session row.
  */
@@ -89,7 +90,7 @@ function KitchenBar(): React.JSX.Element {
           ? "Choose a restaurant"
           : "Opening your restaurant…";
     return (
-      <p className="border-l-[3px] border-line-2 pl-3 text-[17px] text-ink-3">{label}</p>
+      <p className="text-[17px] text-ink-3">{label}</p>
     );
   }
 
@@ -99,7 +100,10 @@ function KitchenBar(): React.JSX.Element {
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-      <div className="flex min-w-0 items-center gap-2.5 border-l-[3px] border-accent py-0.5 pl-3">
+      {/* No accent rule down the left any more — beside the cover it read as a
+          stray line, and the cover already anchors the block. One gap for every
+          piece, centred on one line, so the four read as one identity. */}
+      <div className="flex min-w-0 items-center gap-3">
         {/* 32px: the cover turns "which restaurant am I in" into a glance rather
             than a read, which is the mistake this bar exists to prevent. */}
         <Thumb src={kitchen.restaurant.image_url} name={kitchen.restaurant.name} size={32} />
@@ -150,7 +154,7 @@ function NavGroup({
   readonly pathname: string;
 }): React.JSX.Element {
   return (
-    <ul className="flex flex-wrap gap-1.5">
+    <ul className="flex shrink-0 gap-1">
       {items.map((item) => {
         const current = isCurrent(pathname, item.href);
         return (
@@ -158,13 +162,18 @@ function NavGroup({
             <Link
               href={item.href}
               aria-current={current ? "page" : undefined}
+              // A tab, so a tab's indicator: a 2px accent bar along the bottom
+              // edge, sitting on the header's own rule. The boxed fill it
+              // replaced looked like a pressed button. The bar is shape as well
+              // as colour, and aria-current carries it for a screen reader.
               className={cn(
-                "inline-flex min-h-11 items-center rounded-card border px-4",
+                "relative inline-flex min-h-11 items-center rounded-t-card px-4 whitespace-nowrap",
                 "font-sans text-base font-medium transition-colors",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+                "after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-chip",
+                "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
                 current
-                  ? "border-accent/25 bg-accent-soft text-accent"
-                  : "border-transparent text-ink-2 hover:bg-surface-2",
+                  ? "text-accent after:bg-accent"
+                  : "text-ink-2 after:bg-transparent hover:bg-surface-2 hover:text-ink",
               )}
             >
               {item.label}
@@ -186,16 +195,31 @@ function KitchenNav(): React.JSX.Element {
   const service = SERVICE_NAV.filter(allowed);
   const manage = MANAGE_NAV.filter(allowed);
 
+  // ONE row, always. At 820 portrait the tabs wrapped onto a second line and
+  // the header grew to 151px before any of the day's work. A row that runs out
+  // of room scrolls inside itself, and a fade on the right edge says there is
+  // more — the same rule as a wide table.
   return (
-    <nav aria-label="Sections" className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <NavGroup items={service} pathname={pathname} />
-      {manage.length > 0 ? (
-        <>
-          <span aria-hidden="true" className="h-6 w-px bg-line" />
-          <NavGroup items={manage} pathname={pathname} />
-        </>
-      ) : null}
-    </nav>
+    <div className="relative min-w-0">
+      <nav
+        aria-label="Sections"
+        className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <NavGroup items={service} pathname={pathname} />
+        {manage.length > 0 ? (
+          <>
+            <span aria-hidden="true" className="h-5 w-px shrink-0 bg-line" />
+            <NavGroup items={manage} pathname={pathname} />
+          </>
+        ) : null}
+        {/* Room for the last tab to scroll clear of the fade. */}
+        <span aria-hidden="true" className="w-6 shrink-0" />
+      </nav>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-surface to-transparent"
+      />
+    </div>
   );
 }
 
@@ -219,8 +243,36 @@ function KitchenNav(): React.JSX.Element {
  *
  * The bar sticks so the restaurant name is on screen at every scroll position.
  */
+/**
+ * Publishes the header's real height as --partner-header-h on <html>, so
+ * scroll-padding, sticky sub-rows and sticky side columns sit exactly under it
+ * at every width — the height changes with the restaurant name, the account
+ * row and the viewport, and a hard-coded number was wrong at one of them.
+ * globals.css keeps a fallback for the first paint.
+ */
+function usePublishedHeaderHeight(): React.RefObject<HTMLElement | null> {
+  const ref = React.useRef<HTMLElement | null>(null);
+  React.useLayoutEffect(() => {
+    const element = ref.current;
+    if (element === null) return;
+    const root = document.documentElement;
+    const publish = (): void => {
+      root.style.setProperty("--partner-header-h", `${element.offsetHeight}px`);
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--partner-header-h");
+    };
+  }, []);
+  return ref;
+}
+
 function Chrome({ children }: { readonly children: React.ReactNode }): React.JSX.Element {
   const kitchen = useKitchen();
+  const headerRef = usePublishedHeaderHeight();
 
   // Works nowhere: no sections to navigate to, and no page title to hang above
   // the explanation. One honest screen instead of an empty queue.
@@ -228,8 +280,13 @@ function Chrome({ children }: { readonly children: React.ReactNode }): React.JSX
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b border-line bg-surface">
-        <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-1.5 px-5 py-2">
+      <header ref={headerRef} className="sticky top-0 z-30 border-b border-line bg-surface">
+        {/* 6px on top, no gap between the rows, and no bottom padding: the
+            tabs sit on the header's rule, so the active tab's bar lands on it
+            like a tab strip rather than floating above. Both rows are already
+            44px touch targets, which is the air; the header comes to 95px on a
+            landscape or portrait tablet, down from 103 and 151. */}
+        <div className="mx-auto flex w-full max-w-[1240px] flex-col px-5 pt-1.5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <KitchenBar />
             {/* ml-auto rather than justify-between: when the restaurant name is

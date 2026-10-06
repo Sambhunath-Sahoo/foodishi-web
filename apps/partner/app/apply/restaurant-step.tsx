@@ -8,11 +8,12 @@ import {
   EMPTY_FORM,
   LIMITS,
   SLUG_PATTERN,
-  isReady,
+  missingFields,
   toPayload,
   toSlug,
   type ApplicationForm,
 } from "./application-form";
+import { PinField } from "./pin-field";
 import { StepLabel } from "./step-label";
 
 /**
@@ -66,11 +67,18 @@ export function RestaurantStep({
     }));
   }
 
-  const canSubmit = isReady(form) && !submit.isPending;
+  const missing = missingFields(form);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (submit.isPending) return;
+    // Not sent, and the reason is already on screen above the button; take the
+    // applicant to the first thing it names rather than doing nothing.
+    const first = missing[0];
+    if (first !== undefined) {
+      document.getElementById(first.fieldId)?.focus();
+      return;
+    }
     setError(null);
     try {
       await submit.mutateAsync(toPayload(form));
@@ -189,40 +197,13 @@ export function RestaurantStep({
               />
             </Field>
 
-            <div className="flex flex-wrap gap-4">
-              <div className="min-w-[160px] flex-1">
-                <Field
-                  label="Latitude"
-                  htmlFor="apply-latitude"
-                  hint="From a map pin on your door. The delivery fee is measured from here."
-                >
-                  <Input
-                    id="apply-latitude"
-                    mono
-                    inputMode="decimal"
-                    required
-                    value={form.latitude}
-                    onChange={(event) => set("latitude", event.target.value)}
-                    placeholder="12.925000"
-                    className="min-h-11"
-                  />
-                </Field>
-              </div>
-              <div className="min-w-[160px] flex-1">
-                <Field label="Longitude" htmlFor="apply-longitude">
-                  <Input
-                    id="apply-longitude"
-                    mono
-                    inputMode="decimal"
-                    required
-                    value={form.longitude}
-                    onChange={(event) => set("longitude", event.target.value)}
-                    placeholder="77.583000"
-                    className="min-h-11"
-                  />
-                </Field>
-              </div>
-            </div>
+            <PinField
+              latitude={form.latitude}
+              longitude={form.longitude}
+              onChange={(latitude, longitude) =>
+                setForm((current) => ({ ...current, latitude, longitude }))
+              }
+            />
 
             <div className="flex flex-wrap gap-4">
               <div className="min-w-[180px] flex-1">
@@ -327,16 +308,26 @@ export function RestaurantStep({
               />
             </Field>
 
-            <Button
-              type="submit"
-              size="lg"
-              block
-              disabled={!canSubmit}
-              isPending={submit.isPending}
-              pendingLabel="Sending your application…"
-            >
-              Send application
-            </Button>
+            {/* What is still missing, said next to the button it is holding
+                back. The button used to be greyed out with no reason given. */}
+            <div className="flex flex-col gap-2">
+              {missing.length > 0 ? (
+                <p id="apply-missing" className="text-[14px] leading-snug text-ink-2">
+                  <span className="font-medium">Still needed:</span>{" "}
+                  {missing.map((field) => field.label).join(", ")}
+                </p>
+              ) : null}
+              <Button
+                type="submit"
+                size="lg"
+                block
+                aria-describedby={missing.length > 0 ? "apply-missing" : undefined}
+                isPending={submit.isPending}
+                pendingLabel="Sending your application…"
+              >
+                Send application
+              </Button>
+            </div>
           </form>
         </CardBody>
       </Card>

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { toUserMessage } from "@repo/api-client";
 import {
   Badge,
   Button,
@@ -14,6 +13,7 @@ import {
   PageTitle,
   Thumb,
 } from "@repo/ui";
+import { ActionError } from "../_components/states";
 import { ROLE_LABELS } from "../../lib/permissions";
 import { useChangeMyPassword, useUpdateMyProfile } from "../../lib/queries/profile";
 import { useSession } from "../../lib/session";
@@ -92,7 +92,8 @@ function DetailsCard({ profile }: { readonly profile: Profile }): React.JSX.Elem
               name={form.name === "" ? profile.email : form.name}
               size={56}
               shape="circle"
-              className="border border-line"
+              // Thumb's own initials are ink-4, 2.4:1 on light; see account-menu.
+              className="border border-line text-ink-2!"
             />
             <div className="min-w-[200px] flex-1">
               <Field label="Your name" htmlFor="profile-name">
@@ -108,20 +109,16 @@ function DetailsCard({ profile }: { readonly profile: Profile }): React.JSX.Elem
             </div>
           </div>
 
-          <Field
-            label="Email"
-            htmlFor="profile-email"
-            hint="This is the address a manager used to give you access, so it is not yours to change here. Ask them if it is wrong."
-          >
-            <Input
-              id="profile-email"
-              mono
-              readOnly
-              disabled
-              value={profile.email}
-              className="min-h-11"
-            />
-          </Field>
+          {/* Shown as text, not as a greyed-out box: a disabled input looks
+              like something that will unlock, and this never does. */}
+          <div className="flex flex-col gap-1.5">
+            <span className="font-sans text-[13px] font-medium text-ink-2">Email</span>
+            <span className="font-mono text-[15px] text-ink">{profile.email}</span>
+            <span className="text-[13px] text-ink-3">
+              The address a manager used to give you access, so it is not yours to
+              change here. Ask them if it is wrong.
+            </span>
+          </div>
 
           <div className="flex flex-wrap gap-4">
             <div className="min-w-[170px] flex-1">
@@ -148,27 +145,34 @@ function DetailsCard({ profile }: { readonly profile: Profile }): React.JSX.Elem
             </div>
           </div>
 
-          <Field
-            label="Photo URL"
-            htmlFor="profile-avatar"
-            hint="Optional. There is no upload yet, so a hosted link is the only way to set one."
-          >
-            <Input
-              id="profile-avatar"
-              type="url"
-              mono
-              value={form.avatarUrl}
-              placeholder="https://…"
-              onChange={(event) => set("avatarUrl", event.target.value)}
-              className="min-h-11"
-            />
-          </Field>
-
-          {save.error !== null ? (
-            <p role="alert" className="text-[13px] leading-snug text-crit">
-              {toUserMessage(save.error)}
+          {/* PATCH /me does not take avatar_url (lib/services/api/identity.ts
+              drops it), so on the live API a pasted link used to mark the form
+              dirty, say "Saved." and then vanish. There, it is one muted line
+              and no input: a disabled field reads as a control that is broken. */}
+          {isFixtureSource ? (
+            <Field
+              label="Photo URL"
+              htmlFor="profile-avatar"
+              hint="Optional. There is no upload yet, so a hosted link is the only way to set one."
+            >
+              <Input
+                id="profile-avatar"
+                type="url"
+                mono
+                value={form.avatarUrl}
+                placeholder="https://…"
+                onChange={(event) => set("avatarUrl", event.target.value)}
+                className="min-h-11"
+              />
+            </Field>
+          ) : (
+            <p className="text-[14px] text-ink-3">
+              <span className="font-medium text-ink-2">Photo</span> — your Foodishi
+              profile does not store one yet.
             </p>
-          ) : null}
+          )}
+
+          {save.error !== null ? <ActionError error={save.error} /> : null}
 
           {save.isSuccess && !isDirty ? (
             <p className="text-[13px] text-ok">Saved.</p>
@@ -203,6 +207,30 @@ function DetailsCard({ profile }: { readonly profile: Profile }): React.JSX.Elem
  * the session it ends.
  */
 function PasswordCard(): React.JSX.Element {
+  return isFixtureSource ? <PasswordForm /> : <PasswordUnavailable />;
+}
+
+/**
+ * The live API has no password change or reset endpoint, so there is nothing to
+ * fill in: one muted line saying who can do it, instead of three disabled
+ * boxes and a pointer to a sign-in reset the sign-in screen does not offer.
+ */
+function PasswordUnavailable(): React.JSX.Element {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Password</CardTitle>
+      </CardHeader>
+      <CardBody>
+        <p className="text-[14px] text-ink-3">
+          Ask Foodishi support to reset your password.
+        </p>
+      </CardBody>
+    </Card>
+  );
+}
+
+function PasswordForm(): React.JSX.Element {
   const [current, setCurrent] = React.useState("");
   const [next, setNext] = React.useState("");
   const [confirm, setConfirm] = React.useState("");
@@ -211,8 +239,7 @@ function PasswordCard(): React.JSX.Element {
   // Checked here rather than sent: the two boxes exist to catch a typo, and the
   // source has no way to know which of them was the one that was wrong.
   const mismatch = confirm !== "" && next !== confirm;
-  const canSubmit =
-    current !== "" && next.length >= PASSWORD_MIN && next === confirm;
+  const canSubmit = current !== "" && next.length >= PASSWORD_MIN && next === confirm;
 
   return (
     <Card>
@@ -257,7 +284,7 @@ function PasswordCard(): React.JSX.Element {
               >
                 <Input
                   id="password-new"
-                  type="password"
+                      type="password"
                   autoComplete="new-password"
                   required
                   minLength={PASSWORD_MIN}
@@ -271,7 +298,7 @@ function PasswordCard(): React.JSX.Element {
               <Field label="Type it again" htmlFor="password-confirm">
                 <Input
                   id="password-confirm"
-                  type="password"
+                      type="password"
                   autoComplete="new-password"
                   required
                   value={confirm}
@@ -288,11 +315,7 @@ function PasswordCard(): React.JSX.Element {
             </p>
           ) : null}
 
-          {change.error !== null ? (
-            <p role="alert" className="text-[13px] leading-snug text-crit">
-              {toUserMessage(change.error)}
-            </p>
-          ) : null}
+          {change.error !== null ? <ActionError error={change.error} /> : null}
 
           {change.isSuccess ? (
             <p className="text-[13px] text-ok">
@@ -397,7 +420,7 @@ export default function ProfilePage(): React.JSX.Element {
           <p className="text-[12px] leading-snug text-ink-3">
             {isFixtureSource
               ? "This console is running on bundled sample data, so your details and a password change are stored in this browser and nowhere else. Reset from the header to throw it away."
-              : "Your name, phone and city save to your Foodishi profile. Changing your password from here is not wired up yet — the platform can change one, but not while checking your current password first, and this screen will not pretend to. Use the sign-in screen's reset link."}
+              : "Your name, phone and city save to your Foodishi profile."}
           </p>
         </div>
       )}

@@ -200,7 +200,16 @@ const SEED_ORDERS: readonly Order[] = (ordersSeed as unknown as readonly Order[]
 
 const SEED_DETAILS: Readonly<Record<string, OrderDetail>> = Object.fromEntries(
   Object.entries(orderDetailsSeed as unknown as Record<string, OrderDetail>).map(
-    ([id, order]) => [id, rebaseOrder(order)],
+    // The seed JSON predates `OrderItemRead.modifiers`, and the cast above hides
+    // that its lines have none. Filled in here, as the API always sends it, so
+    // the order-line choices render nothing instead of reading `undefined`.
+    ([id, order]) => [
+      id,
+      rebaseOrder({
+        ...order,
+        items: order.items.map((item) => ({ ...item, modifiers: item.modifiers ?? [] })),
+      }),
+    ],
   ),
 );
 

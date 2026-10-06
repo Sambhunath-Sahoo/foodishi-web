@@ -87,7 +87,7 @@ export function PolicyCard({
                 <dt className="text-ink-3">Free delivery above</dt>
                 <dd className="font-mono tabular-nums text-ink">
                   {policy.data.free_delivery_above === null
-                    ? "never"
+                    ? "No free delivery"
                     : formatMoney(policy.data.free_delivery_above)}
                 </dd>
               </div>
@@ -117,10 +117,10 @@ export function PolicyCard({
               </div>
             </dl>
 
-            <p className="text-[12px] leading-snug text-ink-3">
+            <p className="text-[13px] leading-snug text-ink-3">
               These are the terms a customer was quoted before they ordered, and
               they are frozen onto every order at the moment it is placed — so
-              changing them here would never rewrite a promise already made. The
+              changing them here does not rewrite a promise already made. The
               cancellation fee is charged only when a customer changes their own
               mind; this restaurant&rsquo;s own refusals are always free to them.
             </p>

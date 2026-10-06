@@ -66,7 +66,7 @@ function CategoryRows({
           className="h-[28px] border-y border-line bg-surface-2 px-3 text-left text-[10px] font-bold tracking-[0.07em] text-ink-3 uppercase"
         >
           {category.name}
-          <span className="ml-2 font-normal tracking-normal text-ink-4 normal-case">
+          <span className="ml-2 font-normal tracking-normal text-ink-3 normal-case">
             {pluralise(category.items.length, "dish", "dishes")}
           </span>
         </th>
@@ -197,7 +197,7 @@ export function DishTable({
               id="menu-search"
               type="search"
               value={search}
-              placeholder="Butter Chicken"
+              placeholder="Search dishes"
               onChange={(event) => setSearch(event.target.value)}
               className="min-h-11"
             />

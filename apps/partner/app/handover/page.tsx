@@ -2,23 +2,31 @@
 
 import * as React from "react";
 import {
+  Button,
   Card,
   CardBody,
   CardHeader,
   CardTitle,
-  ErrorBanner,
   Freshness,
   PageTitle,
-  SEVERITY_TEXT,
   StatusChip,
   cn,
 } from "@repo/ui";
 import { KitchenGate } from "../_components/kitchen-gate";
+import { LatenessChip } from "../_components/lateness-chip";
 import { LinkButton } from "../_components/link-button";
 import { NextAction } from "../_components/next-action";
 import { CardSkeletons, EmptyCard, LoadError } from "../_components/states";
-import { formatClock, formatDuration, formatMoney, minutesSince, pluralise } from "../_lib/format";
-import { readLateness } from "../_lib/lateness";
+import { StuckDisclosure } from "../_components/stuck-disclosure";
+import {
+  formatClock,
+  formatCount,
+  formatDuration,
+  formatMoney,
+  minutesSince,
+  pluralise,
+} from "../_lib/format";
+import { isStale, readLateness } from "../_lib/lateness";
 import { TICK_QUEUE_MS, useNow } from "../_lib/use-now";
 import { HANDOVER_STATUSES } from "../../lib/order-flow";
 import { useLiveOrders } from "../../lib/queries/orders";
@@ -47,7 +55,7 @@ function HandoverRow({
   return (
     <Card
       className={cn(
-        "flex flex-col gap-3 p-4",
+        "flex flex-col gap-2 px-4 py-3",
         // The rule is graded by lateness, like every ticket in this console. A
         // ready order going cold on the pass is the one thing this screen is
         // for, so it is allowed to be the loudest row on it.
@@ -59,22 +67,24 @@ function HandoverRow({
           #{order.id}
         </span>
         <StatusChip status={order.status} />
-        <span
-          className={cn("font-mono text-[14px] tabular-nums", SEVERITY_TEXT[late.tier])}
-        >
-          {late.headline}
-        </span>
+        <LatenessChip late={late} />
         <span className="font-mono text-[13px] tabular-nums text-ink-3">
           {formatMoney(order.total_amount)}
         </span>
-        <LinkButton href={`/orders/${order.id}`} variant="ghost" size="sm" className="ml-auto">
+        <LinkButton href={`/orders/${order.id}`} variant="ghost" size="sm" className="-my-2 ml-auto">
           Details
         </LinkButton>
       </div>
 
+      {/* "In the building" only while it is: an order already handed over has
+          left, and saying it was still here 44 days on read as a lost bag.
+          The API has no handed-over timestamp, so an order on its way gets no
+          third fact at all — its chip already says it left, and a bare "left
+          the kitchen" with no time after it read as a line cut short. */}
       <p className="font-mono text-[13px] tabular-nums text-ink-3">
-        promised {formatClock(order.promised_at)} · placed {formatClock(order.placed_at)} ·
-        in the building {sittingFor}
+        Promised {formatClock(order.promised_at, now)} · placed{" "}
+        {formatClock(order.placed_at, now)}
+        {order.status === "out_for_delivery" ? null : ` · in the building ${sittingFor}`}
       </p>
 
       {/*
@@ -93,11 +103,83 @@ function HandoverRow({
   );
 }
 
+const COURIER_NOTICE_KEY_PREFIX = "foodishi.partner.courier-notice-seen.";
+
+/**
+ * Remembered per kitchen, in try/catch: a private window or a full disk throws
+ * on localStorage, and a notice that cannot be dismissed for good is still
+ * better than a screen that will not render.
+ */
+function readNoticeSeen(restaurantId: string): boolean {
+  try {
+    return window.localStorage.getItem(`${COURIER_NOTICE_KEY_PREFIX}${restaurantId}`) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeNoticeSeen(restaurantId: string): void {
+  try {
+    window.localStorage.setItem(`${COURIER_NOTICE_KEY_PREFIX}${restaurantId}`, "1");
+  } catch {
+    // Not remembered; it simply comes back on the next visit.
+  }
+}
+
+/**
+ * Why this screen has a courier's two buttons on it, said once and quietly.
+ *
+ * It was a three-line warn banner on screen permanently. Warn means time
+ * pressure in this console, and "no rider is assigned" is a standing fact, not
+ * a deadline — so it is one muted line, and once somebody has read it they can
+ * put it away for this kitchen.
+ */
+function CourierNotice({ restaurantId }: { readonly restaurantId: string }): React.JSX.Element | null {
+  // Unknown until mounted: the server cannot read this tablet's storage, and
+  // guessing either way would be a hydration mismatch or a flash.
+  const [isSeen, setIsSeen] = React.useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    setIsSeen(readNoticeSeen(restaurantId));
+  }, [restaurantId]);
+
+  if (isSeen !== false) return null;
+
+  return (
+    <p
+      role="note"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card border border-line bg-surface-2 py-0.5 pr-1 pl-3 text-[14px] text-ink-2"
+    >
+      <span className="min-w-0 flex-1">
+        No rider is assigned — you hand over and mark delivered.
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="min-h-11"
+        onClick={() => {
+          writeNoticeSeen(restaurantId);
+          setIsSeen(true);
+        }}
+      >
+        Got it
+      </Button>
+    </p>
+  );
+}
+
 function Handover({ kitchen }: { readonly kitchen: ReadyKitchen }): React.JSX.Element {
   const now = useNow(TICK_QUEUE_MS);
   const queue = useLiveOrders(kitchen);
 
-  const all = queue.data === undefined ? [] : queue.data.items;
+  // Only the pass: what the kitchen has finished with. Split like the list,
+  // so a bag six hours past its promise does not sit at the top of "Waiting to
+  // go out" as if somebody were still coming for it.
+  const onPass = (queue.data === undefined ? [] : queue.data.items).filter((order) =>
+    HANDOVER_STATUSES.has(order.status),
+  );
+  const all = onPass.filter((order) => !isStale(order, now));
+  const stuck = onPass.filter((order) => isStale(order, now));
   const isLoaded = queue.data !== undefined;
 
   // Longest-waiting first, both lists. On a pass, the order that has been
@@ -113,17 +195,7 @@ function Handover({ kitchen }: { readonly kitchen: ReadyKitchen }): React.JSX.El
 
   return (
     <div className="flex flex-col gap-5">
-      {/*
-        The whole reason this screen has two buttons on it. Stated once, at the
-        top, rather than implied by a label — somebody marking an order
-        delivered is recording a fact about the world, and they should know that
-        nobody else is going to correct it.
-      */}
-      <ErrorBanner
-        tone="warn"
-        title="You are standing in for the courier"
-        message="Handing over and marking delivered belong to a delivery partner, and the platform does have riders — but none is assigned to these orders, so this restaurant makes both moves. Only mark an order delivered once the customer actually has the food: it closes the order and counts it as revenue, and nobody downstream will correct it."
-      />
+      <CourierNotice restaurantId={kitchen.restaurantId} />
 
       {queue.isPending ? <CardSkeletons count={2} label="Loading the pass" /> : null}
 
@@ -181,7 +253,20 @@ function Handover({ kitchen }: { readonly kitchen: ReadyKitchen }): React.JSX.El
             </CardBody>
           </Card>
 
-          {waiting.length === 0 && gone.length === 0 ? (
+          {stuck.length > 0 ? (
+            <StuckDisclosure
+              count={stuck.length}
+              hint="Nobody is coming for these any more. Close them out here, or ask Foodishi to close them."
+            >
+              <div className="flex flex-col gap-3">
+                {byWaiting(stuck).map((order) => (
+                  <HandoverRow key={order.id} order={order} kitchen={kitchen} now={now} />
+                ))}
+              </div>
+            </StuckDisclosure>
+          ) : null}
+
+          {waiting.length === 0 && gone.length === 0 && stuck.length === 0 ? (
             <EmptyCard
               title="Nothing has left the kitchen yet"
               detail="This screen holds orders between the kitchen and the customer. Accept and cook a ticket on the Orders board and it will arrive here."
@@ -190,11 +275,8 @@ function Handover({ kitchen }: { readonly kitchen: ReadyKitchen }): React.JSX.El
 
           <p className="text-[13px] text-ink-3">
             <Freshness at={queue.dataUpdatedAt > 0 ? queue.dataUpdatedAt : null} /> ·{" "}
-            {pluralise(
-              all.filter((order) => HANDOVER_STATUSES.has(order.status)).length,
-              "order past the kitchen",
-              "orders past the kitchen",
-            )}
+            {pluralise(all.length, "order past the kitchen", "orders past the kitchen")}
+            {stuck.length > 0 ? ` · ${formatCount(stuck.length)} stuck` : null}
           </p>
         </>
       ) : null}

@@ -11,6 +11,7 @@ import {
   useRejectOrderMutation,
 } from "../../lib/queries/orders";
 import type { ReadyKitchen } from "../../lib/kitchen";
+import { canRestaurantCancel } from "../../lib/order-flow";
 import type { CancelResult, Order, Permission } from "../../lib/types";
 
 /**
@@ -61,6 +62,52 @@ function reasonsFor(refusal: Refusal): readonly ReasonOption[] {
 
 function permissionFor(refusal: Refusal): Permission {
   return refusal === "reject" ? "orders.reject" : "orders.cancel";
+}
+
+const REFUSAL_PERMISSIONS: readonly Permission[] = ["orders.reject", "orders.cancel"];
+
+/** A refusal this ticket could take, but that the signed-in role may not make. */
+function refusalWithheld(order: Order, kitchen: ReadyKitchen): Permission | null {
+  if (!canRestaurantCancel(order.status)) return null;
+  const permission = permissionFor(readRefusal(order.status));
+  return kitchen.can(permission) ? null : permission;
+}
+
+/**
+ * Said once above a list, instead of once per card.
+ *
+ * The same refusal on all eight tickets of a staff member's queue was eight
+ * grey boxes saying one standing fact, each the height of a button — so the
+ * cards drop it and keep the button simply absent, and this line names why.
+ * Nothing at all when every ticket's refusal is the reader's to make.
+ */
+export function RefusalScopeNote({
+  orders,
+  kitchen,
+}: {
+  readonly orders: readonly Order[];
+  readonly kitchen: ReadyKitchen;
+}): React.JSX.Element | null {
+  const withheld = new Set(
+    orders
+      .map((order) => refusalWithheld(order, kitchen))
+      .filter((permission): permission is Permission => permission !== null),
+  );
+  if (withheld.size === 0) return null;
+  // Ladder order, not encounter order, so the sentence never reshuffles as
+  // tickets move.
+  const needs = REFUSAL_PERMISSIONS.filter((permission) => withheld.has(permission)).map(
+    (permission) => PERMISSION_LABELS[permission].toLowerCase(),
+  );
+
+  return (
+    <p role="note" className="text-[13px] leading-snug text-ink-3">
+      <span className="font-medium text-ink-2">Some steps here are a manager&apos;s to do</span>{" "}
+      — turning a ticket away needs permission to {needs.join(" and ")}, and you are signed in
+      as {ROLE_LABELS[kitchen.role].toLowerCase()}. A manager here can do it, or grant it to you
+      from the Team screen.
+    </p>
+  );
 }
 
 /**
@@ -198,6 +245,11 @@ export interface CancelOrderControlProps {
    * action. On the detail screen it sits in a row of controls.
    */
   readonly block?: boolean;
+  /**
+   * Whether a missing permission is explained here. A queue card says false:
+   * its list carries one `RefusalScopeNote` for every card instead.
+   */
+  readonly explainsRefusal?: boolean;
 }
 
 /**
@@ -214,7 +266,8 @@ export function CancelOrderControl({
   kitchen,
   now,
   block = true,
-}: CancelOrderControlProps): React.JSX.Element {
+  explainsRefusal = true,
+}: CancelOrderControlProps): React.JSX.Element | null {
   const [isOpen, setIsOpen] = React.useState(false);
   const [chosenReason, setChosenReason] = React.useState<string | null>(null);
   const [result, setResult] = React.useState<CancelResult | null>(null);
@@ -237,6 +290,7 @@ export function CancelOrderControl({
     FALLBACK_REASON;
 
   if (!kitchen.can(permission)) {
+    if (!explainsRefusal) return null;
     return (
       <RefusedNote
         title={
@@ -264,12 +318,14 @@ export function CancelOrderControl({
 
   return (
     <>
-      {/* Never below the 44px tap floor a wet hand on a tablet needs. */}
+      {/* The primary's height, so the pair reads as one stack — and never
+          below the 44px tap floor a wet hand on a tablet needs. It may still
+          wrap in a narrow column rather than clip the consequence. */}
       <Button
         variant="danger"
         size="md"
         block={block}
-        className="min-h-11 text-[15px] whitespace-normal"
+        className="h-auto min-h-12 py-2 text-[15px] leading-snug whitespace-normal"
         onClick={() => setIsOpen(true)}
       >
         {consequence.trigger}

@@ -1,9 +1,9 @@
 /**
  * The routes the Foodishi API does not have yet.
  *
- * Three of this console's surfaces — offers, reports and payouts — are built
- * against `services/types.ts` and served by the fixtures. There is nothing
- * behind them on the real API.
+ * Reports, payouts and the rest have since shipped; what is left (changing your
+ * own password here; offers and coupon delete refuse in ./offers.ts) is served
+ * by the fixtures only. There is nothing behind them on the real API.
  *
  * So the API implementation refuses, loudly, and names the endpoint it wanted.
  * The alternative — returning an empty array — would draw "no offers yet" over

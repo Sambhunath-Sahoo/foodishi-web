@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Button, SEVERITY_TEXT, Skeleton, cn } from "@repo/ui";
+import { Button, Skeleton, StatusChip, cn } from "@repo/ui";
+import { LatenessChip } from "../_components/lateness-chip";
 import { OrderItems } from "../_components/order-items";
 import { TicketCard } from "../_components/ticket-card";
 import { formatMoney, pluralise } from "../_lib/format";
@@ -26,6 +27,8 @@ export interface KanbanTicketProps {
   readonly onDragStart: (order: Order) => void;
   readonly onDragEnd: () => void;
   readonly isDragging: boolean;
+  /** In a column that holds more than one status, the ticket names its own. */
+  readonly showsStatus?: boolean;
 }
 
 /**
@@ -49,6 +52,7 @@ export function KanbanTicket({
   onDragStart,
   onDragEnd,
   isDragging,
+  showsStatus = false,
 }: KanbanTicketProps): React.JSX.Element {
   const late = readLateness(order.status, order.promised_at, now);
   const detail = useOrder(kitchen, String(order.id), { frozen: true });
@@ -83,14 +87,12 @@ export function KanbanTicket({
         <span className="font-mono text-[16px] leading-none font-semibold tabular-nums text-ink">
           #{order.id}
         </span>
-        <span
-          className={cn("font-mono text-[13px] tabular-nums", SEVERITY_TEXT[late.tier])}
-        >
-          {late.headline}
-        </span>
+        {showsStatus ? <StatusChip status={order.status} /> : null}
+        <LatenessChip late={late} className="h-5 px-1.5 text-[12px]" />
+        {/* A 44px target whose overhang does not set the row's height. */}
         <Link
           href={`/orders/${order.id}`}
-          className="ml-auto inline-flex min-h-9 items-center rounded-card px-2 font-sans text-[13px] font-medium text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="-my-3 -mr-1 ml-auto inline-flex min-h-11 items-center rounded-card px-2 font-sans text-[13px] font-medium text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           Details
         </Link>
@@ -117,9 +119,11 @@ export function KanbanTicket({
       </div>
 
       {move === null ? null : mayMove ? (
+        // The same 44px floor as every other tap on this tablet; `sm` was 32px.
         <Button
           size="sm"
           block
+          className="h-11 text-[14px] font-semibold"
           isPending={isMoving}
           pendingLabel="Moving…"
           onClick={() => {

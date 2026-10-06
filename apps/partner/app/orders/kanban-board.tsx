@@ -1,11 +1,14 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { toUserMessage } from "@repo/api-client";
 import { ErrorBanner, LiveDot, StatusChip, Toolbar, cn } from "@repo/ui";
 import { KanbanTicket } from "./kanban-ticket";
 import { CardSkeletons, EmptyCard, LoadError } from "../_components/states";
-import { byUrgency } from "../_lib/lateness";
+import { stuckLabel } from "../_components/stuck-disclosure";
+import { pluralise } from "../_lib/format";
+import { byUrgency, excludeStale } from "../_lib/lateness";
 import { TICK_QUEUE_MS, useNow } from "../_lib/use-now";
 import { QUEUE_REFRESH_MS } from "../../lib/query-keys";
 import { moveFrom } from "../../lib/order-flow";
@@ -16,7 +19,10 @@ import type { Order, OrderStatus } from "../../lib/types";
 const MS_PER_SECOND = 1_000;
 
 interface Column {
+  /** The chip's tone, and the column's key. */
   readonly status: OrderStatus;
+  /** Every status that lands in this column. */
+  readonly holds: readonly OrderStatus[];
   readonly label: string;
   /** What a non-zero count in this column means somebody should do. */
   readonly caption: string;
@@ -25,30 +31,32 @@ interface Column {
 /**
  * The ladder, left to right, in the order `lib/order-flow` moves through it.
  *
- * Five columns rather than four: the board shows where every live ticket is,
- * and a ticket already with a courier is still live. `delivered` and
- * `cancelled` are not columns — they have left the queue, and the History tab
- * is where they are read.
+ * Four columns. "Ready" and "On the way" used to be two, and five readable
+ * columns never fit a tablet: the fourth was cut mid-card at 1180px. Both are
+ * past the pass — the kitchen only stands in for the courier there — so they
+ * share one "With courier" column, and each ticket in it wears its own status
+ * chip. `delivered` and `cancelled` are not columns; they have left the queue.
  */
 const COLUMNS: readonly Column[] = [
   {
     status: "pending",
+    holds: ["pending"],
     label: "Not answered",
     caption: "A customer is waiting to hear back",
   },
-  { status: "confirmed", label: "Accepted", caption: "Taken on, not started" },
-  { status: "preparing", label: "In the kitchen", caption: "Being cooked now" },
-  {
-    status: "ready_for_pickup",
-    label: "Ready",
-    caption: "Cooked, waiting to go out",
-  },
+  { status: "confirmed", holds: ["confirmed"], label: "Accepted", caption: "Taken on, not started" },
+  { status: "preparing", holds: ["preparing"], label: "In the kitchen", caption: "Being cooked now" },
   {
     status: "out_for_delivery",
-    label: "On the way",
-    caption: "With whoever is delivering it",
+    holds: ["ready_for_pickup", "out_for_delivery"],
+    label: "With courier",
+    caption: "Ready to go out, or on the way",
   },
 ];
+
+function columnOf(status: OrderStatus): Column | null {
+  return COLUMNS.find((column) => column.holds.includes(status)) ?? null;
+}
 
 export interface KanbanBoardProps {
   readonly kitchen: ReadyKitchen;
@@ -83,9 +91,14 @@ export function KanbanBoard({
   /** The ticket under the pointer, or null. Drives the drop highlighting. */
   const [dragged, setDragged] = React.useState<Order | null>(null);
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
-  const [canScrollLeft, canScrollRight] = useScrollEdges(scrollRef);
-
-  const all = queue.data === undefined ? [] : byUrgency(queue.data.items, now);
+  // Stuck tickets (over 6h past promise) stay off the columns, as they stay
+  // off the list's queue: four columns of red 44-day-old cards buried the one
+  // ticket that could still be saved. One line under the toolbar sends
+  // whoever has to close them to the list, where their section is.
+  const items = queue.data === undefined ? [] : queue.data.items;
+  const all = byUrgency(excludeStale(items, now), now);
+  const stuckCount = items.length - all.length;
+  const [canScrollLeft, canScrollRight] = useScrollEdges(scrollRef, all.length > 0);
   const isLoaded = queue.data !== undefined;
 
   const advance = React.useCallback(
@@ -95,18 +108,23 @@ export function KanbanBoard({
     [mutation],
   );
 
-  // Where the dragged ticket is allowed to land: exactly one status.
-  const dropTarget = React.useMemo<OrderStatus | null>(() => {
+  // Where the dragged ticket is allowed to land: the column holding its one
+  // next status. A move that stays inside "With courier" (hand over → on the
+  // way) is a button press, not a drop onto the column it is already in.
+  const dropTarget = React.useMemo<Column | null>(() => {
     if (dragged === null) return null;
     const move = moveFrom(dragged.status);
     if (move === null || !kitchen.can(move.needs)) return null;
-    return move.to;
+    const target = columnOf(move.to);
+    return target === null || target === columnOf(dragged.status) ? null : target;
   }, [dragged, kitchen]);
 
   const onDrop = React.useCallback(
-    (column: OrderStatus): void => {
+    (column: Column): void => {
       if (dragged === null || dropTarget !== column) return;
-      advance(dragged.id, column);
+      const move = moveFrom(dragged.status);
+      if (move === null) return;
+      advance(dragged.id, move.to);
       setDragged(null);
     },
     [advance, dragged, dropTarget],
@@ -126,13 +144,32 @@ export function KanbanBoard({
         {isLoaded ? (
           <span className="text-[15px] text-ink-2">
             {all.length === 0
-              ? "Nothing live right now"
-              : `${String(all.length)} live ${all.length === 1 ? "ticket" : "tickets"} across five stages · drag a card right, or press its button`}
+              ? stuckCount > 0
+                ? "Nothing on the board right now"
+                : "Nothing live right now"
+              : `${pluralise(all.length, "live ticket", "live tickets")} across four stages · drag a card right, or press its button`}
           </span>
         ) : (
           <span className="text-[15px] text-ink-2">Counting live tickets…</span>
         )}
       </Toolbar>
+
+      {stuckCount > 0 ? (
+        <p className="flex flex-wrap items-baseline gap-x-2 text-[14px] text-ink-2">
+          <span>{stuckLabel(stuckCount)}</span>
+          <span aria-hidden="true" className="text-ink-4">
+            ·
+          </span>
+          {/* view=list, not just /orders: the board is remembered per device,
+              and the URL's view is the only thing that outranks it. */}
+          <Link
+            href="/orders?view=list#stuck"
+            className="-my-3 inline-flex min-h-11 items-center rounded-card px-1 font-medium text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            See list
+          </Link>
+        </p>
+      ) : null}
 
       {/* A status filter narrows the list view; on a board it would empty four
           of five columns and hide the very thing the board is for. So it is
@@ -141,8 +178,8 @@ export function KanbanBoard({
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-surface-2 px-3 py-2">
           <p className="text-[13px] leading-snug text-ink-2">
             The <strong className="font-semibold">{status.replace(/_/g, " ")}</strong>{" "}
-            filter narrows the list view. A board showing one stage would be four
-            empty columns, so all five are shown here.
+            filter narrows the list view. A board showing one stage would be three
+            empty columns, so all four are shown here.
           </p>
           <button
             type="button"
@@ -177,26 +214,30 @@ export function KanbanBoard({
 
       {isLoaded && all.length === 0 ? (
         <EmptyCard
-          title="No live orders right now"
+          title={stuckCount > 0 ? "Nothing in front of the kitchen right now" : "No live orders right now"}
           detail="New tickets land in the first column the moment a customer checks out, and move right as the kitchen works them."
         />
       ) : null}
 
       {all.length > 0 ? (
-        // The board scrolls in its own container rather than the page: five
-        // columns will not fit a tablet, and a horizontally scrolling page
-        // takes the header and the nav with it (DESIGN.md).
+        // From 1024px all four columns fit side by side. Below that (a
+        // portrait tablet) they scroll in their own container — never the
+        // page, which would take the header and the nav with it (DESIGN.md) —
+        // snapping to a column edge, with a fade saying there is more.
         <div className="relative">
-          <div ref={scrollRef} className="-mx-1 overflow-x-auto px-1 pb-2">
-            <div className="flex min-w-max items-start gap-3">
+          <div
+            ref={scrollRef}
+            className="-mx-1 snap-x snap-mandatory scroll-px-1 overflow-x-auto px-1 pb-2 lg:snap-none"
+          >
+            <div className="flex min-w-max items-start gap-3 lg:grid lg:min-w-0 lg:grid-cols-4">
             {COLUMNS.map((column) => (
               <BoardColumn
                 key={column.status}
                 column={column}
-                orders={all.filter((order) => order.status === column.status)}
+                orders={all.filter((order) => column.holds.includes(order.status))}
                 kitchen={kitchen}
                 now={now}
-                isDropTarget={dropTarget === column.status}
+                isDropTarget={dropTarget === column}
                 isDragActive={dragged !== null}
                 draggedId={dragged?.id ?? null}
                 movingId={
@@ -205,7 +246,7 @@ export function KanbanBoard({
                 onAdvance={advance}
                 onDragStart={setDragged}
                 onDragEnd={() => setDragged(null)}
-                onDrop={() => onDrop(column.status)}
+                onDrop={() => onDrop(column)}
               />
               ))}
             </div>
@@ -230,8 +271,8 @@ export function KanbanBoard({
 
       {all.length > 0 && canScrollRight ? (
         <p className="text-[13px] text-ink-3">
-          Scroll sideways for the rest of the ladder — five stages, and the last
-          two are a courier&apos;s in the finished product.
+          Scroll sideways for the rest of the ladder — four stages, the last of
+          them with the courier.
         </p>
       ) : null}
     </div>
@@ -249,12 +290,14 @@ export function KanbanBoard({
  */
 function useScrollEdges(
   ref: React.RefObject<HTMLDivElement | null>,
+  /** The scroller only mounts once there are tickets; re-attach when it does. */
+  isMounted: boolean,
 ): readonly [boolean, boolean] {
   const [edges, setEdges] = React.useState<readonly [boolean, boolean]>([false, false]);
 
   React.useEffect(() => {
     const element = ref.current;
-    if (element === null) return;
+    if (element === null) return undefined;
 
     const measure = (): void => {
       const { scrollLeft, scrollWidth, clientWidth } = element;
@@ -273,7 +316,7 @@ function useScrollEdges(
       element.removeEventListener("scroll", measure);
       observer.disconnect();
     };
-  }, [ref]);
+  }, [ref, isMounted]);
 
   return edges;
 }
@@ -322,7 +365,7 @@ function BoardColumn({
         onDrop();
       }}
       className={cn(
-        "flex w-[17.5rem] shrink-0 flex-col gap-2 rounded-card border p-2 transition-colors",
+        "flex w-[17.5rem] shrink-0 snap-start flex-col gap-2 rounded-card border p-2 transition-colors lg:w-auto lg:min-w-0",
         isDropTarget
           ? "border-accent bg-accent-soft"
           : // Dimming the columns that cannot take the card is the only hint a
@@ -361,6 +404,7 @@ function BoardColumn({
               now={now}
               isMoving={movingId === order.id}
               isDragging={draggedId === order.id}
+              showsStatus={column.holds.length > 1}
               onAdvance={onAdvance}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}

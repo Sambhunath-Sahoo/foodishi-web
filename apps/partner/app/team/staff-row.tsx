@@ -71,6 +71,8 @@ export function StaffRow({
             name={member.user.name}
             size={36}
             shape="circle"
+            // Thumb's own initials are ink-4, 2.4:1 on light; see account-menu.
+            className="text-ink-3!"
           />
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate text-[15px] leading-tight text-ink">
@@ -158,7 +160,10 @@ export function StaffRow({
         {canManage ? (
           <span className="flex flex-col items-end gap-1">
             <span className="flex flex-wrap justify-end gap-1.5">
-              {member.is_active ? (
+              {/* Not on your own row either: it sat enabled beside "Another
+                  manager changes your access", and the two contradicted each
+                  other. Your own row is a caption, no buttons. */}
+              {member.is_active && !isSelf ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -179,32 +184,46 @@ export function StaffRow({
                 </Button>
               ) : null}
 
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "min-h-11 whitespace-nowrap",
-                  member.is_active && "text-crit hover:bg-crit-soft",
-                )}
-                isPending={setActive.isPending}
-                pendingLabel="Saving…"
-                onClick={() =>
-                  setActive.mutate({ staffId: member.id, isActive: !member.is_active })
-                }
-              >
-                {member.is_active ? "Revoke" : "Restore"}
-              </Button>
+              {/* Never on your own row, for the same lockout reason as the role
+                  select above: the source refuses it, and the footnote already
+                  says so — so the two red buttons could only ever round-trip
+                  into an error repeating it. */}
+              {isSelf ? null : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "min-h-11 whitespace-nowrap",
+                      member.is_active && "text-crit hover:bg-crit-soft",
+                    )}
+                    isPending={setActive.isPending}
+                    pendingLabel="Saving…"
+                    onClick={() =>
+                      setActive.mutate({ staffId: member.id, isActive: !member.is_active })
+                    }
+                  >
+                    {member.is_active ? "Revoke" : "Restore"}
+                  </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-11 whitespace-nowrap text-crit hover:bg-crit-soft"
-                aria-label={`Remove ${member.user.name} from this restaurant`}
-                onClick={() => setDialog("remove")}
-              >
-                Remove
-              </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-11 whitespace-nowrap text-crit hover:bg-crit-soft"
+                    aria-label={`Remove ${member.user.name} from this restaurant`}
+                    onClick={() => setDialog("remove")}
+                  >
+                    Remove
+                  </Button>
+                </>
+              )}
             </span>
+
+            {isSelf ? (
+              <span className="text-right text-[13px] leading-snug text-ink-3">
+                Another manager changes your access
+              </span>
+            ) : null}
 
             {setActive.error !== null ? (
               <span role="alert" className="text-[11px] leading-snug text-crit">

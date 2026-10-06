@@ -2,7 +2,7 @@
  * What the next move on a ticket promises, in words, before it is tapped.
  *
  * The move itself comes from `lib/order-flow` — one state machine, shared with
- * the service layer. This file is only the sentence underneath the button: the
+ * the service layer. This file is only the caption line above the button: the
  * consequence, with this order's own clock number in it rather than a guess.
  */
 import { formatLate } from "@repo/ui";
@@ -69,10 +69,10 @@ const CONSEQUENCE: Record<
       now,
       (clock, left) => `${left} to spare on the ${clock} promise`,
     ),
-  ready_for_pickup: () =>
-    "Records that the food has left the kitchen. There is no delivery partner yet, so this is the kitchen's to mark.",
-  out_for_delivery: () =>
-    "Closes the order and counts it as revenue. Only mark this once the customer actually has the food.",
+  // Short on purpose: this is the one caption line above the button, read at
+  // two feet. There is no delivery partner yet, so both moves are the kitchen's.
+  ready_for_pickup: () => "Records that the food left the kitchen.",
+  out_for_delivery: () => "Counts as revenue. Only once the customer has the food.",
   delivered: undefined,
   cancelled: undefined,
 };

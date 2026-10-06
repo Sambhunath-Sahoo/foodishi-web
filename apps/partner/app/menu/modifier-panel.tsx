@@ -69,6 +69,8 @@ function GroupCard({
             <Button
               variant="outline"
               size="sm"
+              // Outlined, never filled (DESIGN.md non-negotiable 5), but still
+              // crit: a delete has to read as one.
               className="min-h-11 text-crit hover:bg-crit-soft"
               onClick={onDelete}
             >
@@ -80,26 +82,34 @@ function GroupCard({
       <CardBody className="flex flex-col gap-3">
         {group.options.length === 0 ? (
           <p className="text-[13px] text-warn">
-            No choices in this group, so it never appears to a customer.
+            No choices in this group, so customers do not see it.
           </p>
         ) : (
           <ul className="flex flex-wrap gap-1.5">
             {group.options.map((option) => (
+              // Sold out is a standing state, not an emergency: crit red on
+              // "Extra cheese" made one switched-off topping the loudest thing
+              // on the menu. Muted, struck through, and the words say it.
               <li
                 key={option.id}
                 className={
                   option.is_available
                     ? "rounded-chip border border-line bg-surface-2 px-2.5 py-1 text-[13px] text-ink"
-                    : "rounded-chip border border-crit/25 bg-crit-soft px-2.5 py-1 text-[13px] text-crit line-through"
+                    : "rounded-chip border border-line bg-surface px-2.5 py-1 text-[13px] text-ink-3"
                 }
                 title={option.is_available ? undefined : "Turned off — customers cannot pick this"}
               >
-                {option.name}
+                <span className={option.is_available ? undefined : "line-through"}>
+                  {option.name}
+                </span>
                 <span className="ml-1.5 font-mono tabular-nums text-ink-3">
                   {Number(option.price_delta) === 0
                     ? "free"
                     : `+${formatMoney(option.price_delta)}`}
                 </span>
+                {option.is_available ? null : (
+                  <span className="ml-1.5 font-medium text-ink-2">· Sold out</span>
+                )}
               </li>
             ))}
           </ul>
@@ -125,10 +135,9 @@ function GroupCard({
 /**
  * Add-ons and variants.
  *
- * FIXTURE-ONLY. `menu_item_modifiers` is not a table on the Foodishi API yet, so
- * against `NEXT_PUBLIC_DATA_SOURCE=api` the read below refuses and names the
- * missing route. That refusal is drawn as the quiet notice it is rather than a
- * red alarm — nothing is broken, the route has not shipped.
+ * Served by /restaurants/{id}/modifier-groups on the live API now. It was
+ * fixture-only once; should a source ever refuse with a 501 again, `LoadError`
+ * draws that as the quiet notice it is rather than a red alarm.
  */
 export function ModifierPanel({
   kitchen,

@@ -106,7 +106,7 @@ export function PopularItemsTable({
         {items.data !== undefined && sorted.length === 0 ? (
           <EmptyCard
             title="Nothing was delivered in this period"
-            detail="A dish appears here once an order containing it has been delivered. Cancelled orders do not count — those plates were never sold."
+            detail="A dish appears here once an order containing it has been delivered. Cancelled orders do not count — those plates were not sold."
           />
         ) : null}
 
@@ -141,7 +141,7 @@ export function PopularItemsTable({
               <DataTableBody>
                 {rows.map((row, index) => (
                   <DataTableRow key={row.menu_item_id} className="h-auto min-h-[48px]">
-                    <DataTableCell numeric mono className="text-ink-4">
+                    <DataTableCell numeric mono className="text-ink-3">
                       {index + 1}
                     </DataTableCell>
                     <DataTableCell wrap className="max-w-[260px]">

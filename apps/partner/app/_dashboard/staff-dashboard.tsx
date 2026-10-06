@@ -4,10 +4,12 @@ import * as React from "react";
 import { Freshness, LiveDot, Toolbar } from "@repo/ui";
 import { ServiceBoard } from "./service-board";
 import { LinkButton } from "../_components/link-button";
+import { MasonryGrid } from "../_components/masonry-grid";
 import { OrderCard } from "../_components/order-card";
+import { RefusalScopeNote } from "../_components/cancel-order-control";
 import { CardSkeletons, EmptyCard, LoadError } from "../_components/states";
 import { formatCount, pluralise } from "../_lib/format";
-import { byUrgency, readLateness } from "../_lib/lateness";
+import { byUrgency, excludeStale, isPastPromised } from "../_lib/lateness";
 import { TICK_QUEUE_MS, useNow } from "../_lib/use-now";
 import { QUEUE_REFRESH_MS } from "../../lib/query-keys";
 import { isKitchenWork } from "../../lib/order-flow";
@@ -36,19 +38,29 @@ export function StaffDashboard({
   const now = useNow(TICK_QUEUE_MS);
   const queue = useLiveOrders(kitchen);
 
-  const orders = queue.data === undefined ? [] : byUrgency(queue.data.items, now);
+  // The tiles, the waiting list, the late count and "See all N" all leave out
+  // the stuck ones (over 6h past promise): they need closing, not cooking, and
+  // /orders keeps them in their own collapsed section — its "All" counts them
+  // out too, so every number here matches the page it links to.
+  const allLive = queue.data === undefined ? [] : queue.data.items;
+  const orders = byUrgency(excludeStale(allLive, now), now);
   const isLoaded = queue.data !== undefined;
 
   const needsDecision = orders.filter((order) => isKitchenWork(order.status));
-  const late = orders.filter(
-    (order) => readLateness(order.status, order.promised_at, now).isLate,
-  ).length;
+  const late = orders.filter((order) => isPastPromised(order, now)).length;
   const shown = needsDecision.slice(0, CARDS_SHOWN);
-  const hidden = needsDecision.length - shown.length;
+  // Measured against the whole live queue, so stuck tickets left off this
+  // list still leave a way to /orders where they are.
+  const hidden = allLive.length - shown.length;
+  const stuck = allLive.length - orders.length;
 
   return (
     <div className="flex flex-col gap-5">
-      <ServiceBoard orders={orders} isLoaded={isLoaded} />
+      <ServiceBoard
+        orders={orders}
+        isLoaded={isLoaded}
+        canSeePickups={kitchen.can("handover.view")}
+      />
 
       {queue.isPending ? <CardSkeletons count={2} label="Loading the queue" /> : null}
 
@@ -68,6 +80,7 @@ export function StaffDashboard({
             ariaLabel="Queue status"
             right={
               <LiveDot
+                className="text-[13px]"
                 interval={QUEUE_REFRESH_MS / MS_PER_SECOND}
                 at={queue.dataUpdatedAt > 0 ? queue.dataUpdatedAt : null}
               />
@@ -75,7 +88,7 @@ export function StaffDashboard({
           >
             <h2 className="font-title text-[19px] text-ink">Waiting on you</h2>
             {late > 0 ? (
-              <span className="rounded-chip border border-crit/25 bg-crit-soft px-2 py-0.5 text-[12px] text-crit">
+              <span className="rounded-chip border border-crit/25 bg-crit-soft px-2 py-0.5 text-[13px] text-crit">
                 {formatCount(late)} past promised
               </span>
             ) : null}
@@ -84,26 +97,39 @@ export function StaffDashboard({
           {needsDecision.length === 0 ? (
             <EmptyCard
               title="Nothing needs a decision right now"
-              detail="Tickets appear here the moment a customer checks out, and stay until they have been accepted, cooked and handed over. The four numbers above are the whole live queue."
+              detail="Tickets appear here the moment a customer checks out, and stay until they have been accepted, cooked and handed over. The four numbers above are every ticket in front of the kitchen."
             />
           ) : (
-            // Two columns once the tablet is wide enough to hold them. A
-            // landscape tablet sits around 1180px and is exactly the device
-            // this screen is for, so the break is `lg` and not `xl`.
-            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-              {shown.map((order) => (
-                <OrderCard key={order.id} order={order} kitchen={kitchen} now={now} />
-              ))}
-            </div>
+            // The same grid as the live queue: two columns on a landscape
+            // tablet (~1180px, exactly the device this screen is for), each
+            // card at its own height.
+            <>
+              <RefusalScopeNote orders={shown} kitchen={kitchen} />
+              <MasonryGrid>
+                {shown.map((order) => (
+                  <OrderCard key={order.id} order={order} kitchen={kitchen} now={now} />
+                ))}
+              </MasonryGrid>
+            </>
           )}
 
           {hidden > 0 ? (
             <div className="flex flex-wrap items-center gap-3">
-              <LinkButton href="/orders">
-                See all {pluralise(needsDecision.length, "ticket", "tickets")}
-              </LinkButton>
+              {/* The live queue as /orders counts it under "All": every ticket
+                  in front of the kitchen, stuck ones named in the line beside.
+                  With only stuck ones left, "See all 0 tickets" would be a
+                  button promising nothing, so it goes to where they are. */}
+              {orders.length > 0 ? (
+                <LinkButton href="/orders">
+                  See all {pluralise(orders.length, "ticket", "tickets")}
+                </LinkButton>
+              ) : (
+                <LinkButton href="/orders?view=list#stuck">See the stuck tickets</LinkButton>
+              )}
               <p className="text-[13px] text-ink-3">
-                {pluralise(hidden, "more ticket", "more tickets")} not shown here.
+                {stuck > 0
+                  ? `${pluralise(stuck, "ticket is", "tickets are")} stuck over 6 h past promise — they need closing, not cooking.`
+                  : `${pluralise(hidden, "more ticket", "more tickets")} not shown here.`}
               </p>
             </div>
           ) : null}

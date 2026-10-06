@@ -5,6 +5,8 @@
  * Money arrives as a decimal *string* ("1180.00"). It is parsed for display
  * only — never for arithmetic the source has already done.
  */
+import { formatSpan } from "@repo/ui";
+
 const RUPEES = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
@@ -49,7 +51,6 @@ const DATE_TIME = new Intl.DateTimeFormat("en-IN", {
 });
 
 const MS_PER_MINUTE = 60_000;
-const MINUTES_PER_HOUR = 60;
 const PERCENT = new Intl.NumberFormat("en-IN", {
   style: "percent",
   maximumFractionDigits: 1,
@@ -81,9 +82,23 @@ export function sumMoney(amounts: readonly string[]): number {
   }, 0);
 }
 
-/** 20:05 — a wall clock, in the tablet's own timezone. */
-export function formatClock(iso: string): string {
-  return CLOCK.format(new Date(iso));
+/**
+ * 20:05 — a wall clock, in the tablet's own timezone — but only for today.
+ *
+ * Any other day reads "21 Aug, 20:05". A bare "20:26" on a ticket from six
+ * weeks ago reads as this evening, which is how a 44-day-old order passed for
+ * a live one. `now` defaults to the render instant; pass the ticking clock
+ * where a screen already has one so a page left open past midnight re-dates.
+ */
+export function formatClock(iso: string, now: number = Date.now()): string {
+  const at = new Date(iso);
+  const clock = CLOCK.format(at);
+  if (Number.isNaN(at.getTime()) || isSameLocalDay(at.getTime(), now)) return clock;
+  return `${DAY.format(at)}, ${clock}`;
+}
+
+function isSameLocalDay(left: number, right: number): boolean {
+  return toLocalDate(left) === toLocalDate(right);
 }
 
 /** "21 Aug" — for an axis, a period, a settlement window. */
@@ -131,10 +146,7 @@ export function minutesUntil(iso: string, now: number): number {
 export function formatDuration(minutes: number): string {
   const whole = Math.max(Math.abs(minutes), 0);
   if (whole < 1) return "under a minute";
-  if (whole < MINUTES_PER_HOUR) return `${whole}m`;
-  const hours = Math.floor(whole / MINUTES_PER_HOUR);
-  const rest = whole % MINUTES_PER_HOUR;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+  return formatSpan(whole);
 }
 
 /** The local calendar day an instant falls on, as "2026-08-21". */
@@ -160,4 +172,14 @@ export function formatCount(value: number): string {
 /** "1 dish" / "4 dishes", so no call site has to hand-pluralise. */
 export function pluralise(count: number, one: string, many: string): string {
   return `${formatCount(count)} ${count === 1 ? one : many}`;
+}
+
+/**
+ * "4.6 ★ · 7 ratings" — one spelling for the dashboard and Reports, which used
+ * to say "4.6 · 7" and "4.6 from 7" about the same two numbers. With no ratings
+ * the average is meaningless, so it is not shown at all.
+ */
+export function formatRating(rating: string | number, count: number): string {
+  if (count === 0) return "No ratings yet";
+  return `${rating} ★ · ${pluralise(count, "rating", "ratings")}`;
 }

@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { StatusChip, cn } from "@repo/ui";
 import { formatCount } from "../_lib/format";
-import { HANDOVER_STATUSES } from "../../lib/order-flow";
 import type { Order, OrderStatus } from "../../lib/types";
 
 /**
@@ -59,9 +58,12 @@ const CELLS: readonly Cell[] = [
 export function ServiceBoard({
   orders,
   isLoaded,
+  canSeePickups,
 }: {
   readonly orders: readonly Order[];
   readonly isLoaded: boolean;
+  /** Whether the line under the tiles may link to /handover. */
+  readonly canSeePickups: boolean;
 }): React.JSX.Element {
   const counts = React.useMemo(() => {
     const tally = new Map<OrderStatus, number>();
@@ -71,9 +73,11 @@ export function ServiceBoard({
     return tally;
   }, [orders]);
 
-  const outForDelivery = orders.filter((order) =>
-    HANDOVER_STATUSES.has(order.status),
-  ).length;
+  // Only out_for_delivery. Ready orders are already the fourth tile, and
+  // counting them here as well (HANDOVER_STATUSES includes ready_for_pickup)
+  // told a cook with 3 ready and 2 on the road that 5 were "out".
+  const outForDelivery = counts.get("out_for_delivery") ?? 0;
+  const outLine = `${formatCount(outForDelivery)} out for delivery`;
 
   return (
     <div className="flex flex-col gap-2">
@@ -96,13 +100,13 @@ export function ServiceBoard({
               <span className="flex items-center justify-between gap-2">
                 <span
                   className={cn(
-                    "text-[10px] leading-none font-bold tracking-[0.09em] uppercase",
+                    "text-[13px] leading-none font-bold tracking-[0.06em] uppercase",
                     isLoud ? "text-warn" : "text-ink-3",
                   )}
                 >
                   {cell.label}
                 </span>
-                <StatusChip status={cell.status} />
+                <StatusChip status={cell.status} className="text-[13px]" />
               </span>
               <span
                 className={cn(
@@ -114,7 +118,7 @@ export function ServiceBoard({
               </span>
               <span
                 className={cn(
-                  "text-[12px] leading-snug",
+                  "text-[14px] leading-snug",
                   isLoud ? "text-warn" : "text-ink-3",
                 )}
               >
@@ -128,10 +132,19 @@ export function ServiceBoard({
       {/* Not a fifth cell: nothing on it needs doing, so giving it the same
           weight as "Not answered" would make the loudest thing on the board a
           number nobody acts on. */}
-      <p className="text-[13px] text-ink-3">
-        {isLoaded
-          ? `${formatCount(outForDelivery)} more already out for delivery or waiting for pickup.`
-          : "Counting live tickets…"}
+      <p className="text-[14px] text-ink-3">
+        {!isLoaded ? (
+          "Counting live tickets…"
+        ) : canSeePickups ? (
+          <Link
+            href="/handover"
+            className="inline-flex min-h-11 items-center text-accent underline-offset-2 hover:underline"
+          >
+            {outLine} — see Pickups
+          </Link>
+        ) : (
+          `${outLine}.`
+        )}
       </p>
     </div>
   );

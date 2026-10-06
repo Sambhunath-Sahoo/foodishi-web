@@ -18,8 +18,8 @@ export interface NextActionProps {
 
 /**
  * The one thing to press. It is the biggest element on the card, it names the
- * move in a verb, and it states what the move promises underneath — using this
- * order's own promise, not a guess.
+ * move in a verb, and the line directly above it states what the move
+ * promises — using this order's own promise, not a guess.
  *
  * Somebody without the permission for this particular move gets the sentence
  * instead of the button. Not a disabled button: a disabled control invites a
@@ -32,6 +32,7 @@ export function NextAction({
   now,
 }: NextActionProps): React.JSX.Element {
   const mutation = useOrderStatusMutation(kitchen, order.id);
+  const captionId = React.useId();
   const next = getNextTransition(order.status, order.promised_at, now);
 
   if (next === null) {
@@ -56,19 +57,27 @@ export function NextAction({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1">
+      {/* The consequence sits above the button, read on the way to the tap,
+          instead of as a two-line paragraph inside it — that made the button
+          150px tall. It is still part of the button's accessible description. */}
+      {next.consequence !== "" ? (
+        <p id={captionId} className="text-[13px] leading-4 text-ink-3">
+          {next.consequence}
+        </p>
+      ) : null}
       <Button
         size="lg"
         block
-        className="h-auto min-h-20 flex-col gap-1 py-4 whitespace-normal"
+        className="h-12 w-full text-[16px] font-semibold"
+        aria-describedby={next.consequence !== "" ? captionId : undefined}
         isPending={mutation.isPending}
         pendingLabel="Saving…"
         onClick={() => {
           mutation.mutate(next.toStatus);
         }}
       >
-        <span className="text-xl font-semibold">{next.label}</span>
-        <span className="text-[14px] font-normal opacity-90">{next.consequence}</span>
+        {next.label}
       </Button>
 
       {mutation.error !== null ? (

@@ -123,7 +123,7 @@ export function PermissionsDialog({
                     className={
                       isOn
                         ? "min-w-0 flex-1 text-[14px] leading-snug text-ink"
-                        : "min-w-0 flex-1 text-[14px] leading-snug text-ink-4"
+                        : "min-w-0 flex-1 text-[14px] leading-snug text-ink-3"
                     }
                   >
                     {PERMISSION_LABELS[permission]}

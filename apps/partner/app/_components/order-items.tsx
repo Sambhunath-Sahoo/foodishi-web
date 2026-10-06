@@ -2,13 +2,18 @@ import * as React from "react";
 import { Thumb, cn } from "@repo/ui";
 import type { DishFace } from "../../lib/queries/menu";
 import type { OrderItem } from "../../lib/types";
+import { OrderLineModifiers } from "./order-line-modifiers";
 
 /** How many dishes a queue card lists before it defers to Details. */
 const MAX_VISIBLE_LINES = 5;
 
 /** Big enough to recognise a dish at arm's length, small enough to stay a list. */
-const THUMB_PX = 40;
+const THUMB_PX = 36;
 const COMPACT_THUMB_PX = 32;
+/** The quantity column, fixed so every dish name starts at the same x. */
+const QTY_COLUMN_PX = 36;
+/** `gap-2` between photo, quantity and name. */
+const COLUMN_GAP_PX = 8;
 
 export interface OrderItemsProps {
   readonly items: readonly OrderItem[];
@@ -63,7 +68,8 @@ export function OrderItems({
   const thumbSize = compact ? COMPACT_THUMB_PX : THUMB_PX;
   // Indent for the wrapped note and the "+ N more" line, so both sit under the
   // dish name rather than under the photo.
-  const indent = hasPhotoColumn ? thumbSize + 8 + 36 : 36;
+  const indent =
+    (hasPhotoColumn ? thumbSize + COLUMN_GAP_PX : 0) + QTY_COLUMN_PX + COLUMN_GAP_PX;
 
   return (
     <div className={cn("flex flex-col gap-1", className)}>
@@ -76,7 +82,7 @@ export function OrderItems({
             // digits competing with the dish name for the two-feet glance this
             // screen is read at. The order total stays below; line-by-line money
             // is on Details, where somebody is actually reading money.
-            <li key={item.id} className={cn("flex flex-col", compact ? "py-[2px]" : "py-[3px]")}>
+            <li key={item.id} className={cn("flex flex-col", compact ? "py-px" : "py-[1.5px]")}>
               <div className="flex items-center gap-2">
                 {hasPhotoColumn ? (
                   <Thumb
@@ -88,16 +94,20 @@ export function OrderItems({
                 ) : null}
                 <p
                   className={cn(
-                    "flex min-w-0 items-baseline gap-2 leading-snug text-ink",
+                    "flex min-w-0 items-baseline gap-2 leading-tight text-ink",
                     compact ? "text-[14px]" : "text-[15px]",
                   )}
                 >
-                  <span className="min-w-[2.25rem] shrink-0 font-mono font-semibold tabular-nums">
+                  <span
+                    className="shrink-0 font-mono font-semibold tabular-nums"
+                    style={{ width: QTY_COLUMN_PX }}
+                  >
                     {item.quantity}×
                   </span>
                   <span className="min-w-0">{item.item_name}</span>
                 </p>
               </div>
+              <OrderLineModifiers modifiers={item.modifiers} indent={indent} compact={compact} />
               {item.notes !== null && item.notes !== "" ? (
                 // A note changes what leaves the kitchen, so it survives the trim
                 // and keeps its word label — colour alone is never the signal

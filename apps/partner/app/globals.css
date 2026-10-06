@@ -24,3 +24,16 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* The shell's sticky header, measured by the pages that sit a sticky row
+ * under it (orders/page.tsx publishes both variables). 103px is the landscape
+ * tablet header, so a page that never measures still clears it there.
+ * Anything scrolled or tabbed into view then lands below the header — and
+ * below a page's own sticky row — instead of underneath it. */
+:root {
+  --partner-header-h: 103px;
+}
+
+html {
+  scroll-padding-top: calc(var(--partner-header-h) + var(--partner-subheader-h, 0px) + 12px);
+}

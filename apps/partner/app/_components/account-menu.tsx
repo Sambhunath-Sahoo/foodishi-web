@@ -91,10 +91,10 @@ export function AccountMenu(): React.JSX.Element {
         aria-label={`Account and settings for ${who}`}
         onClick={() => setIsOpen((current) => !current)}
         className={cn(
-          // h-9, not the 44px floor: this opens a panel nobody touches
-          // mid-service, and at 44px it was setting the height of the whole
-          // identity row above the tabs that ARE tapped mid-service.
-          "flex h-9 max-w-[220px] items-center gap-2 rounded-card border px-2.5",
+          // The same 44px as the tabs below it. Shorter, it looked like a
+          // different kind of control from the rest of the chrome, and it is
+          // still something a thumb has to hit on a tablet.
+          "flex min-h-11 max-w-[240px] items-center gap-2 rounded-card border px-2.5",
           "font-sans transition-colors",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
           isOpen
@@ -102,12 +102,17 @@ export function AccountMenu(): React.JSX.Element {
             : "border-transparent hover:bg-surface-2",
         )}
       >
+        {/* `text-ink-2!`: Thumb draws its initials in ink-4, which is 2.4:1 on
+            the light surface — unreadable, here of all places, where the
+            initials ARE the avatar. The shared component is not this app's to
+            change, so the override is local and marked important to beat
+            Thumb's own class, which comes after this one. */}
         <Thumb
           src={profile?.avatar_url}
           name={who}
-          size={26}
+          size={28}
           shape="circle"
-          className="border border-line"
+          className="border border-line text-ink-2!"
         />
         <span className="truncate text-[14px] text-ink-2">{who}</span>
         <svg
@@ -121,7 +126,7 @@ export function AccountMenu(): React.JSX.Element {
           strokeLinecap="round"
           strokeLinejoin="round"
           className={cn(
-            "shrink-0 text-ink-4 transition-transform",
+            "shrink-0 text-ink-3 transition-transform",
             isOpen && "rotate-180",
           )}
         >
@@ -144,7 +149,7 @@ export function AccountMenu(): React.JSX.Element {
               name={who}
               size={38}
               shape="circle"
-              className="border border-line"
+              className="border border-line text-ink-2!"
             />
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-[15px] leading-tight text-ink">{who}</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { toUserMessage } from "@repo/api-client";
+import { isUnsupported } from "@repo/api-client";
 import {
   Badge,
   Button,
@@ -29,9 +29,16 @@ import {
   readStanding,
 } from "./discount-shape";
 import { KitchenGate } from "../_components/kitchen-gate";
-import { CardSkeletons, EmptyCard, LoadError, RefusedNote } from "../_components/states";
+import {
+  ActionError,
+  CardSkeletons,
+  EmptyCard,
+  LoadError,
+  RefusedNote,
+} from "../_components/states";
 import { formatCount, formatDay, formatMoney, pluralise } from "../_lib/format";
 import { ROLE_LABELS } from "../../lib/permissions";
+import { isFixtureSource } from "../../lib/services";
 import { useMenu } from "../../lib/queries/menu";
 import {
   useCoupons,
@@ -68,6 +75,9 @@ function OffersTable({
   const remove = useDeleteOffer(kitchen);
 
   const canManage = kitchen.can("offers.manage");
+  // Derived from the read's own refusal rather than from the data source, so
+  // the button comes back by itself the day the source can hold an offer.
+  const isOfferless = isUnsupported(offers.error);
   const rows = offers.data ?? [];
   const live = rows.filter(
     (offer) => readStanding(offer.is_active, offer.starts_at, offer.ends_at, now) === "live",
@@ -77,8 +87,21 @@ function OffersTable({
   return (
     <div className="flex flex-col gap-4">
       {canManage ? (
-        <div className="flex justify-end">
-          <Button className="min-h-11" onClick={() => setIsCreating(true)}>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {/* Disabled with its reason beside it, not hidden: a missing button
+              reads as "you may not", which is not what is true here. */}
+          {isOfferless ? (
+            <p id="offers-create-reason" className="text-[13px] leading-snug text-ink-3">
+              Use the Coupons tab — a coupon scoped to this restaurant is how the
+              live platform runs an offer.
+            </p>
+          ) : null}
+          <Button
+            className="min-h-11"
+            disabled={isOfferless}
+            aria-describedby={isOfferless ? "offers-create-reason" : undefined}
+            onClick={() => setIsCreating(true)}
+          >
             Create an offer
           </Button>
         </div>
@@ -231,11 +254,7 @@ function OffersTable({
             </DataTableScroll>
           )}
 
-          {setActive.error !== null ? (
-            <p role="alert" className="text-[13px] leading-snug text-crit">
-              {toUserMessage(setActive.error)}
-            </p>
-          ) : null}
+          {setActive.error !== null ? <ActionError error={setActive.error} /> : null}
         </>
       ) : null}
 
@@ -260,7 +279,7 @@ function OffersTable({
           open
           onOpenChange={() => setDeleting(null)}
           title={`Delete ${deleting.title}?`}
-          description="Switching it off stops it applying immediately and keeps the numbers. Deleting is only for an offer that was never used."
+          description="Switching it off stops it applying immediately and keeps the numbers. Deleting is only for an offer nobody has used."
           footer={
             <>
               <Button variant="ghost" className="min-h-11" onClick={() => setDeleting(null)}>
@@ -292,9 +311,7 @@ function OffersTable({
               : "Nobody has used this offer, so nothing is lost."}
           </p>
           {remove.error !== null ? (
-            <p role="alert" className="mt-2 text-[13px] leading-snug text-crit">
-              {toUserMessage(remove.error)}
-            </p>
+            <ActionError error={remove.error} className="mt-2" />
           ) : null}
         </Dialog>
       ) : null}
@@ -472,6 +489,10 @@ function CouponsTable({
         )
       ) : null}
 
+      {/* The switch used to fail silently here — the offers table showed its
+          reason and this one did not, so a refused tap simply did nothing. */}
+      {setActive.error !== null ? <ActionError error={setActive.error} /> : null}
+
       {isCreating ? (
         <CouponDialog kitchen={kitchen} coupon={null} onClose={() => setIsCreating(false)} />
       ) : null}
@@ -496,7 +517,7 @@ function CouponsTable({
               <Button
                 variant="danger"
                 className="min-h-11"
-                disabled={deleting.redemption_count > 0}
+                disabled={deleting.redemption_count > 0 || !isFixtureSource}
                 isPending={remove.isPending}
                 pendingLabel="Deleting…"
                 onClick={() =>
@@ -509,14 +530,17 @@ function CouponsTable({
           }
         >
           <p className="leading-snug">
-            {deleting.redemption_count > 0
+            {/* The live platform has no DELETE /coupons/{id} on purpose (see
+                lib/services/api/offers.ts), so the same doomed-button rule
+                applies to every coupon there, used or not. */}
+            {!isFixtureSource
+              ? `${deleting.code} cannot be deleted on the live platform — past orders keep their link to a coupon. Switch it off instead: it stops working immediately and its numbers stay.`
+              : deleting.redemption_count > 0
               ? `${deleting.code} has been used ${formatCount(deleting.redemption_count)} times, so it cannot be deleted — those orders keep their link to it. Switch it off instead and it stops working immediately.`
               : "Nobody has used this code, so nothing is lost."}
           </p>
           {remove.error !== null ? (
-            <p role="alert" className="mt-2 text-[13px] leading-snug text-crit">
-              {toUserMessage(remove.error)}
-            </p>
+            <ActionError error={remove.error} className="mt-2" />
           ) : null}
         </Dialog>
       ) : null}
@@ -524,9 +548,15 @@ function CouponsTable({
   );
 }
 
+/**
+ * Coupons first, because they work: automatic offers have no route on the live
+ * API yet, and opening on that tab put a manager in front of a disabled
+ * "Create an offer" as the first thing on the screen. The label says so before
+ * the tap rather than after it.
+ */
 const TABS: readonly { readonly value: Tab; readonly label: string }[] = [
-  { value: "offers", label: "Offers" },
   { value: "coupons", label: "Coupons" },
+  { value: "offers", label: "Offers · soon" },
 ];
 
 /**
@@ -537,7 +567,7 @@ const TABS: readonly { readonly value: Tab; readonly label: string }[] = [
  * coupon has to be typed, which is why only the coupon carries usage limits.
  */
 export default function OffersPage(): React.JSX.Element {
-  const [tab, setTab] = React.useState<Tab>("offers");
+  const [tab, setTab] = React.useState<Tab>("coupons");
   const now = React.useMemo(() => Date.now(), []);
 
   return (

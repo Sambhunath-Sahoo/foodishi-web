@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { toUserMessage } from "@repo/api-client";
-import { Button, Card, EmptyState, ErrorBanner, Skeleton } from "@repo/ui";
+import { isRetryable, isUnsupported, toUserMessage } from "@repo/api-client";
+import { Button, Card, EmptyState, ErrorBanner, Skeleton, cn } from "@repo/ui";
 import { isPermanentRefusal } from "../_lib/refusal";
 
 /** Card-shaped placeholders, so the queue does not jump when it arrives. */
@@ -56,6 +56,8 @@ export function RefusedNote({
   );
 }
 
+const UNSUPPORTED_TITLE = "Not on the live API yet";
+
 /**
  * The server writes its failures for humans — "Requires manager access to
  * restaurant 1" — so the message goes through verbatim.
@@ -76,6 +78,19 @@ export function LoadError({
   /** What to say instead of `title` when the door is shut by design. */
   readonly refusedTitle?: string;
 }): React.JSX.Element {
+  // A 501 is the build saying this screen has no route behind it yet. Nothing
+  // is broken and nothing a tap does will change it, so it gets the quiet note
+  // too — and never "Could not load…", which would read as an outage. Not an
+  // empty list either: "none" and "no such route" are different facts.
+  if (isUnsupported(error)) {
+    return (
+      <RefusedNote
+        title={refusedTitle ?? UNSUPPORTED_TITLE}
+        detail={toUserMessage(error)}
+      />
+    );
+  }
+
   if (isPermanentRefusal(error)) {
     return (
       <RefusedNote
@@ -85,18 +100,48 @@ export function LoadError({
     );
   }
 
+  // Red is still right for a 409 or a 422 — something did go wrong — but the
+  // retry is only offered when asking again can give a different answer.
   return (
     <ErrorBanner
       title={title}
       message={toUserMessage(error)}
       action={
-        onRetry !== undefined ? (
+        onRetry !== undefined && isRetryable(error) ? (
           <Button variant="outline" size="sm" className="min-h-11" onClick={onRetry}>
             Try again
           </Button>
         ) : undefined
       }
     />
+  );
+}
+
+/**
+ * The inline reason under a button that was tapped and refused.
+ *
+ * Same rule as `LoadError`, at a smaller size: a 501 is a fact about the build,
+ * not a failure, so it is not drawn in crit red. The server's sentence is kept
+ * verbatim either way.
+ */
+export function ActionError({
+  error,
+  className,
+}: {
+  readonly error: unknown;
+  readonly className?: string;
+}): React.JSX.Element {
+  return (
+    <p
+      role={isUnsupported(error) ? "status" : "alert"}
+      className={cn(
+        "text-[13px] leading-snug",
+        isUnsupported(error) ? "text-ink-3" : "text-crit",
+        className,
+      )}
+    >
+      {toUserMessage(error)}
+    </p>
   );
 }
 
