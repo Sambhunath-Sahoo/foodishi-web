@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import type {
   DeliveryDetail,
   OrderDetail,
@@ -70,6 +70,8 @@ export function useLiveOrders(): UseQueryResult<Page<OrderRead>> {
       }),
     refetchInterval: LIVE_REFETCH_MS,
     staleTime: 0,
+    // Read by the rail on every page; see useWorkload for why it holds on.
+    placeholderData: keepPreviousData,
   });
 }
 

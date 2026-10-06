@@ -19,14 +19,16 @@ import {
   Thumb,
   Timeline,
   type TimelineEntry,
+  type Tone,
 } from "@repo/ui";
-import type { OrderDetail } from "../lib/api-types";
+import type { DeliveryDetail, OrderDetail, OrderEventRead } from "../lib/api-types";
 import {
   formatDateOnly,
   formatDateTime,
   formatDuration,
   formatMoney,
   formatOrderRef,
+  formatPaymentMethod,
   humanizeEnum,
 } from "../lib/format";
 import {
@@ -45,8 +47,22 @@ import {
   useUserAddresses,
 } from "../lib/queries";
 import { useNow } from "../lib/use-now";
+import { DeliveryActionDialog } from "./delivery-actions";
+import { CancelOrderDialog, isOpenOrder, OrderFooter } from "./order-actions";
 import { QueryState } from "./query-state";
 import { Sheet } from "./sheet";
+
+/**
+ * The ride chip, matching the Deliveries board. It was `cool` for anything not
+ * yet delivered — cool means "out for delivery", so a ride still waiting at
+ * the kitchen or one that had failed read as on the road (OP-7).
+ */
+const RIDE_TONE: Readonly<Record<DeliveryDetail["status"], Tone>> = {
+  assigned: "warn",
+  picked_up: "cool",
+  delivered: "ok",
+  failed: "crit",
+};
 
 /** Both thumbnails in the drawer. Big enough to read, small enough to inline. */
 const THUMB_PX = 32;
@@ -167,7 +183,7 @@ function CustomerSection({ userId }: { readonly userId: number }): React.JSX.Ele
                 </p>
               </div>
               {person.is_active ? null : (
-                <Badge tone="warn" className="ml-auto shrink-0">
+                <Badge tone="mute" className="ml-auto shrink-0">
                   Deactivated
                 </Badge>
               )}
@@ -276,7 +292,7 @@ function DeliverySection({
               {humanizeEnum(delivery.data.partner.vehicle_type)}
             </DetailRow>
             <DetailRow label="Ride">
-              <Badge tone={delivery.data.delivered_at === null ? "cool" : "ok"}>
+              <Badge tone={RIDE_TONE[delivery.data.status]}>
                 {humanizeEnum(delivery.data.status)}
               </Badge>
             </DetailRow>
@@ -304,6 +320,32 @@ function DeliverySection({
   );
 }
 
+/**
+ * Who moved the order, in words.
+ *
+ * The trail carries `actor_type` and an id, and printing them raw put "User
+ * 250" on the drawer of the very customer whose name is in the section above
+ * it (OP-4). The customer is named; anyone else is named by role, because an
+ * id is not something support can say back on a call.
+ */
+function describeActor(
+  event: OrderEventRead,
+  order: OrderDetail | undefined,
+  customerName: string | undefined,
+  kitchenName: string | undefined,
+): string {
+  if (event.actor_type === "user") {
+    return order !== undefined && event.actor_id === order.user_id
+      ? (customerName ?? "The customer")
+      : "Another customer account";
+  }
+  if (event.actor_type === "restaurant") {
+    return kitchenName === undefined ? "Kitchen staff" : `${kitchenName} staff`;
+  }
+  if (event.actor_type === "agent") return "Foodishi support";
+  return humanizeEnum(event.actor_type);
+}
+
 function OrderBody({ orderId }: { readonly orderId: number }): React.JSX.Element {
   const detail = useOrderDetail(orderId);
   const events = useOrderEvents(orderId);
@@ -317,6 +359,11 @@ function OrderBody({ orderId }: { readonly orderId: number }): React.JSX.Element
   // client render identical to the server's.
   const nowMs = useNow();
   const order = detail.data;
+  // Both already cached: the customer section and the drawer header read them.
+  const customer = useUser(order?.user_id ?? null);
+  const restaurants = useRestaurantDirectory();
+  const kitchenName =
+    order === undefined ? undefined : restaurants.data?.get(order.restaurant_id)?.name;
 
   return (
     <>
@@ -365,8 +412,27 @@ function OrderBody({ orderId }: { readonly orderId: number }): React.JSX.Element
                       <TableRow key={item.id}>
                         <TableCell>
                           <span className="text-ink">{item.item_name}</span>
+                          {/* The choices frozen onto the line at order time. Paid
+                              ones carry their delta, because Unit already includes
+                              it and an operator reconciling money needs to see why.
+                              `?? []` covers fixture rows written before the field. */}
+                          {(item.modifiers ?? []).length > 0 ? (
+                            <span className="block text-[12px] text-ink-2">
+                              {(item.modifiers ?? [])
+                                .map((choice) =>
+                                  Number(choice.price_delta) === 0
+                                    ? choice.option_name
+                                    : `${choice.option_name} +${formatMoney(choice.price_delta)}`,
+                                )
+                                .join(" · ")}
+                            </span>
+                          ) : null}
+                          {/* The customer's own words, labelled and set apart:
+                              in the same 12px grey as the options above, "no
+                              onions" read as a choice the menu offered. */}
                           {item.notes !== null && item.notes !== "" ? (
-                            <span className="block text-[12px] text-ink-3">
+                            <span className="block text-[12px] text-ink-3 italic">
+                              <span className="font-medium not-italic">Note:</span>{" "}
                               {item.notes}
                             </span>
                           ) : null}
@@ -434,10 +500,7 @@ function OrderBody({ orderId }: { readonly orderId: number }): React.JSX.Element
                 label: getOrderStatusLabel(event.to_status),
                 tone: getOrderStatusTone(event.to_status),
                 timestamp: formatDateTime(event.created_at),
-                actor:
-                  event.actor_id === null
-                    ? humanizeEnum(event.actor_type)
-                    : `${humanizeEnum(event.actor_type)} ${String(event.actor_id)}`,
+                actor: describeActor(event, order, customer.data?.name, kitchenName),
                 detail: event.reason ?? undefined,
               }))}
             />
@@ -468,7 +531,7 @@ function OrderBody({ orderId }: { readonly orderId: number }): React.JSX.Element
                 <TableBody>
                   {page.items.map((payment) => (
                     <TableRow key={payment.id}>
-                      <TableCell>{humanizeEnum(payment.method)}</TableCell>
+                      <TableCell>{formatPaymentMethod(payment.method)}</TableCell>
                       <TableCell>
                         <Badge tone={paymentStatusTone(payment.status)}>
                           {humanizeEnum(payment.status)}
@@ -569,39 +632,84 @@ export function OrderDrawer({
   const order = detail.data;
   const kitchen =
     order === undefined ? undefined : restaurants.data?.get(order.restaurant_id);
+  const kitchenName = kitchen?.name ?? (order === undefined ? "" : `Restaurant ${String(order.restaurant_id)}`);
+
+  const [reassigning, setReassigning] = React.useState<DeliveryDetail | null>(null);
+  const [cancelling, setCancelling] = React.useState<number | null>(null);
+
+  // A different order, or none, closes whatever confirmation was open: it was
+  // about the previous order and must never be answered on behalf of this one.
+  React.useEffect(() => {
+    setReassigning(null);
+    setCancelling(null);
+  }, [orderId]);
+
+  const showFooter = order !== undefined && order.id === orderId && isOpenOrder(order.status);
 
   return (
-    <Sheet
-      open={orderId !== null}
-      onClose={onClose}
-      title={
-        <span className="flex items-center gap-2">
-          <span className="font-mono">
-            {orderId === null ? "" : formatOrderRef(orderId)}
-          </span>
-          {order !== undefined ? <StatusChip status={order.status} /> : null}
-        </span>
-      }
-      subtitle={
-        order === undefined ? (
-          <Skeleton className="h-3 w-52" label="Loading order summary" />
-        ) : (
+    <>
+      <Sheet
+        open={orderId !== null}
+        onClose={onClose}
+        title={
           <span className="flex items-center gap-2">
-            <Thumb
-              src={kitchen?.image_url}
-              name={kitchen?.name ?? `Restaurant ${String(order.restaurant_id)}`}
-              size={THUMB_PX}
-            />
-            <span className="min-w-0">
-              {kitchen?.name ?? `Restaurant ${String(order.restaurant_id)}`} · placed{" "}
-              {formatDateTime(order.placed_at)} · promised{" "}
-              {formatDateTime(order.promised_at)}
+            <span className="font-mono">
+              {orderId === null ? "" : formatOrderRef(orderId)}
             </span>
+            {order !== undefined ? <StatusChip status={order.status} /> : null}
           </span>
-        )
-      }
-    >
-      {orderId === null ? null : <OrderBody orderId={orderId} />}
-    </Sheet>
+        }
+        subtitle={
+          order === undefined ? (
+            <Skeleton className="h-3 w-52" label="Loading order summary" />
+          ) : (
+            <span className="flex items-center gap-2">
+              <Thumb src={kitchen?.image_url} name={kitchenName} size={THUMB_PX} />
+              {/* Each fragment holds together and the line breaks only
+                  between them: "21 Aug, ⏎ 20:26" split a timestamp in half
+                  (OP-4). */}
+              <span className="flex min-w-0 flex-wrap gap-x-1">
+                <span className="whitespace-nowrap">{kitchenName} ·</span>
+                <span className="whitespace-nowrap">
+                  placed {formatDateTime(order.placed_at)} ·
+                </span>
+                <span className="whitespace-nowrap">
+                  promised {formatDateTime(order.promised_at)}
+                </span>
+              </span>
+            </span>
+          )
+        }
+        footer={
+          showFooter ? (
+            <OrderFooter
+              order={order}
+              onReassign={setReassigning}
+              onCancel={setCancelling}
+            />
+          ) : undefined
+        }
+      >
+        {orderId === null ? null : <OrderBody orderId={orderId} />}
+      </Sheet>
+
+      {/* Siblings of the sheet, not children of it. React bubbles a portal's
+          events through the component tree, so a dialog inside the sheet
+          would hand its Escape to the sheet's own handler and close both. */}
+      <DeliveryActionDialog
+        row={
+          order === undefined || reassigning === null
+            ? null
+            : { delivery: reassigning, order }
+        }
+        action="reassign"
+        onClose={() => setReassigning(null)}
+      />
+      <CancelOrderDialog
+        order={cancelling === null || order === undefined ? null : order}
+        refund={cancelling ?? 0}
+        onClose={() => setCancelling(null)}
+      />
+    </>
   );
 }

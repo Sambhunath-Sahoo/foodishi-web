@@ -90,7 +90,7 @@ export default function SettingsPage(): React.JSX.Element {
         </PageTitle>
         <div className="flex items-center gap-3">
           {isDirty ? (
-            <Badge tone="warn">Unsaved changes</Badge>
+            <Badge tone="mute">Unsaved changes</Badge>
           ) : saved ? (
             <Badge tone="ok">Saved</Badge>
           ) : null}

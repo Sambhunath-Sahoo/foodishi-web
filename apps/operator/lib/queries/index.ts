@@ -57,6 +57,7 @@ export {
 
 export {
   DELIVERY_PAGE_SIZE,
+  useActiveRides,
   useDeliveries,
   useDeliveryCounts,
   useDeliveryPartners,

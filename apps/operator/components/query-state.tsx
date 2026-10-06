@@ -12,6 +12,18 @@ export interface QueryStateProps<TData> {
   /** Say what would appear here. Required — a blank panel explains nothing. */
   readonly emptyTitle: string;
   readonly emptyDetail?: string;
+  /**
+   * Rendered above the empty state, for the controls that produced it — a
+   * search or a filter that matched nothing has to stay on screen to be undone.
+   */
+  readonly emptyLead?: React.ReactNode;
+  /**
+   * The one control that brings rows back, inside the empty state. "Widen the
+   * window" as a sentence beside a window that would have worked is advice the
+   * reader has to act on themselves; a button with the count on it is the
+   * answer (OP-5). Omit it when there is nothing wider to offer.
+   */
+  readonly emptyAction?: React.ReactNode;
   readonly isEmpty?: (data: TData) => boolean;
   /** Names the failing view: "Today's numbers could not load". */
   readonly errorTitle: string;
@@ -31,6 +43,8 @@ export function QueryState<TData>({
   skeleton,
   emptyTitle,
   emptyDetail,
+  emptyLead,
+  emptyAction,
   isEmpty,
   errorTitle,
   children,
@@ -67,7 +81,12 @@ export function QueryState<TData>({
   }
 
   if (isEmpty?.(data) === true) {
-    return <EmptyState title={emptyTitle} detail={emptyDetail} />;
+    return (
+      <>
+        {emptyLead}
+        <EmptyState title={emptyTitle} detail={emptyDetail} action={emptyAction} />
+      </>
+    );
   }
 
   return <>{children(data)}</>;
@@ -86,7 +105,7 @@ export function RefreshingDot({
 }): React.JSX.Element | null {
   if (!isFetching) return null;
   return (
-    <span className="inline-flex items-center gap-1.5 font-sans text-[11px] text-ink-4">
+    <span className="inline-flex items-center gap-1.5 font-sans text-[11px] text-ink-3">
       <span
         aria-hidden="true"
         className="size-1.5 animate-pulse rounded-chip bg-accent"

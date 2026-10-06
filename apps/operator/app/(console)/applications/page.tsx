@@ -10,7 +10,6 @@ import {
   DataTableHeaderCell,
   DataTableRow,
   DataTableScroll,
-  FilterChip,
   PageTitle,
   Pagination,
   SegmentedControl,
@@ -20,6 +19,7 @@ import {
 import { ApplicationDrawer } from "../../../components/application-drawer";
 import { BoardSkeleton } from "../../../components/board-skeleton";
 import { QueryState } from "../../../components/query-state";
+import { ToolbarHint } from "../../../components/toolbar-hint";
 import { RowAction } from "../../../components/row-action";
 import { formatDateOnly, formatMoneyWhole } from "../../../lib/format";
 import { DECK_PAGE, DECK_PANEL } from "../../../lib/deck";
@@ -118,16 +118,10 @@ export default function ApplicationsPage(): React.JSX.Element {
           value={tab}
           onValueChange={changeTab}
         />
-        <FilterChip
-          label="Oldest first"
-          tone="accent"
-          title="A worklist, not a feed. Sorting the newest to the top would bury the application that has been waiting longest, which is the one failure mode a queue must not have."
-        />
-        <FilterChip
-          label="Approving does not publish"
-          tone="warn"
-          title="An approved restaurant is created closed: invisible to customers until its own owner opens it, once there is a menu and a policy behind it. Nobody here has to remember to switch it on, and nobody here can."
-        />
+        <ToolbarHint>
+          Oldest first, so the longest wait is never buried · approving does not
+          publish: the kitchen opens closed until its owner switches it on.
+        </ToolbarHint>
       </Toolbar>
 
       <QueryState
@@ -204,7 +198,7 @@ export default function ApplicationsPage(): React.JSX.Element {
                       <span className="flex flex-col">
                         <span className="truncate">{row.applicant_name}</span>
                         {row.is_applicant_active ? null : (
-                          <span className="text-[12px] text-warn">
+                          <span className="text-[12px] font-medium text-ink-2">
                             account deactivated
                           </span>
                         )}

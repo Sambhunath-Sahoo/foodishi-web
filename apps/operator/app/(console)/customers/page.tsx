@@ -31,6 +31,7 @@ import {
 import { CustomerDrawer } from "../../../components/customer-drawer";
 import { OrderDrawer } from "../../../components/order-drawer";
 import { QueryState } from "../../../components/query-state";
+import { ToolbarHint } from "../../../components/toolbar-hint";
 import { RowAction } from "../../../components/row-action";
 import {
   formatCount,
@@ -44,6 +45,7 @@ import {
   useSetCustomerActive,
   useSummary,
 } from "../../../lib/queries";
+import { useOpenOrder } from "../../../lib/use-open-order";
 
 /** The avatar in a 38px row. */
 const AVATAR_PX = 24;
@@ -79,7 +81,13 @@ export default function CustomersPage(): React.JSX.Element {
   const [openCustomerId, setOpenCustomerId] = React.useState<number | null>(
     null,
   );
-  const [openOrderId, setOpenOrderId] = React.useState<number | null>(null);
+  // In the URL as ?order=, so an open order survives a reload and can be
+  // pasted to a colleague (OP-4).
+  const {
+    orderId: openOrderId,
+    open: openOrder,
+    close: closeOrder,
+  } = useOpenOrder();
 
   const customers = useCustomers({
     q: query,
@@ -112,8 +120,8 @@ export default function CustomersPage(): React.JSX.Element {
 
   const openOrderFromCustomer = React.useCallback((orderId: number) => {
     setOpenCustomerId(null);
-    setOpenOrderId(orderId);
-  }, []);
+    openOrder(orderId);
+  }, [openOrder]);
 
   return (
     <div className={DECK_PAGE}>
@@ -157,11 +165,9 @@ export default function CustomersPage(): React.JSX.Element {
                     ? "—"
                     : formatCount(deactivated.data)
                 }
-                tone={
-                  deactivated.data !== undefined && deactivated.data > 0
-                    ? "warn"
-                    : "default"
-                }
+                // Neutral ink, not warn: a closed account has no clock running
+                // on it, and warn means one is (OP-7).
+                tone="default"
                 caption="Cannot sign in or order"
                 hint="Accounts an administrator has switched off. They keep their order history and are still counted in the total beside them."
               />
@@ -204,16 +210,10 @@ export default function CustomersPage(): React.JSX.Element {
         {query === "" ? null : (
           <FilterChip label="Matching" value={query} onDismiss={clearSearch} />
         )}
-        <FilterChip
-          label="Every customer"
-          tone="accent"
-          title="The directory is platform-wide. The console account is the only caller the API lets read it at all."
-        />
-        <FilterChip
-          label="Profiles only"
-          tone="warn"
-          title="Order counts and lifetime spend are not columns here: there is no per-customer aggregate endpoint, so they have to be read one customer at a time. Open a row and the panel sums them."
-        />
+        <ToolbarHint>
+          Every customer, platform-wide · profiles only — open a row for their
+          order count and lifetime spend.
+        </ToolbarHint>
       </Toolbar>
 
       <QueryState
@@ -326,27 +326,22 @@ export default function CustomersPage(): React.JSX.Element {
                         {person.is_active ? (
                           <Badge tone="ok">Enabled</Badge>
                         ) : (
-                          <Badge tone="warn">Deactivated</Badge>
+                          <Badge tone="mute">Deactivated</Badge>
                         )}
                       </DataTableCell>
                       <DataTableCell numeric>
+                        {/* Neutral, and one step removed from the write. A red
+                            "Deactivate" on every row — 25 of them, the
+                            operator's own included — was one slip of the mouse
+                            from locking a customer out with no confirmation
+                            (OP-8). The drawer states the consequence first. */}
                         <RowAction
-                          tone={person.is_active ? "danger" : "default"}
                           isPending={isBusy}
-                          onClick={() =>
-                            setActive.mutate({
-                              userId: person.id,
-                              isActive: !person.is_active,
-                            })
-                          }
-                          title={
-                            person.is_active
-                              ? "Stop this account signing in or ordering. Their order history is kept."
-                              : "Let this account sign in and order again."
-                          }
-                          ariaLabel={`${person.is_active ? "Deactivate" : "Reactivate"} ${person.name}`}
+                          onClick={() => setOpenCustomerId(person.id)}
+                          title="Open the account: orders, addresses, and deactivation."
+                          ariaLabel={`Manage ${person.name}`}
                         >
-                          {person.is_active ? "Deactivate" : "Reactivate"}
+                          Manage
                         </RowAction>
                       </DataTableCell>
                     </DataTableRow>
@@ -363,7 +358,7 @@ export default function CustomersPage(): React.JSX.Element {
         onClose={() => setOpenCustomerId(null)}
         onOpenOrder={openOrderFromCustomer}
       />
-      <OrderDrawer orderId={openOrderId} onClose={() => setOpenOrderId(null)} />
+      <OrderDrawer orderId={openOrderId} onClose={() => closeOrder()} />
     </div>
   );
 }

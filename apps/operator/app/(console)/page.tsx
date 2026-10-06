@@ -33,6 +33,7 @@ import { BoardSkeleton, RailSkeleton } from "../../components/board-skeleton";
 import { PipelineBoard } from "../../components/pipeline-board";
 import { PlatformHealth } from "../../components/platform-health";
 import { QueryState } from "../../components/query-state";
+import { WidenWindow } from "../../components/widen-window";
 import {
   formatCount,
   formatDay,
@@ -41,16 +42,18 @@ import {
   formatRate,
   toNumber,
 } from "../../lib/format";
-import { DECK_PAGE, DECK_PANEL, DECK_RAIL } from "../../lib/deck";
+import { DECK_RAIL } from "../../lib/deck";
 import {
   bySlippingFirst,
   divergenceTier,
+  formatAboveTypical,
   gapMinutes,
   gapScale,
 } from "../../lib/kitchen-gap";
 import {
   LIVE_REFETCH_MS,
   useFunnel,
+  useLiveOrders,
   useOrderReport,
   useOrdersOverTime,
   useRestaurantDirectory,
@@ -58,7 +61,9 @@ import {
   useSummary,
   useWorkload,
 } from "../../lib/queries";
+import { tallyLate } from "../../lib/sla";
 import { median } from "../../lib/stats";
+import { useNow } from "../../lib/use-now";
 
 type Series = "orders" | "revenue";
 type RangeDays = "7" | "30" | "90";
@@ -87,6 +92,17 @@ const CHART_HEIGHT = 196;
 /** The cover beside a kitchen's name, sized for a 38px row. */
 const COVER_PX = 22;
 
+/**
+ * The page root. Deliberately NOT `DECK_PAGE`.
+ *
+ * Overview is a stack of five bands — pipeline, rail, chart, health, kitchens —
+ * and on a fixed-height deck the kitchens table was the band that gave way: 75px
+ * at 1440×900 (one row of eight) and 0px at 1366×768 (OP-1). There is no height
+ * at which all five fit a laptop, so this page is a document: every band keeps
+ * its content height and `<main>` scrolls.
+ */
+const OVERVIEW_PAGE = "flex flex-col gap-3";
+
 /** The window the health panel describes. Long enough to have a shape. */
 const HEALTH_WINDOW_DAYS = 30;
 
@@ -105,9 +121,19 @@ export default function OverviewPage(): React.JSX.Element {
   const directory = useRestaurantDirectory();
 
   const breached = summary.data?.breached_refunds ?? 0;
+  // The same cached query the live board and the nav read; see lib/sla.ts.
+  const liveOrders = useLiveOrders();
+  const nowMs = useNow();
+  // Late and stuck split from the rows, not `workload.orders_late`: the
+  // server's figure counts stuck orders as late, and the red "36 past
+  // promised" it produced sat over a live board with nothing late on it.
+  const liveTally =
+    nowMs === null || liveOrders.data === undefined
+      ? undefined
+      : tallyLate(liveOrders.data.items, nowMs);
 
   return (
-    <div className={DECK_PAGE}>
+    <div className={OVERVIEW_PAGE}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <PageTitle subtitle="Every restaurant, counted together.">
           Overview
@@ -128,7 +154,8 @@ export default function OverviewPage(): React.JSX.Element {
           funnel.data?.statuses.find((row) => row.status === "confirmed")
             ?.order_count
         }
-        late={workload.data?.orders_late}
+        late={liveTally?.late}
+        stuck={liveTally?.stuck}
       />
 
       <QueryState
@@ -176,7 +203,7 @@ export default function OverviewPage(): React.JSX.Element {
                 tone={data.breached_refunds > 0 ? "alarm" : "ok"}
                 caption={
                   data.breached_refunds > 0
-                    ? "Work them on the SLA watch"
+                    ? "Work them under Refunds"
                     : "Every refund inside its SLA"
                 }
                 hint={
@@ -247,6 +274,12 @@ export default function OverviewPage(): React.JSX.Element {
               errorTitle="The daily chart could not load"
               emptyTitle={`No orders in the last ${rangeDays} days`}
               emptyDetail="Each day with at least one order becomes a point on this chart."
+              emptyAction={
+                <WidenWindow
+                  days={Number.parseInt(rangeDays, 10)}
+                  onWiden={() => setRangeDays("90")}
+                />
+              }
               isEmpty={(data) => data.length === 0}
               skeleton={
                 <Skeleton
@@ -317,7 +350,7 @@ export default function OverviewPage(): React.JSX.Element {
               href="/sla"
               className="font-medium text-accent underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              Open the SLA watch
+              Open Refunds
             </Link>{" "}
             to see which {formatCount(breached)} refunds are past due and by how
             long.
@@ -348,7 +381,6 @@ export default function OverviewPage(): React.JSX.Element {
 
           return (
             <DataTableScroll
-              className={DECK_PANEL}
               footer={
                 <TableFooter
                   shown={rows.length}
@@ -413,7 +445,7 @@ export default function OverviewPage(): React.JSX.Element {
                         </DataTableCell>
                         <DataTableCell numeric>
                           {row.avg_delivery_minutes === null ? (
-                            <span className="text-ink-4">
+                            <span className="text-ink-3">
                               no deliveries yet
                             </span>
                           ) : (
@@ -429,7 +461,7 @@ export default function OverviewPage(): React.JSX.Element {
                                 tier === 0 ? "text-ink-2" : SEVERITY_TEXT[tier]
                               }
                             >
-                              +{formatDuration(gap)}
+                              {formatAboveTypical(gap, scale)}
                             </span>
                           )}
                         </DataTableCell>

@@ -302,7 +302,7 @@ const AREAS_BY_CITY = {
 };
 
 const AVATAR_BASE =
-  "https://xvtorrqykrxyveiqsicg.supabase.co/storage/v1/object/public/menu-images/avatars";
+  "https://zqntdarrnhwjwdqzekrp.supabase.co/storage/v1/object/public/menu-images/avatars";
 const AVATAR_COUNT = 8;
 
 const ADDRESS_LABELS = ["Home", "Work", "Parents", "Flatmate's", "Weekend flat"];

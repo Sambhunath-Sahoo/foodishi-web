@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import type { Workload } from "../services/types";
 import type {
   OrderFunnel,
@@ -41,6 +41,9 @@ export function useWorkload(): UseQueryResult<Workload> {
     queryFn: () => services.metrics.getWorkload(),
     refetchInterval: LIVE_REFETCH_MS,
     staleTime: METRICS_STALE_MS,
+    // The rail is chrome: it must hold its last figures while a repoll or a
+    // post-navigation refetch is in flight, never fall back to nothing.
+    placeholderData: keepPreviousData,
   });
 }
 

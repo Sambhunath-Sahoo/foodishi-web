@@ -26,6 +26,7 @@ import {
 } from "@repo/ui";
 import { MiniMeter } from "../../../components/mini-meter";
 import { QueryState } from "../../../components/query-state";
+import { WidenWindow } from "../../../components/widen-window";
 import {
   formatCount,
   formatDay,
@@ -123,7 +124,9 @@ export default function RevenuePage(): React.JSX.Element {
                 <Stat
                   label="Charged a fee"
                   value={formatCount(data.cancelled_outside_window)}
-                  tone={data.cancelled_outside_window > 0 ? "warn" : "default"}
+                  // Neutral ink (OP-7). A late-cancel fee is settled money, not
+                  // a running clock — warn would rank it beside SLAs.
+                  tone="default"
                   caption="Cancelled after the free window"
                   hint="These are the customers support hears from: they cancelled late and were charged for it."
                 />
@@ -146,6 +149,12 @@ export default function RevenuePage(): React.JSX.Element {
                       errorTitle="The daily revenue chart could not load"
                       emptyTitle={`No orders in the last ${rangeDays} days`}
                       emptyDetail="Each day with at least one delivered order becomes a point on this chart."
+                      emptyAction={
+                        <WidenWindow
+                          days={Number.parseInt(rangeDays, 10)}
+                          onWiden={() => setRangeDays("90")}
+                        />
+                      }
                       isEmpty={(rows) => rows.length === 0}
                       skeleton={
                         <Skeleton

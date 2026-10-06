@@ -92,8 +92,15 @@ export const apiOffers: OffersService = {
     // Returned as the server sent it. `Page<CouponRead>` is the wire's envelope
     // already — items, total, limit, offset — and `CouponRead` is the generated
     // schema, so there is nothing here to map and nothing to drift.
+    //
+    // `state: "all"` because the route defaults to "redeemable" — active and in
+    // date — which is a customer's question, not an operator's. Without it the
+    // board could never show a switched-off or expired code, so its "Not
+    // usable" card was structurally zero, and the rail's "1 exhausted" (counted
+    // server-side over every active code) named a coupon this page never
+    // received (OP-6).
     return api.get<Page<CouponRead>>("/coupons", {
-      query: { limit: COUPON_LIMIT, offset: 0 },
+      query: { limit: COUPON_LIMIT, offset: 0, state: "all" },
     });
   },
 

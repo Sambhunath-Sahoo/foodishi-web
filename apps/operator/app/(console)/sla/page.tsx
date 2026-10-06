@@ -27,6 +27,7 @@ import { BoardSkeleton } from "../../../components/board-skeleton";
 import { OrderDrawer } from "../../../components/order-drawer";
 import { QueryState } from "../../../components/query-state";
 import { RowAction, RowActions } from "../../../components/row-action";
+import { SettleRefundDialog } from "../../../components/settle-refund-dialog";
 import { StageCards, type Stage } from "../../../components/stage-cards";
 import {
   formatCount,
@@ -49,7 +50,8 @@ import {
   useRetryRefund,
 } from "../../../lib/queries";
 import { useNow } from "../../../lib/use-now";
-import type { RefundStatus } from "../../../lib/api-types";
+import type { RefundDetail, RefundStatus } from "../../../lib/api-types";
+import { useOpenOrder } from "../../../lib/use-open-order";
 
 const MINUTES_PER_HOUR = 60;
 
@@ -76,12 +78,22 @@ const BREACHED = "__breached";
  */
 export default function SlaPage(): React.JSX.Element {
   const nowMs = useNow();
-  const [scope, setScope] = React.useState<Scope>("breached");
+  // Unfiltered by default. It opened on the Breached filter, which rang that
+  // card before anybody pressed it (OP-6) — and it never needed to: the server
+  // orders every refund breached-first, longest overdue at the top, so the
+  // unfiltered list already leads with exactly what the filter showed.
+  const [scope, setScope] = React.useState<Scope>("all");
   const [status, setStatus] = React.useState<string>(ANY_STATUS);
   const [term, setTerm] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [offset, setOffset] = React.useState(0);
-  const [openOrderId, setOpenOrderId] = React.useState<number | null>(null);
+  // In the URL as ?order=, so an open order survives a reload and can be
+  // pasted to a colleague (OP-4).
+  const {
+    orderId: openOrderId,
+    open: openOrder,
+    close: closeOrder,
+  } = useOpenOrder();
 
   const refunds = useRefunds({
     q: query,
@@ -95,6 +107,7 @@ export default function SlaPage(): React.JSX.Element {
   const retry = useRetryRefund();
   const settle = useCompleteRefund();
   const actionError = retry.error ?? settle.error;
+  const [settling, setSettling] = React.useState<RefundDetail | null>(null);
 
   const submitSearch = React.useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
@@ -170,7 +183,8 @@ export default function SlaPage(): React.JSX.Element {
     (value: string) => {
       setOffset(0);
       if (value === BREACHED) {
-        setScope("breached");
+        // Pressing the ringed card again clears it, like every other card.
+        setScope((current) => (current === "breached" ? "all" : "breached"));
         setStatus(ANY_STATUS);
         return;
       }
@@ -180,10 +194,45 @@ export default function SlaPage(): React.JSX.Element {
     [],
   );
 
+  // Built once and rendered in two places: above the table, and above the
+  // empty state. A search or a filter that matches nothing must leave the
+  // controls on screen to undo it — inside the results they vanished with the
+  // rows, and "clear the filters" pointed at filters nobody could see.
+  const filters = (
+    // No freshness stamp on the right: the table footer already says when the
+    // queue was read, and this copy rendered at body size, twice the weight of
+    // every other "updated" in the console.
+    <Toolbar ariaLabel="Refund queue filters">
+      <form onSubmit={submitSearch} className="flex items-center gap-2">
+        <Input
+          value={term}
+          onChange={(event) => setTerm(event.target.value)}
+          placeholder="Refund, order or provider ref"
+          aria-label="Search refunds by refund id, order id or provider reference"
+          className="h-8 w-[220px] text-[13px]"
+        />
+      </form>
+      {query === "" ? null : (
+        <FilterChip
+          label="Matching"
+          value={query}
+          onDismiss={() => {
+            setTerm("");
+            setQuery("");
+            setOffset(0);
+          }}
+        />
+      )}
+    </Toolbar>
+  );
+
   return (
     <div className={DECK_PAGE}>
-      <PageTitle subtitle="Refunds the customer was promised and has not been paid. Worst first.">
-        SLA watch
+      {/* "Refunds", the word the section rail uses for this page. It was "SLA
+          watch", so the rail said one thing and the page another; the SLA is
+          what every row is measured against, and the subtitle still says so. */}
+      <PageTitle subtitle="Every refund a customer was promised and has not been paid, against its SLA. Worst first.">
+        Refunds
       </PageTitle>
 
       {actionError === null ? null : (
@@ -196,12 +245,9 @@ export default function SlaPage(): React.JSX.Element {
       <StageCards
         ariaLabel="Which refunds to show"
         stages={stages}
+        // Unfiltered rings nothing: a ring is the card you pressed (OP-6).
         active={
-          scope === "breached"
-            ? [BREACHED]
-            : status === ANY_STATUS
-              ? stages.map((stage) => stage.value).filter((v) => v !== BREACHED)
-              : [status]
+          scope === "breached" ? [BREACHED] : status === ANY_STATUS ? [] : [status]
         }
         onSelect={selectStage}
         note={
@@ -236,16 +282,24 @@ export default function SlaPage(): React.JSX.Element {
 
       <QueryState
         query={refunds}
+        emptyLead={filters}
         errorTitle="The refund queue could not load"
+        // A search that matches nothing says so. Without the first branch it
+        // announced "every refund is inside its SLA" over a queue of six late
+        // ones, because a typo had emptied the page.
         emptyTitle={
-          scope === "breached"
-            ? "No breached refunds — every refund is inside its SLA"
-            : "No refunds on record"
+          query !== ""
+            ? `Nothing matches “${query}”`
+            : scope === "breached"
+              ? "No breached refunds — every refund is inside its SLA"
+              : "No refunds on record"
         }
         emptyDetail={
-          scope === "breached"
-            ? "A refund lands here when it is past the time the customer was promised their money back and still has not completed. A failed refund counts: the money never went back."
-            : "Refunds appear after a cancellation, a quality complaint or a late delivery."
+          query !== ""
+            ? "The search matches a refund id, an order id or the provider's reference."
+            : scope === "breached"
+              ? "A refund lands here when it is past the time the customer was promised their money back and still has not completed. A failed refund counts: the money never went back."
+              : "Refunds appear after a cancellation, a quality complaint or a late delivery."
         }
         isEmpty={(page) => page.items.length === 0}
         skeleton={
@@ -276,35 +330,7 @@ export default function SlaPage(): React.JSX.Element {
 
           return (
             <>
-              <Toolbar
-                ariaLabel="Refund queue filters"
-                right={
-                  <Freshness
-                    at={refunds.dataUpdatedAt === 0 ? null : refunds.dataUpdatedAt}
-                  />
-                }
-              >
-                <form onSubmit={submitSearch} className="flex items-center gap-2">
-                  <Input
-                    value={term}
-                    onChange={(event) => setTerm(event.target.value)}
-                    placeholder="Refund, order or provider ref"
-                    aria-label="Search refunds by refund id, order id or provider reference"
-                    className="h-8 w-[220px] text-[13px]"
-                  />
-                </form>
-                {query === "" ? null : (
-                  <FilterChip
-                    label="Matching"
-                    value={query}
-                    onDismiss={() => {
-                      setTerm("");
-                      setQuery("");
-                      setOffset(0);
-                    }}
-                  />
-                )}
-              </Toolbar>
+              {filters}
 
               <DataTableScroll
                 className={DECK_PANEL}
@@ -365,7 +391,7 @@ export default function SlaPage(): React.JSX.Element {
                           <DataTableCell>
                             <button
                               type="button"
-                              onClick={() => setOpenOrderId(refund.order_id)}
+                              onClick={() => openOrder(refund.order_id)}
                               className="rounded-card font-mono text-[12px] text-accent underline underline-offset-2 hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                             >
                               {formatOrderRef(refund.order_id)}
@@ -410,12 +436,12 @@ export default function SlaPage(): React.JSX.Element {
                                 }
                                 ariaLabel={`Retry refund ${String(refund.id)}`}
                               >
-                                Retry
+                                Retry refund
                               </RowAction>
                               <RowAction
                                 isPending={isBusy}
                                 disabled={isSettled}
-                                onClick={() => settle.mutate(refund.id)}
+                                onClick={() => setSettling(refund)}
                                 title={
                                   isSettled
                                     ? "This refund is already settled."
@@ -423,7 +449,7 @@ export default function SlaPage(): React.JSX.Element {
                                 }
                                 ariaLabel={`Mark refund ${String(refund.id)} settled`}
                               >
-                                Settled
+                                Mark settled…
                               </RowAction>
                             </RowActions>
                           </DataTableCell>
@@ -438,7 +464,15 @@ export default function SlaPage(): React.JSX.Element {
         }}
       </QueryState>
 
-      <OrderDrawer orderId={openOrderId} onClose={() => setOpenOrderId(null)} />
+      <SettleRefundDialog
+        refund={settling}
+        isPending={settle.isPending}
+        onConfirm={(refundId) =>
+          settle.mutate(refundId, { onSettled: () => setSettling(null) })
+        }
+        onClose={() => setSettling(null)}
+      />
+      <OrderDrawer orderId={openOrderId} onClose={() => closeOrder()} />
     </div>
   );
 }

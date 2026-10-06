@@ -88,7 +88,7 @@ function validate(next: PlatformSettings): void {
   }
   if (rules.refund_sla_hours < 1 || rules.refund_sla_hours > MAX_SLA_HOURS) {
     throw new UnprocessableError(
-      `The refund promise has to be between an hour and ${String(MAX_SLA_HOURS)} hours. Every refund on the SLA watch is measured against it.`,
+      `The refund promise has to be between an hour and ${String(MAX_SLA_HOURS)} hours. Every refund under Refunds is measured against it.`,
     );
   }
   if (rules.auto_cancel_unconfirmed_minutes < 1) {

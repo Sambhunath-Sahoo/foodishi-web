@@ -216,7 +216,7 @@ export function RestaurantDrawer({
           <span className="flex items-center gap-2">
             <Thumb src={loaded.image_url} name={loaded.name} size={COVER_PX} />
             <span className="truncate">{loaded.name}</span>
-            {loaded.is_active ? null : <Badge tone="warn">Switched off</Badge>}
+            {loaded.is_active ? null : <Badge tone="mute">Switched off</Badge>}
           </span>
         )
       }
@@ -291,7 +291,7 @@ export function RestaurantDrawer({
                     saved ? (
                       <Badge tone="ok">Saved</Badge>
                     ) : isDirty ? (
-                      <Badge tone="warn">Unsaved</Badge>
+                      <Badge tone="mute">Unsaved</Badge>
                     ) : null
                   }
                 >

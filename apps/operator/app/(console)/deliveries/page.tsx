@@ -42,19 +42,20 @@ import {
   humanizeEnum,
 } from "../../../lib/format";
 import { DECK_PAGE, DECK_PANEL } from "../../../lib/deck";
-import { getPromiseOutcome } from "../../../lib/sla";
+import { getPromiseOutcome, tallyLate } from "../../../lib/sla";
 import {
   DELIVERY_PAGE_SIZE,
   LIVE_REFETCH_MS,
+  useActiveRides,
   useDeliveries,
   useDeliveryCounts,
   useDeliveryPartners,
   useRestaurantDirectory,
-  useWorkload,
 } from "../../../lib/queries";
 import { useNow } from "../../../lib/use-now";
 import type { DeliveryStatus } from "../../../lib/api-types";
 import type { DeliveryBoardRow, DeliveryFilter } from "../../../lib/services/types";
+import { useOpenOrder } from "../../../lib/use-open-order";
 
 /** The kitchen cover in a 38px row. */
 const THUMB_PX = 22;
@@ -95,7 +96,13 @@ export default function DeliveriesPage(): React.JSX.Element {
   const [term, setTerm] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [offset, setOffset] = React.useState(0);
-  const [openOrderId, setOpenOrderId] = React.useState<number | null>(null);
+  // In the URL as ?order=, so an open order survives a reload and can be
+  // pasted to a colleague (OP-4).
+  const {
+    orderId: openOrderId,
+    open: openOrder,
+    close: closeOrder,
+  } = useOpenOrder();
   const [acting, setActing] = React.useState<{
     readonly row: DeliveryBoardRow;
     readonly action: DeliveryAction;
@@ -112,8 +119,17 @@ export default function DeliveriesPage(): React.JSX.Element {
   const counts = useDeliveryCounts();
   // Lateness platform-wide, not on this page: the rail used to count it from
   // whatever rows the filter had produced, which meant switching to "Handed
-  // over" quietly reported nothing late.
-  const workload = useWorkload();
+  // over" quietly reported nothing late. Counted from every active ride rather
+  // than `workload.deliveries_late`, which calls a six-week-old ride late too —
+  // the same split the rail makes, so the two never disagree (OP-3).
+  const activeRides = useActiveRides();
+  const rideTally =
+    nowMs === null || activeRides.data === undefined
+      ? undefined
+      : tallyLate(
+          activeRides.data.items.map((row) => row.order),
+          nowMs,
+        );
 
   const submitSearch = React.useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
@@ -178,6 +194,46 @@ export default function DeliveriesPage(): React.JSX.Element {
     [counts.data],
   );
 
+  // Built once and rendered in two places: above the table, and above the
+  // empty state. A search or a filter that matches nothing must leave the
+  // controls on screen to undo it — inside the results they vanished with the
+  // rows, and "clear the filters" pointed at filters nobody could see.
+  const filters = (
+    <Toolbar
+      ariaLabel="Delivery filters"
+      right={
+        <LiveDot
+          interval={LIVE_REFETCH_MS / 1000}
+          at={
+            deliveries.dataUpdatedAt === 0 ? null : deliveries.dataUpdatedAt
+          }
+          paused={deliveries.isError}
+        />
+      }
+    >
+      <form onSubmit={submitSearch} className="flex items-center gap-2">
+        <Input
+          value={term}
+          onChange={(event) => setTerm(event.target.value)}
+          placeholder="Order or rider"
+          aria-label="Search deliveries by order id, rider name or phone"
+          className="h-8 w-[200px] text-[13px]"
+        />
+      </form>
+      {query === "" ? null : (
+        <FilterChip
+          label="Matching"
+          value={query}
+          onDismiss={() => {
+            setTerm("");
+            setQuery("");
+            setOffset(0);
+          }}
+        />
+      )}
+    </Toolbar>
+  );
+
   return (
     <div className={DECK_PAGE}>
       <PageTitle subtitle="Every ride out there, and the two things to do about one that has stopped.">
@@ -187,15 +243,13 @@ export default function DeliveriesPage(): React.JSX.Element {
       <StageCards
         ariaLabel="Which rides to show"
         stages={stages}
-        // "Still out" spans two stages, so both cards read as selected under it.
-        active={
-          scope === "active"
-            ? ["assigned", "picked_up"]
-            : scope === "any"
-              ? ["assigned", "picked_up", "failed", "delivered"]
-              : [scope]
-        }
-        onSelect={changeScope}
+        // A ring means "you pressed this". The default "still out" view and
+        // "every ride" are not a press, so no card is ringed under them —
+        // ringing all of them said every card was selected, which is the
+        // same as saying none is (OP-6). The note below names the default.
+        active={scope === "active" || scope === "any" ? [] : [scope]}
+        // Pressing the ringed card again goes back to the default view.
+        onSelect={(next) => changeScope(next === scope ? "active" : next)}
         note={
           counts.data === undefined ? (
             "Counting rides…"
@@ -209,14 +263,22 @@ export default function DeliveriesPage(): React.JSX.Element {
                 {formatCount(counts.data.assigned + counts.data.picked_up)} still out
               </button>{" "}
               across both live stages
-              {workload.data === undefined || workload.data.deliveries_late === 0
-                ? null
-                : ", "}
-              {workload.data === undefined ||
-              workload.data.deliveries_late === 0 ? null : (
-                <span className="font-semibold text-crit">
-                  {formatCount(workload.data.deliveries_late)} past the promise
-                </span>
+              {rideTally === undefined || rideTally.late === 0 ? null : (
+                <>
+                  ,{" "}
+                  <span className="font-semibold text-crit">
+                    {formatCount(rideTally.late)} past the promise
+                  </span>
+                </>
+              )}
+              {rideTally === undefined || rideTally.stuck === 0 ? null : (
+                <>
+                  ,{" "}
+                  <span className="font-medium text-ink-2">
+                    {formatCount(rideTally.stuck)} stuck
+                  </span>{" "}
+                  over 6 h
+                </>
               )}{" "}
               ·{" "}
               <span className="font-medium text-ink-2">
@@ -237,6 +299,7 @@ export default function DeliveriesPage(): React.JSX.Element {
 
       <QueryState
         query={deliveries}
+        emptyLead={filters}
         errorTitle="The deliveries board could not load"
         emptyTitle={
           query === ""
@@ -269,39 +332,7 @@ export default function DeliveriesPage(): React.JSX.Element {
 
           return (
             <>
-              <Toolbar
-                ariaLabel="Delivery filters"
-                right={
-                  <LiveDot
-                    interval={LIVE_REFETCH_MS / 1000}
-                    at={
-                      deliveries.dataUpdatedAt === 0 ? null : deliveries.dataUpdatedAt
-                    }
-                    paused={deliveries.isError}
-                  />
-                }
-              >
-                <form onSubmit={submitSearch} className="flex items-center gap-2">
-                  <Input
-                    value={term}
-                    onChange={(event) => setTerm(event.target.value)}
-                    placeholder="Order or rider"
-                    aria-label="Search deliveries by order id, rider name or phone"
-                    className="h-8 w-[200px] text-[13px]"
-                  />
-                </form>
-                {query === "" ? null : (
-                  <FilterChip
-                    label="Matching"
-                    value={query}
-                    onDismiss={() => {
-                      setTerm("");
-                      setQuery("");
-                      setOffset(0);
-                    }}
-                  />
-                )}
-              </Toolbar>
+              {filters}
 
               <DataTableScroll
                 className={DECK_PANEL}
@@ -343,7 +374,11 @@ export default function DeliveriesPage(): React.JSX.Element {
                       <DataTableHeaderCell>Ride</DataTableHeaderCell>
                       <DataTableHeaderCell>Assigned</DataTableHeaderCell>
                       <DataTableHeaderCell numeric>Distance</DataTableHeaderCell>
-                      <DataTableHeaderCell>Against its promise</DataTableHeaderCell>
+                      {/* "Promise", not "Against its promise": the header was
+                          the widest thing in its column, and the longer action
+                          labels (OP-8) and dated Assigned times (OP-3) need the
+                          room to keep "Mark failed…" on screen at 1366. */}
+                      <DataTableHeaderCell>Promise</DataTableHeaderCell>
                       <DataTableHeaderCell numeric>Order value</DataTableHeaderCell>
                       <DataTableHeaderCell numeric>Step in</DataTableHeaderCell>
                     </tr>
@@ -364,7 +399,7 @@ export default function DeliveriesPage(): React.JSX.Element {
                           <SeverityCell tier={tier} title={SEVERITY_LABEL[tier]}>
                             <button
                               type="button"
-                              onClick={() => setOpenOrderId(row.order.id)}
+                              onClick={() => openOrder(row.order.id)}
                               aria-label={`Open order ${formatOrderRef(row.order.id)}`}
                               className="rounded-card font-mono text-[12px] font-medium text-accent underline underline-offset-2 hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                             >
@@ -385,7 +420,7 @@ export default function DeliveriesPage(): React.JSX.Element {
                             <span className="block truncate">
                               {row.delivery.partner.name}
                             </span>
-                            <span className="block font-mono text-[11px] text-ink-4">
+                            <span className="block font-mono text-[11px] text-ink-3">
                               {row.delivery.partner.phone} ·{" "}
                               {humanizeEnum(row.delivery.partner.vehicle_type)}
                             </span>
@@ -431,9 +466,9 @@ export default function DeliveriesPage(): React.JSX.Element {
                                     ? "This order was handed over. There is nothing to reassign."
                                     : "Hand the ride to another rider."
                                 }
-                                ariaLabel={`Reassign order ${formatOrderRef(row.order.id)}`}
+                                ariaLabel={`Reassign the rider on order ${formatOrderRef(row.order.id)}`}
                               >
-                                Reassign
+                                Reassign rider
                               </RowAction>
                               <RowAction
                                 tone="danger"
@@ -448,7 +483,7 @@ export default function DeliveriesPage(): React.JSX.Element {
                                 }
                                 ariaLabel={`Mark order ${formatOrderRef(row.order.id)} failed`}
                               >
-                                Failed
+                                Mark failed…
                               </RowAction>
                             </RowActions>
                           </DataTableCell>
@@ -468,7 +503,7 @@ export default function DeliveriesPage(): React.JSX.Element {
         action={acting?.action ?? "reassign"}
         onClose={() => setActing(null)}
       />
-      <OrderDrawer orderId={openOrderId} onClose={() => setOpenOrderId(null)} />
+      <OrderDrawer orderId={openOrderId} onClose={() => closeOrder()} />
     </div>
   );
 }

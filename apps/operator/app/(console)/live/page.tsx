@@ -9,6 +9,7 @@ import {
   DataTableHeaderCell,
   DataTableRow,
   DataTableScroll,
+  EmptyState,
   FilterChip,
   formatLate,
   Freshness,
@@ -21,20 +22,32 @@ import {
   SEVERITY_LABEL,
   SEVERITY_TEXT,
   SeverityCell,
+  Skeleton,
   Stat,
   StatRail,
   StatusChip,
   TableFooter,
-  Thumb,
   Toolbar,
   type OrderStatus,
 } from "@repo/ui";
 import { BoardSkeleton, RailSkeleton } from "../../../components/board-skeleton";
+import {
+  CustomerCell,
+  KitchenCell,
+  lookupOf,
+  RIDER_STATUSES,
+  RiderCell,
+  type BoardLookups,
+  type BoardRow,
+  type Lookup,
+} from "../../../components/live-rows";
 import { OrderDrawer } from "../../../components/order-drawer";
 import { QueryState } from "../../../components/query-state";
+import { StuckOrders } from "../../../components/stuck-orders";
+import { ToolbarHint } from "../../../components/toolbar-hint";
 import { formatClock, formatCount, formatMoney, formatOrderRef } from "../../../lib/format";
 import { DECK_PAGE, DECK_PANEL, DECK_RAIL } from "../../../lib/deck";
-import { getLateness, type Lateness } from "../../../lib/sla";
+import { getLateness, isStuck } from "../../../lib/sla";
 import {
   LIVE_REFETCH_MS,
   useCustomerDirectory,
@@ -44,18 +57,12 @@ import {
   useSummary,
 } from "../../../lib/queries";
 import { useNow } from "../../../lib/use-now";
-import type { OrderRead } from "../../../lib/api-types";
+import { useOpenOrder } from "../../../lib/use-open-order";
 
 /** Delivered and cancelled are terminal; a live board never shows them. */
 const BOARD_STATUSES: readonly OrderStatus[] = ORDER_STATUSES.filter(
   (status) => status !== "delivered" && status !== "cancelled",
 );
-
-/** A rider is only attached once an order is off the pass. */
-const RIDER_STATUSES: readonly OrderStatus[] = ["ready_for_pickup", "out_for_delivery"];
-
-/** Covers and avatars in a 38px row. */
-const THUMB_PX = 22;
 
 type SortAxis = "urgency" | "status" | "kitchen";
 
@@ -72,16 +79,6 @@ const SORTED_BY: Record<SortAxis, string> = {
 };
 
 const ANY_STATUS = "any";
-
-interface BoardRow {
-  readonly order: OrderRead;
-  readonly lateness: Lateness | null;
-  readonly kitchen: string;
-  readonly kitchenImageUrl: string | null;
-  readonly customer: string;
-  readonly customerAvatarUrl: string | null;
-  readonly rider: string | undefined;
-}
 
 /** Worst first within whatever the primary axis is. */
 function byUrgency(left: BoardRow, right: BoardRow): number {
@@ -100,7 +97,8 @@ function sortRows(rows: readonly BoardRow[], axis: SortAxis): readonly BoardRow[
   if (axis === "kitchen") {
     return sorted.sort(
       (left, right) =>
-        left.kitchen.localeCompare(right.kitchen) || byUrgency(left, right),
+        (left.kitchen ?? "").localeCompare(right.kitchen ?? "") ||
+        byUrgency(left, right),
     );
   }
   return sorted.sort(byUrgency);
@@ -109,7 +107,13 @@ function sortRows(rows: readonly BoardRow[], axis: SortAxis): readonly BoardRow[
 export default function LiveBoardPage(): React.JSX.Element {
   const nowMs = useNow();
 
-  const [openOrderId, setOpenOrderId] = React.useState<number | null>(null);
+  // In the URL as ?order=, so an open order survives a reload and can be
+  // pasted to a colleague (OP-4).
+  const {
+    orderId: openOrderId,
+    open: openOrder,
+    close: closeOrder,
+  } = useOpenOrder();
   const [sortAxis, setSortAxis] = React.useState<SortAxis>("urgency");
   const [statusFilter, setStatusFilter] = React.useState<string>(ANY_STATUS);
 
@@ -144,9 +148,9 @@ export default function LiveBoardPage(): React.JSX.Element {
           // have one rather than rendering a figure the server cannot agree
           // with.
           lateness: nowMs === null ? null : getLateness(order, nowMs),
-          kitchen: kitchen?.name ?? `Restaurant ${String(order.restaurant_id)}`,
+          kitchen: kitchen?.name,
           kitchenImageUrl: kitchen?.image_url ?? null,
-          customer: customer?.name ?? "—",
+          customer: customer?.name,
           customerAvatarUrl: customer?.avatar_url ?? null,
           rider: riders.data?.get(order.id)?.partner.name,
         };
@@ -154,19 +158,49 @@ export default function LiveBoardPage(): React.JSX.Element {
     [items, nowMs, restaurants.data, customers.data, riders.data],
   );
 
+  // A disabled query (no order is off the pass) reports `isPending` forever,
+  // and "still loading" is not true of a lookup nobody needed to make.
+  const riderLookup: Lookup =
+    riderOrderIds.length === 0 ? "ready" : lookupOf(riders);
+  const lookups = React.useMemo<BoardLookups>(
+    () => ({
+      kitchens: lookupOf(restaurants),
+      customers: lookupOf(customers),
+      riders: riderLookup,
+    }),
+    [restaurants, customers, riderLookup],
+  );
+
+  // Stuck orders leave the queue (OP-3). Until the clock is known nothing is
+  // judged stuck, so the first frame cannot move rows between the two lists.
+  const live = React.useMemo(
+    () =>
+      nowMs === null ? rows : rows.filter((row) => !isStuck(row.order, nowMs)),
+    [rows, nowMs],
+  );
+  const stuck = React.useMemo(
+    () =>
+      nowMs === null
+        ? []
+        : rows
+            .filter((row) => isStuck(row.order, nowMs))
+            .sort(byUrgency),
+    [rows, nowMs],
+  );
+
   const filtered = React.useMemo(
     () =>
       statusFilter === ANY_STATUS
-        ? rows
-        : rows.filter((row) => row.order.status === statusFilter),
-    [rows, statusFilter],
+        ? live
+        : live.filter((row) => row.order.status === statusFilter),
+    [live, statusFilter],
   );
   const visible = React.useMemo(
     () => sortRows(filtered, sortAxis),
     [filtered, sortAxis],
   );
 
-  const lateCount = rows.filter((row) => row.lateness?.isLate === true).length;
+  const lateCount = live.filter((row) => row.lateness?.isLate === true).length;
   const platformLive = summary.data?.live_orders;
   // The board is platform-wide, so anything missing from it is the page cap and
   // nothing else. Stated on screen rather than left as a silent gap between the
@@ -174,9 +208,11 @@ export default function LiveBoardPage(): React.JSX.Element {
   const beyondPage =
     platformLive === undefined ? 0 : Math.max(0, platformLive - rows.length);
 
-  // The worst row on the board, and the one thing a rider fixes: an order
-  // sitting cooked on the pass with nobody coming for it.
-  const worst = rows.reduce<BoardRow | null>(
+  // The worst row on the queue, and the one thing a rider fixes: an order
+  // sitting cooked on the pass with nobody coming for it. Both read the queue
+  // only — a stuck order six weeks past its promise is not "the worst" thing to
+  // do next, it is a different job.
+  const worst = live.reduce<BoardRow | null>(
     (peak, row) =>
       (row.lateness?.lateMinutes ?? 0) > (peak?.lateness?.lateMinutes ?? 0)
         ? row
@@ -184,7 +220,7 @@ export default function LiveBoardPage(): React.JSX.Element {
     null,
   );
   const worstMinutes = worst?.lateness?.lateMinutes ?? 0;
-  const awaitingRider = rows.filter(
+  const awaitingRider = live.filter(
     (row) => row.order.status === "ready_for_pickup" && row.rider === undefined,
   ).length;
 
@@ -226,14 +262,16 @@ export default function LiveBoardPage(): React.JSX.Element {
             <div className={DECK_RAIL}>
               <StatRail ariaLabel="What is in flight across the platform">
                 <Stat
-                  label="Listed here"
-                  value={formatCount(rows.length)}
+                  label="On the queue"
+                  value={formatCount(live.length)}
                   caption={
                     beyondPage > 0
                       ? `${formatCount(beyondPage)} more than this page holds`
-                      : "Every live order on the platform"
+                      : stuck.length > 0
+                        ? `${formatCount(rows.length)} live, less ${formatCount(stuck.length)} stuck`
+                        : "Every live order on the platform"
                   }
-                  hint="The rows below: every order in flight across every kitchen. A page holds 100, so on an evening busier than that the oldest live orders would not be on it — the tile at the end of this rail is what says so."
+                  hint="The rows below: every order in flight across every kitchen that is not stuck. A page holds 100, so on an evening busier than that the oldest live orders would not be on it — this caption is what says so."
                 />
                 <Stat
                   label="Past promised"
@@ -242,44 +280,57 @@ export default function LiveBoardPage(): React.JSX.Element {
                   caption={
                     lateCount === 0
                       ? "Every order is inside its promise"
-                      : lateCount === rows.length
-                        ? "Every order on the board"
-                        : `${formatCount(rows.length - lateCount)} still inside their promise`
+                      : lateCount === live.length
+                        ? "Every order on the queue"
+                        : `${formatCount(live.length - lateCount)} still inside their promise`
                   }
-                  hint="Orders already past the time the customer was promised. They are at the top of the board."
+                  hint="Orders on the queue already past the time the customer was promised. They are at the top of the board. Stuck orders are counted separately."
                 />
                 <Stat
                   label="Worst"
                   value={worstMinutes > 0 ? formatLate(worstMinutes) : "—"}
                   caption={
                     worst === null || worstMinutes <= 0
-                      ? "Nothing is past its promise"
-                      : `${formatOrderRef(worst.order.id)} · ${worst.customer}`
+                      ? "Nothing on the queue is late"
+                      : `${formatOrderRef(worst.order.id)} · ${worst.customer ?? "—"}`
                   }
-                  hint="The order that has been waiting longest past the time it was promised."
+                  hint="The order on the queue that has been waiting longest past the time it was promised. Stuck orders are left out: they are past the point where ranking them helps."
                 />
                 <Stat
                   label="Waiting for a rider"
-                  value={formatCount(awaitingRider)}
-                  tone={awaitingRider > 0 ? "warn" : "default"}
+                  value={
+                    riderLookup === "loading" ? (
+                      <Skeleton
+                        className="inline-block h-[20px] w-[60px] align-bottom"
+                        label="Checking which orders have a rider"
+                      />
+                    ) : riderLookup === "error" ? (
+                      "—"
+                    ) : (
+                      formatCount(awaitingRider)
+                    )
+                  }
+                  tone={riderLookup === "ready" && awaitingRider > 0 ? "warn" : "default"}
                   caption={
-                    awaitingRider > 0
-                      ? "Cooked, on the pass, nobody coming"
-                      : "Every cooked order has a rider"
+                    riderLookup === "loading"
+                      ? "Checking the riders…"
+                      : riderLookup === "error"
+                        ? "The rider lookup failed"
+                        : awaitingRider > 0
+                          ? "Cooked, on the pass, nobody coming"
+                          : "Every cooked order has a rider"
                   }
                   hint="Ready for pickup with no delivery partner assigned. The food is getting colder and the clock is still running."
                 />
                 <Stat
-                  label="Live platform-wide"
-                  value={
-                    platformLive === undefined ? "—" : formatCount(platformLive)
-                  }
+                  label="Stuck"
+                  value={formatCount(stuck.length)}
                   caption={
-                    beyondPage > 0
-                      ? `${formatCount(beyondPage)} not on this page`
-                      : "All of them are listed"
+                    stuck.length > 0
+                      ? "Over 6 h past promise · listed below"
+                      : "Nothing is more than 6 h past its promise"
                   }
-                  hint="Every order in flight, counted platform-wide rather than by adding up the rows below. The two agreeing is how you know the board is showing all of it."
+                  hint="Live orders more than six hours past the time the customer was promised. They are off the queue because no rider or kitchen fixes them now — each needs a cancel-and-refund decision."
                 />
               </StatRail>
             </div>
@@ -318,61 +369,85 @@ export default function LiveBoardPage(): React.JSX.Element {
                   onDismiss={() => setStatusFilter(ANY_STATUS)}
                 />
               )}
-              <FilterChip
-                label="Every kitchen"
-                tone="accent"
-                title="The board is platform-wide. It is not scoped to one kitchen's orders."
-              />
+              <ToolbarHint>
+                Every kitchen, platform-wide — not scoped to one kitchen&apos;s
+                orders.
+              </ToolbarHint>
             </Toolbar>
 
-            <BoardFrame
-              shown={visible.length}
-              total={rows.length}
-              sortedBy={SORTED_BY[sortAxis]}
-              beyondPage={beyondPage}
-              updatedAt={
-                liveOrders.dataUpdatedAt === 0 ? null : liveOrders.dataUpdatedAt
-              }
-            >
-              <DataTable aria-label="Live orders, worst first">
-                <DataTableHead>
-                  <tr>
-                    <DataTableHeaderCell className="pl-4">Order</DataTableHeaderCell>
-                    <DataTableHeaderCell>Kitchen</DataTableHeaderCell>
-                    <DataTableHeaderCell>Customer</DataTableHeaderCell>
-                    <DataTableHeaderCell>State</DataTableHeaderCell>
-                    <DataTableHeaderCell>Due</DataTableHeaderCell>
-                    <DataTableHeaderCell>Late by</DataTableHeaderCell>
-                    <DataTableHeaderCell numeric>Total</DataTableHeaderCell>
-                    <DataTableHeaderCell>Rider</DataTableHeaderCell>
-                  </tr>
-                </DataTableHead>
-                <DataTableBody>
-                  {visible.map((row) => (
-                    <BoardTableRow
-                      key={row.order.id}
-                      row={row}
-                      selected={row.order.id === openOrderId}
-                      onOpen={setOpenOrderId}
-                    />
-                  ))}
-                </DataTableBody>
-              </DataTable>
-            </BoardFrame>
+            {live.length === 0 ? (
+              <div className="shrink-0 rounded-card border border-line bg-surface">
+                <EmptyState
+                  title="Nothing live inside six hours of its promise"
+                  detail={
+                    stuck.length > 0
+                      ? `The ${formatCount(stuck.length)} older live orders are stuck rather than late, so they are listed below instead of here. New orders appear on this board the moment they are placed.`
+                      : "Orders appear here the moment they are placed and leave when they are delivered or cancelled."
+                  }
+                />
+              </div>
+            ) : (
+              <BoardFrame
+                shown={visible.length}
+                total={live.length}
+                sortedBy={SORTED_BY[sortAxis]}
+                beyondPage={beyondPage}
+                updatedAt={
+                  liveOrders.dataUpdatedAt === 0 ? null : liveOrders.dataUpdatedAt
+                }
+              >
+                <DataTable aria-label="Live orders, worst first">
+                  <DataTableHead>
+                    <tr>
+                      <DataTableHeaderCell className="pl-4">Order</DataTableHeaderCell>
+                      <DataTableHeaderCell>Kitchen</DataTableHeaderCell>
+                      <DataTableHeaderCell>Customer</DataTableHeaderCell>
+                      <DataTableHeaderCell>State</DataTableHeaderCell>
+                      <DataTableHeaderCell>Due</DataTableHeaderCell>
+                      <DataTableHeaderCell>Late by</DataTableHeaderCell>
+                      <DataTableHeaderCell numeric>Total</DataTableHeaderCell>
+                      <DataTableHeaderCell>Rider</DataTableHeaderCell>
+                    </tr>
+                  </DataTableHead>
+                  <DataTableBody>
+                    {visible.map((row) => (
+                      <BoardTableRow
+                        key={row.order.id}
+                        row={row}
+                        lookups={lookups}
+                        nowMs={nowMs}
+                        selected={row.order.id === openOrderId}
+                        onOpen={openOrder}
+                      />
+                    ))}
+                  </DataTableBody>
+                </DataTable>
+              </BoardFrame>
+            )}
 
-            {visible.length === 0 && statusFilter !== ANY_STATUS ? (
+            {visible.length === 0 && live.length > 0 && statusFilter !== ANY_STATUS ? (
               <p className="font-sans text-[12px] text-ink-3">
                 Nothing is{" "}
                 {getOrderStatusLabel(statusFilter as OrderStatus).toLowerCase()}{" "}
                 right now — clear the state filter to see the rest of the board.
               </p>
             ) : null}
+
+            {nowMs === null ? null : (
+              <StuckOrders
+                rows={stuck}
+                lookups={lookups}
+                nowMs={nowMs}
+                selectedOrderId={openOrderId}
+                onOpen={openOrder}
+              />
+            )}
           </>
         )}
       </QueryState>
       <OrderDrawer
         orderId={openOrderId}
-        onClose={() => setOpenOrderId(null)}
+        onClose={() => closeOrder()}
       />
     </div>
   );
@@ -420,10 +495,14 @@ function BoardFrame({
 
 function BoardTableRow({
   row,
+  lookups,
+  nowMs,
   selected,
   onOpen,
 }: {
   readonly row: BoardRow;
+  readonly lookups: BoardLookups;
+  readonly nowMs: number | null;
   readonly selected: boolean;
   readonly onOpen: (orderId: number) => void;
 }): React.JSX.Element {
@@ -449,27 +528,14 @@ function BoardTableRow({
           {formatOrderRef(order.id)}
         </button>
       </SeverityCell>
-      <DataTableCell className="max-w-[190px] text-ink">
-        <span className="flex items-center gap-2">
-          <Thumb src={row.kitchenImageUrl} name={row.kitchen} size={THUMB_PX} />
-          <span className="truncate">{row.kitchen}</span>
-        </span>
-      </DataTableCell>
-      <DataTableCell className="max-w-[170px] text-ink-2">
-        <span className="flex items-center gap-2">
-          <Thumb
-            src={row.customerAvatarUrl}
-            name={row.customer}
-            size={THUMB_PX}
-            shape="circle"
-          />
-          <span className="truncate">{row.customer}</span>
-        </span>
-      </DataTableCell>
+      <KitchenCell row={row} lookup={lookups.kitchens} />
+      <CustomerCell row={row} lookup={lookups.customers} />
       <DataTableCell>
         <StatusChip status={order.status} />
       </DataTableCell>
-      <DataTableCell mono>{formatClock(order.promised_at)}</DataTableCell>
+      <DataTableCell mono>
+        {formatClock(order.promised_at, nowMs ?? undefined)}
+      </DataTableCell>
       <DataTableCell>
         {lateness === null ? (
           <span className="text-ink-4">—</span>
@@ -478,9 +544,7 @@ function BoardTableRow({
         )}
       </DataTableCell>
       <DataTableCell numeric>{formatMoney(order.total_amount)}</DataTableCell>
-      <DataTableCell className="max-w-[150px] text-ink-3">
-        {row.rider ?? <span className="text-ink-4">not assigned</span>}
-      </DataTableCell>
+      <RiderCell row={row} lookup={lookups.riders} />
     </DataTableRow>
   );
 }

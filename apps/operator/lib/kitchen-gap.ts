@@ -15,6 +15,7 @@
  */
 import type { SeverityTier } from "@repo/ui";
 import type { RestaurantMetrics } from "./api-types";
+import { formatDuration } from "./format";
 import { median } from "./stats";
 
 /** How far above the typical overhead a kitchen may sit before it is called
@@ -57,6 +58,22 @@ export function divergenceTier(gap: number | null, scale: GapScale): SeverityTie
   if (gap >= scale.critAt) return 3;
   if (gap >= scale.warnAt) return 1;
   return 0;
+}
+
+/**
+ * How far a kitchen sits above the typical overhead — the figure the grade is
+ * actually taken from, so it is the one the "Above typical" column shows.
+ *
+ * The column used to print the raw gap: "+14 min" under "Above typical", beside
+ * a "Slipping 0" that was right, because the typical overhead was 12 min and the
+ * kitchen was 2 min over it. Two numbers on one screen read by two different
+ * rules; printing the distance from the median makes the row and the count the
+ * same judgement. Signed, because a kitchen faster than typical is news too.
+ */
+export function formatAboveTypical(gap: number, scale: GapScale): string {
+  const over = Math.round(gap - scale.medianGap);
+  if (over === 0) return "at typical";
+  return over > 0 ? `+${formatDuration(over)}` : `−${formatDuration(-over)}`;
 }
 
 /** Worst first, kitchens with no deliveries yet last. */

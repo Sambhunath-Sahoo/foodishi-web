@@ -24,6 +24,7 @@ import {
 import { BoardSkeleton, RailSkeleton } from "../board-skeleton";
 import { MiniMeter } from "../mini-meter";
 import { QueryState } from "../query-state";
+import { WidenWindow } from "../widen-window";
 import {
   formatCount,
   formatDuration,
@@ -52,13 +53,23 @@ function hourLabel(hour: number): string {
  * costs nobody anything; after it, the customer was charged a fee and is the one
  * who rings support about it.
  */
-export function OrderReport({ days }: { readonly days: number }): React.JSX.Element {
+export function OrderReport({
+  days,
+  onWiden,
+}: {
+  readonly days: number;
+  /** Offered from the empty state when a wider window has orders (OP-5). */
+  readonly onWiden?: (days: number) => void;
+}): React.JSX.Element {
   const report = useOrderReport(days);
 
   return (
     <QueryState
       query={report}
       errorTitle="The order report could not load"
+      emptyAction={
+        onWiden === undefined ? undefined : <WidenWindow days={days} onWiden={onWiden} />
+      }
       emptyTitle="No orders in this window"
       emptyDetail="Widen the range and the split across the seven states appears here."
       isEmpty={(data) => data.orders === 0}
@@ -127,7 +138,7 @@ export function OrderReport({ days }: { readonly days: number }): React.JSX.Elem
                 <Stat
                   label="Cancelled for a fee"
                   value={formatCount(data.cancelled_outside_window)}
-                  tone={data.cancelled_outside_window > 0 ? "warn" : "default"}
+                  tone="default"
                   caption="After the free window closed"
                   hint="The customer was charged for cancelling. This is the number support hears about."
                 />

@@ -13,7 +13,6 @@ import {
   DataTableRow,
   DataTableScroll,
   ErrorBanner,
-  FilterChip,
   PageTitle,
   SEVERITY_LABEL,
   SeverityCell,
@@ -27,6 +26,7 @@ import { CouponDialog } from "../../../components/coupon-dialog";
 import { MiniMeter } from "../../../components/mini-meter";
 import { StageCards, type Stage } from "../../../components/stage-cards";
 import { QueryState } from "../../../components/query-state";
+import { ToolbarHint } from "../../../components/toolbar-hint";
 import { RowAction, RowActions } from "../../../components/row-action";
 import { DECK_PAGE, DECK_PANEL } from "../../../lib/deck";
 import { formatCount, formatDateTime, formatMoney } from "../../../lib/format";
@@ -97,17 +97,22 @@ function getUsage(coupon: CouponRead, nowMs: number | null): Usage {
   if (nowMs !== null && nowMs < new Date(coupon.valid_from).getTime()) {
     return {
       key: "dormant",
-      tone: "cool",
+      // Mute, not cool: cool means "out for delivery" (OP-7). A code that has
+      // not started yet is pending, which is what mute means.
+      tone: "mute",
       label: "Not started",
       tier: 0,
     };
   }
   if (limit !== null && coupon.times_used / limit >= NEARLY_EXHAUSTED) {
+    // Mute, and no stripe. Running low on a usage cap is not a clock running,
+    // and warn is kept for the states that are (OP-7). The card still sorts
+    // these to the top and the word "Nearly gone" carries the meaning.
     return {
       key: "nearly_gone",
-      tone: "warn",
+      tone: "mute",
       label: "Nearly gone",
-      tier: 1,
+      tier: 0,
     };
   }
   return {
@@ -248,8 +253,7 @@ export default function OffersPage(): React.JSX.Element {
               label: "Nearly gone",
               caption: "Within a tenth of the cap",
               count: tally("nearly_gone"),
-              tone: "warn",
-              chip: <Badge tone="warn">Watch</Badge>,
+              chip: <Badge tone="mute">Watch</Badge>,
             },
             {
               value: "exhausted",
@@ -273,11 +277,8 @@ export default function OffersPage(): React.JSX.Element {
               <StageCards
                 ariaLabel="Which codes to show"
                 stages={stages}
-                active={
-                  scope === ANY_USAGE
-                    ? stages.map((stage) => stage.value)
-                    : [scope]
-                }
+                // Unfiltered rings nothing: a ring is the card you pressed (OP-6).
+                active={scope === ANY_USAGE ? [] : [scope]}
                 onSelect={(next) =>
                   setScope((current) => (current === next ? ANY_USAGE : next))
                 }
@@ -291,11 +292,10 @@ export default function OffersPage(): React.JSX.Element {
               />
 
               <Toolbar ariaLabel="Coupon filters">
-                <FilterChip
-                  label="Every scope"
-                  tone="accent"
-                  title="Platform-wide offers, one kitchen's own codes and cuisine promotions are one record with a different scope. The 'Applies to' column says which."
-                />
+                <ToolbarHint>
+                  Every scope — platform-wide, one kitchen&apos;s and cuisine
+                  codes together; &ldquo;Applies to&rdquo; says which.
+                </ToolbarHint>
               </Toolbar>
 
               <DataTableScroll

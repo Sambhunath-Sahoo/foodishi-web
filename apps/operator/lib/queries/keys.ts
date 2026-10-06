@@ -62,6 +62,8 @@ export const keys = {
   deliveries: {
     all: ["deliveries"] as const,
     board: (fingerprint: string) => ["deliveries", "board", fingerprint] as const,
+    /** Every active ride, for the late and stuck counts. */
+    active: () => ["deliveries", "active"] as const,
     partners: () => ["deliveries", "partners"] as const,
     /** One count per status, for the board's stage cards. */
     counts: () => ["deliveries", "counts"] as const,

@@ -18,6 +18,7 @@ import { BoardSkeleton, RailSkeleton } from "../board-skeleton";
 import { CommissionLedgerTable } from "../commission-ledger-table";
 import { MiniMeter } from "../mini-meter";
 import { QueryState } from "../query-state";
+import { WidenWindow } from "../widen-window";
 import {
   formatCount,
   formatMoney,
@@ -41,8 +42,11 @@ import { useCommissionReport } from "../../lib/queries";
  */
 export function CommissionReport({
   days,
+  onWiden,
 }: {
   readonly days: number;
+  /** Offered from the empty state when a wider window has orders (OP-5). */
+  readonly onWiden?: (days: number) => void;
 }): React.JSX.Element {
   const report = useCommissionReport(days);
 
@@ -50,6 +54,9 @@ export function CommissionReport({
     <QueryState
       query={report}
       errorTitle="The commission report could not load"
+      emptyAction={
+        onWiden === undefined ? undefined : <WidenWindow days={days} onWiden={onWiden} />
+      }
       emptyTitle="Nothing was delivered in this window"
       emptyDetail="Commission is charged on delivered orders, so a window with no deliveries earns nothing."
       isEmpty={(data) => toNumber(data.ledger.gross) === 0}
@@ -108,7 +115,7 @@ export function CommissionReport({
                 <Stat
                   label="Off standard rate"
                   value={formatCount(negotiated)}
-                  tone={negotiated > 0 ? "warn" : "default"}
+                  tone="default"
                   caption={
                     negotiated > 0
                       ? "Negotiated separately"

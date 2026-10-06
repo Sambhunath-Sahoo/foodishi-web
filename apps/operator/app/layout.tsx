@@ -8,7 +8,12 @@ import { NAV_INIT_SCRIPT } from "../lib/nav-collapse";
 import { OperatorSessionProvider } from "../components/session-provider";
 
 export const metadata: Metadata = {
-  title: "Foodishi Operator",
+  // Every route names itself ("Orders · Foodishi Operator"), so a reader with
+  // several tabs open can tell them apart. The default is for the routes that
+  // cannot: the overview, whose page and nearest layout are both client
+  // components and so cannot export metadata, and anything Next renders
+  // without a page of its own.
+  title: { template: "%s · Foodishi Operator", default: "Foodishi Operator" },
   description:
     "Internal operations console — orders, deliveries, refund SLAs, offers, payments and platform settings across every kitchen.",
 };
@@ -62,6 +67,18 @@ export default function RootLayout({
         className="min-h-dvh bg-bg font-sans text-ink antialiased"
         suppressHydrationWarning
       >
+        {/* The first thing a keyboard reaches, so nobody has to tab through the
+            whole header and section rail on every page to get to the work. A
+            plain <a>, not next/link: it is an in-page jump, and it has to work
+            before hydration too. Hidden until focused, then pinned above the
+            sticky header (z-30) in the same accent ring every control uses. The
+            padding is focus: too, because not-sr-only resets padding to 0. */}
+        <a
+          href="#main"
+          className="sr-only rounded-card border border-line-2 bg-surface font-sans text-[13px] font-medium text-accent shadow-card focus:not-sr-only focus:fixed focus:px-3 focus:py-2 focus:top-3 focus:left-3 focus:z-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Skip to content
+        </a>
         <ApiProvider>
           <OperatorSessionProvider>{children}</OperatorSessionProvider>
         </ApiProvider>

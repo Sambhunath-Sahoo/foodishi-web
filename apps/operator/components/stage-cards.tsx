@@ -42,10 +42,14 @@ export interface Stage<TValue extends string> {
 export interface StageCardsProps<TValue extends string> {
   readonly stages: readonly Stage<TValue>[];
   /**
-   * Which cards read as selected. A list rather than one value because a
-   * board's default view can legitimately span two stages — "still out" is
-   * assigned AND picked up — and ringing neither of them would leave the reader
-   * unable to see what the table is currently showing.
+   * Which cards read as selected: the one the reader pressed, or none.
+   *
+   * Pass `[]` when no card is applied as a filter — including a page's default
+   * view. Callers used to ring every card when nothing was chosen (4/4 on
+   * Offers, 5/5 on Payments), and a ring on everything is a ring on nothing: it
+   * could not tell the reader which card they had pressed, because they had
+   * not pressed one (OP-6). What the unfiltered table shows is said in `note`.
+   * Still a list so a caller can ring a genuine multi-stage selection.
    */
   readonly active: readonly TValue[];
   readonly onSelect: (value: TValue) => void;

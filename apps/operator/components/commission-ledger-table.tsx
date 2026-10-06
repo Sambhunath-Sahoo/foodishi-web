@@ -86,7 +86,7 @@ export function CommissionLedgerTable({
               <DataTableCell className="text-ink-3">{row.city}</DataTableCell>
               <DataTableCell numeric>
                 {row.delivered_orders === 0 ? (
-                  <span className="text-ink-4">none</span>
+                  <span className="text-ink-3">none</span>
                 ) : (
                   formatCount(row.delivered_orders)
                 )}
@@ -97,7 +97,7 @@ export function CommissionLedgerTable({
               </DataTableCell>
               <DataTableCell>
                 {row.is_negotiated ? (
-                  <Badge tone="warn">
+                  <Badge tone="mute">
                     {formatRate(toNumber(row.commission_percent) / 100, 0)} negotiated
                   </Badge>
                 ) : (
@@ -112,7 +112,7 @@ export function CommissionLedgerTable({
                   value={toNumber(row.commission)}
                   max={topCommission}
                   valueLabel={formatMoney(row.commission)}
-                  tone={row.is_negotiated ? "warn" : "ok"}
+                  tone={row.is_negotiated ? "mute" : "ok"}
                 />
               </DataTableCell>
               <DataTableCell numeric>{formatMoney(row.payout)}</DataTableCell>

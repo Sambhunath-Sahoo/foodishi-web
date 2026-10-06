@@ -30,6 +30,8 @@ import {
 import { CommissionLedgerTable } from "../../../components/commission-ledger-table";
 import { OrderDrawer } from "../../../components/order-drawer";
 import { QueryState } from "../../../components/query-state";
+import { ToolbarHint } from "../../../components/toolbar-hint";
+import { WidenWindow } from "../../../components/widen-window";
 import { StageCards, type Stage } from "../../../components/stage-cards";
 import {
   formatCount,
@@ -37,6 +39,7 @@ import {
   formatMoney,
   formatMoneyWhole,
   formatOrderRef,
+  formatPaymentMethod,
   humanizeEnum,
   toNumber,
 } from "../../../lib/format";
@@ -51,6 +54,7 @@ import {
   useTransactions,
 } from "../../../lib/queries";
 import type { PaymentStatus } from "../../../lib/api-types";
+import { useOpenOrder } from "../../../lib/use-open-order";
 
 type View = "transactions" | "commission";
 
@@ -92,18 +96,6 @@ const SCOPE_STATUSES: Record<string, readonly PaymentStatus[]> = {
   failed: ["failed"],
   pending: ["pending"],
   refunded: ["refunded", "partially_refunded"],
-};
-
-/**
- * How each method reads in a row. Only UPI is an acronym; "WALLET" shouting at
- * the reader is the enum value leaking into the product (DENSITY.md §6).
- */
-const METHOD_LABEL: Readonly<Record<string, string>> = {
-  upi: "UPI",
-  card: "Card",
-  netbanking: "Netbanking",
-  wallet: "Wallet",
-  cod: "Cash on delivery",
 };
 
 const METHOD_OPTIONS = [
@@ -167,7 +159,13 @@ function TransactionsView(): React.JSX.Element {
   const [term, setTerm] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [offset, setOffset] = React.useState(0);
-  const [openOrderId, setOpenOrderId] = React.useState<number | null>(null);
+  // In the URL as ?order=, so an open order survives a reload and can be
+  // pasted to a colleague (OP-4).
+  const {
+    orderId: openOrderId,
+    open: openOrder,
+    close: closeOrder,
+  } = useOpenOrder();
 
   const transactions = useTransactions({
     q: query,
@@ -213,20 +211,22 @@ function TransactionsView(): React.JSX.Element {
         // the total, appeared in the unfiltered table, and had no control that
         // could isolate it. The card counts never added up to the total printed
         // beside them.
+        //
+        // Neither this nor "pending" is loud. Warn means a clock is running
+        // (DESIGN.md, OP-7), and both are ordinary waits: the chips match the
+        // row badges (`paymentStatusTone`) so a card and its rows agree.
         value: "authorized",
         label: "Authorized",
         caption: "Committed, not yet collected",
         count: counts.data?.authorized,
-        tone: "warn",
-        chip: <Badge tone="warn">Authorized</Badge>,
+        chip: <Badge tone="accent">Authorized</Badge>,
       },
       {
         value: "pending",
         label: "Awaiting payment",
         caption: "Cash on delivery, or unpaid",
         count: counts.data?.pending,
-        tone: "warn",
-        chip: <Badge tone="warn">Pending</Badge>,
+        chip: <Badge tone="mute">Pending</Badge>,
       },
       {
         value: "refunded",
@@ -236,7 +236,8 @@ function TransactionsView(): React.JSX.Element {
           counts.data === undefined
             ? undefined
             : counts.data.refunded + counts.data.partially_refunded,
-        chip: <Badge tone="cool">Refunded</Badge>,
+        // Mute: settled money going back. Cool means out for delivery (OP-7).
+        chip: <Badge tone="mute">Refunded</Badge>,
       },
     ],
     [counts.data],
@@ -252,7 +253,8 @@ function TransactionsView(): React.JSX.Element {
       <StageCards
         ariaLabel="Which attempts to show"
         stages={stages}
-        active={scope === ANY ? stages.map((stage) => stage.value) : [scope]}
+        // Unfiltered rings nothing: a ring is the card you pressed (OP-6).
+        active={scope === ANY ? [] : [scope]}
         onSelect={(next) => narrow(() => setScope(next === scope ? ANY : next))}
         note={
           counts.data === undefined ? (
@@ -341,11 +343,16 @@ function TransactionsView(): React.JSX.Element {
                     }
                   />
                 )}
-                <FilterChip
-                  label="Refunds live on the SLA watch"
-                  tone="accent"
-                  title="Money going back has its own promise and its own clock, so it is worked from there rather than from this list."
-                />
+                <ToolbarHint>
+                  Refunds have their own clock and are worked under{" "}
+                  <Link
+                    href="/sla"
+                    className="font-medium text-accent underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  >
+                    Refunds
+                  </Link>
+                  .
+                </ToolbarHint>
               </Toolbar>
 
               <DataTableScroll
@@ -407,7 +414,7 @@ function TransactionsView(): React.JSX.Element {
                           <DataTableCell>
                             <button
                               type="button"
-                              onClick={() => setOpenOrderId(payment.order_id)}
+                              onClick={() => openOrder(payment.order_id)}
                               aria-label={`Open order ${formatOrderRef(payment.order_id)}`}
                               className="rounded-card font-mono text-[12px] font-medium text-accent underline underline-offset-2 hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                             >
@@ -415,15 +422,14 @@ function TransactionsView(): React.JSX.Element {
                             </button>
                           </DataTableCell>
                           <DataTableCell className="text-ink-2">
-                            {METHOD_LABEL[payment.method] ??
-                              humanizeEnum(payment.method)}
+                            {formatPaymentMethod(payment.method)}
                           </DataTableCell>
                           <DataTableCell className="text-ink-3 capitalize">
                             {payment.provider}
                           </DataTableCell>
                           <DataTableCell mono className="max-w-[180px]">
                             {payment.provider_ref ?? (
-                              <span className="text-ink-4">none</span>
+                              <span className="text-ink-3">none</span>
                             )}
                           </DataTableCell>
                           <DataTableCell className="max-w-[240px]">
@@ -453,7 +459,7 @@ function TransactionsView(): React.JSX.Element {
         }}
       </QueryState>
 
-      <OrderDrawer orderId={openOrderId} onClose={() => setOpenOrderId(null)} />
+      <OrderDrawer orderId={openOrderId} onClose={() => closeOrder()} />
     </>
   );
 }
@@ -472,6 +478,14 @@ function CommissionView(): React.JSX.Element {
       errorTitle="The commission ledger could not load"
       emptyTitle="Nothing delivered in this window"
       emptyDetail="Commission is charged on delivered orders only, so a window with no deliveries earns nothing."
+      // The window control lives inside the loaded view, so without this the
+      // empty ledger had no way back to a window with deliveries in it (OP-5).
+      emptyAction={
+        <WidenWindow
+          days={Number.parseInt(range, 10)}
+          onWiden={() => setRange("90")}
+        />
+      }
       isEmpty={(data) => data.rows.every((row) => row.delivered_orders === 0)}
       skeleton={
         <>
@@ -520,7 +534,8 @@ function CommissionView(): React.JSX.Element {
                 <Stat
                   label="Off standard rate"
                   value={formatCount(negotiated)}
-                  tone={negotiated > 0 ? "warn" : "default"}
+                  // A negotiated rate is a fact about a contract, not urgency.
+                  tone="default"
                   caption={
                     negotiated > 0
                       ? "Negotiated separately"
@@ -538,13 +553,9 @@ function CommissionView(): React.JSX.Element {
                 value={range}
                 onValueChange={setRange}
               />
-              <FilterChip
-                label="Delivered orders only"
-                tone="accent"
-                title="An order in flight or cancelled earns the platform nothing until it is handed over."
-              />
               <p className="font-sans text-[12px] text-ink-3">
-                Rates are configured on{" "}
+                Delivered orders only — one in flight or cancelled earns
+                nothing until it is handed over · rates are configured on{" "}
                 <Link
                   href="/settings"
                   className="font-medium text-accent underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"

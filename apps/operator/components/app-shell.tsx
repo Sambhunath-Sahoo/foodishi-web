@@ -35,7 +35,7 @@ export function AppShell({
           >
             Foodishi
           </Link>
-          <span className="font-sans text-[11px] font-semibold tracking-widest uppercase text-ink-4">
+          <span className="font-sans text-[11px] font-semibold tracking-widest uppercase text-ink-3">
             Operations
           </span>
           {/* Said out loud, on every screen. Nothing in this console is a live
@@ -60,7 +60,16 @@ export function AppShell({
         {/* The rail owns its own width: it can be collapsed, and the width is
             driven by an attribute on <html> rather than by React state. */}
         <Nav />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4 py-5 md:px-6">
+        {/* id="main" is the skip link's target (app/layout.tsx). It sits on
+            <main> itself, not a wrapper, because every deck page is a direct
+            flex child of this element. tabIndex -1 lets the jump move focus
+            here; outline-none because a ring round the whole deck says
+            nothing the next Tab does not. */}
+        <main
+          id="main"
+          tabIndex={-1}
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4 py-5 outline-none md:px-6"
+        >
           {children}
         </main>
       </div>

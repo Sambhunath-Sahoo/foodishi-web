@@ -20,6 +20,7 @@ import {
 } from "@repo/ui";
 import { BoardSkeleton, RailSkeleton } from "../board-skeleton";
 import { QueryState } from "../query-state";
+import { WidenWindow } from "../widen-window";
 import {
   formatCount,
   formatDuration,
@@ -56,8 +57,11 @@ const SLIP_BAD_MINUTES = 25;
  */
 export function RestaurantReport({
   days,
+  onWiden,
 }: {
   readonly days: number;
+  /** Offered from the empty state when a wider window has orders (OP-5). */
+  readonly onWiden?: (days: number) => void;
 }): React.JSX.Element {
   const report = useRestaurantReport(days);
   const directory = useRestaurantDirectory();
@@ -66,6 +70,9 @@ export function RestaurantReport({
     <QueryState
       query={report}
       errorTitle="The restaurant report could not load"
+      emptyAction={
+        onWiden === undefined ? undefined : <WidenWindow days={days} onWiden={onWiden} />
+      }
       emptyTitle="No kitchen took an order in this window"
       emptyDetail="Widen the range and every kitchen with at least one order appears here."
       isEmpty={(data) => data.rows.every((row) => row.delivered_orders === 0)}
@@ -142,7 +149,7 @@ export function RestaurantReport({
                 <Stat
                   label="Cancelling"
                   value={formatCount(highCancellation)}
-                  tone={highCancellation > 0 ? "warn" : "default"}
+                  tone="default"
                   caption={
                     inactive > 0
                       ? `${formatCount(inactive)} kitchens switched off`
@@ -200,7 +207,7 @@ export function RestaurantReport({
                         <DataTableCell className="text-ink-3">{row.city}</DataTableCell>
                         <DataTableCell numeric>
                           {row.delivered_orders === 0 ? (
-                            <span className="text-ink-4">none</span>
+                            <span className="text-ink-3">none</span>
                           ) : (
                             formatCount(row.delivered_orders)
                           )}
@@ -212,8 +219,10 @@ export function RestaurantReport({
                         <DataTableCell numeric>
                           <span
                             className={
+                              // Crit: a cancellation is crit's own meaning
+                              // (DESIGN.md), and warn is kept for a clock (OP-7).
                               row.cancellation_rate >= CANCELLATION_CONCERN
-                                ? "text-warn"
+                                ? "font-medium text-crit"
                                 : "text-ink-2"
                             }
                           >
@@ -225,7 +234,7 @@ export function RestaurantReport({
                         </DataTableCell>
                         <DataTableCell numeric>
                           {row.avg_delivery_minutes === null ? (
-                            <span className="text-ink-4">no deliveries</span>
+                            <span className="text-ink-3">no deliveries</span>
                           ) : (
                             <span
                               className={tier === 0 ? "text-ink-2" : SEVERITY_TEXT[tier]}
@@ -241,7 +250,7 @@ export function RestaurantReport({
                           {row.is_active ? (
                             <Badge tone="ok">Active</Badge>
                           ) : (
-                            <Badge tone="warn">Switched off</Badge>
+                            <Badge tone="mute">Switched off</Badge>
                           )}
                         </DataTableCell>
                       </DataTableRow>

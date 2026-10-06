@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import { cn, TONE_DOT, TONE_TEXT, type Tone } from "@repo/ui";
 import { formatCount, formatMoneyWhole } from "../lib/format";
 import { isNavCollapsed, setNavCollapsed } from "../lib/nav-collapse";
-import { useWorkload } from "../lib/queries";
+import { useActiveRides, useLiveOrders, useWorkload } from "../lib/queries";
+import { tallyLate } from "../lib/sla";
+import { useNow } from "../lib/use-now";
 import type { Workload } from "../lib/services/types";
 import { NavIcon, type NavIconName } from "./nav-icons";
 
@@ -48,7 +50,29 @@ interface NavItem {
    * The one figure this section is worth interrupting somebody for, or null.
    * Reads the whole workload so a section can build its own phrase.
    */
-  readonly figure?: (workload: Workload) => Figure | null;
+  readonly figure?: (workload: Workload, queue: LiveQueue) => Figure | null;
+}
+
+/**
+ * The live queue as the board itself counts it: in flight, less stuck.
+ *
+ * `workload.live_orders` is the server's count of everything in flight, and on
+ * a platform with six-week-old orders that never expired it said "36 in flight"
+ * while the board's queue was empty (OP-3). The server has no notion of stuck
+ * yet (AD-2), so the rail counts from the same cached live-orders query the
+ * board reads — one request shared, not a second one. Undefined until it lands,
+ * so the badge never flashes the server's larger number first.
+ */
+interface LiveQueue {
+  readonly inFlight: number | undefined;
+  readonly stuck: number | undefined;
+  /**
+   * The same split for rides on the road. `workload.deliveries_late` counts a
+   * six-week-old ride as late, so the rail said "13 late" over a deliveries
+   * board with nothing a rider could still fix (OP-3).
+   */
+  readonly ridesLate: number | undefined;
+  readonly ridesStuck: number | undefined;
 }
 
 interface Figure {
@@ -74,33 +98,27 @@ const NAV_GROUPS: readonly NavGroup[] = [
         href: "/live",
         label: "Live board",
         icon: "live",
-        figure: (workload) => ({
-          count: workload.live_orders,
-          unit: "in flight",
-          tone: "cool",
-          hint: `${formatCount(workload.live_orders)} orders are somewhere between placed and handed over.`,
-        }),
+        // Mute, not cool: cool means "out for delivery" (DESIGN.md), and most
+        // of what is in flight is still in a kitchen (OP-7).
+        figure: (_workload, queue) =>
+          queue.inFlight === undefined || queue.inFlight === 0
+            ? null
+            : {
+                count: queue.inFlight,
+                unit: "in flight",
+                tone: "mute",
+                hint:
+                  (queue.stuck ?? 0) > 0
+                    ? `${formatCount(queue.inFlight)} orders are somewhere between placed and handed over. ${formatCount(queue.stuck ?? 0)} more are stuck over six hours past their promise and are listed separately on the board.`
+                    : `${formatCount(queue.inFlight)} orders are somewhere between placed and handed over.`,
+              },
       },
       { href: "/orders", label: "Orders", icon: "orders" },
       {
         href: "/deliveries",
         label: "Deliveries",
         icon: "deliveries",
-        figure: (workload) =>
-          workload.deliveries_out === 0
-            ? null
-            : {
-                count: workload.deliveries_out,
-                unit:
-                  workload.deliveries_late === 0
-                    ? "on the road"
-                    : `out · ${formatCount(workload.deliveries_late)} late`,
-                tone: workload.deliveries_late > 0 ? "crit" : "cool",
-                hint:
-                  workload.deliveries_late > 0
-                    ? `${formatCount(workload.deliveries_late)} of the ${formatCount(workload.deliveries_out)} rides out are already past what the customer was promised.`
-                    : `${formatCount(workload.deliveries_out)} rides are out and every one of them is inside its promise.`,
-              },
+        figure: (workload, queue) => deliveriesFigure(workload.deliveries_out, queue),
       },
     ],
   },
@@ -137,11 +155,11 @@ const NAV_GROUPS: readonly NavGroup[] = [
             : {
                 count: workload.applications_pending,
                 unit: "waiting",
-                // Warn rather than crit: nobody's dinner is late and no money is
-                // held. It is a restaurant that cannot trade until somebody at
-                // Foodishi reads their form, which is a debt of attention rather
-                // than an emergency.
-                tone: "warn",
+                // Mute: nobody's dinner is late and no money is held. It is a
+                // restaurant that cannot trade until somebody at Foodishi reads
+                // their form — pending, in DESIGN.md's words. Warn is kept for
+                // a running clock (OP-7).
+                tone: "mute",
                 hint: "Restaurants asking to join. Each one is waiting on a person here — nothing about an application resolves itself.",
               },
       },
@@ -180,7 +198,8 @@ const NAV_GROUPS: readonly NavGroup[] = [
             : {
                 count: workload.payments_failed,
                 unit: "failed",
-                tone: "warn",
+                // Failed is crit in DESIGN.md; warn means a clock is running.
+                tone: "crit",
                 hint: "Payment attempts that never went through. Each one is a customer who tried to pay and could not.",
               },
       },
@@ -211,6 +230,49 @@ const NAV_GROUPS: readonly NavGroup[] = [
   },
 ];
 
+/**
+ * Rides out, and of those the ones late enough to chase.
+ *
+ * Only rides inside six hours of their promise are "late" and red; stuck ones
+ * are said separately in the unit's neutral ink, because nobody on the road can
+ * fix them. Until the ride rows land the badge says "on the road" rather than
+ * flash the server's late count, which includes the stuck ones.
+ */
+function deliveriesFigure(out: number, queue: LiveQueue): Figure | null {
+  if (out === 0) return null;
+  const late = queue.ridesLate ?? 0;
+  const stuck = queue.ridesStuck ?? 0;
+  const stuckNote =
+    stuck > 0
+      ? ` ${formatCount(stuck)} more are stuck over six hours past their promise — a refund decision, not a rider.`
+      : "";
+
+  if (late > 0) {
+    return {
+      count: out,
+      unit: `out · ${formatCount(late)} late`,
+      tone: "crit",
+      hint: `${formatCount(late)} of the ${formatCount(out)} rides out are already past what the customer was promised.${stuckNote}`,
+    };
+  }
+  if (stuck > 0) {
+    return {
+      count: out,
+      unit: `out · ${formatCount(stuck)} stuck`,
+      // Mute, not crit: a stuck ride is a money decision with no clock a rider
+      // can beat, so it must not borrow the colour of a late one.
+      tone: "mute",
+      hint: `None of the ${formatCount(out)} rides out is late enough to chase.${stuckNote}`,
+    };
+  }
+  return {
+    count: out,
+    unit: "on the road",
+    tone: "cool",
+    hint: `${formatCount(out)} rides are out and every one of them is inside its promise.`,
+  };
+}
+
 function isCurrent(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
@@ -234,7 +296,7 @@ function NavFigure({ figure }: { readonly figure: Figure }): React.JSX.Element {
       >
         {formatCount(figure.count)}
       </span>
-      <span className="font-sans text-[10px] leading-none tracking-[0.03em] whitespace-nowrap uppercase text-ink-4">
+      <span className="font-sans text-[10px] leading-none tracking-[0.03em] whitespace-nowrap uppercase text-ink-3">
         {figure.unit}
       </span>
     </span>
@@ -245,6 +307,31 @@ export function Nav(): React.JSX.Element {
   const pathname = usePathname();
   const workload = useWorkload();
   const data = workload.data;
+  const liveOrders = useLiveOrders();
+  const activeRides = useActiveRides();
+  const nowMs = useNow();
+  const queue = React.useMemo<LiveQueue>(() => {
+    const items = liveOrders.data?.items;
+    const rides = activeRides.data?.items;
+    const orderTally =
+      items === undefined || nowMs === null ? undefined : tallyLate(items, nowMs);
+    const rideTally =
+      rides === undefined || nowMs === null
+        ? undefined
+        : tallyLate(
+            rides.map((row) => row.order),
+            nowMs,
+          );
+    return {
+      inFlight:
+        items === undefined || orderTally === undefined
+          ? undefined
+          : items.length - orderTally.stuck,
+      stuck: orderTally?.stuck,
+      ridesLate: rideTally?.late,
+      ridesStuck: rideTally?.stuck,
+    };
+  }, [liveOrders.data, activeRides.data, nowMs]);
 
   // Mirrors the attribute the pre-paint script set, for the button's own label.
   // The layout does not read this — the stylesheet does — so a first render
@@ -278,7 +365,7 @@ export function Nav(): React.JSX.Element {
           title={collapsed ? "Show the section names" : "Collapse to icons"}
           className={cn(
             "nav-item flex items-center gap-2 rounded-card px-2 py-1",
-            "font-sans text-[11px] tracking-[0.06em] uppercase text-ink-4 transition-colors",
+            "font-sans text-[11px] tracking-[0.06em] uppercase text-ink-3 transition-colors",
             "hover:bg-surface-2 hover:text-ink-2",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
           )}
@@ -309,7 +396,7 @@ export function Nav(): React.JSX.Element {
             <p
               className={cn(
                 "mx-2 mt-1.5 mb-1 flex items-center gap-2",
-                "font-sans text-[10px] font-bold tracking-[0.1em] uppercase text-ink-4",
+                "font-sans text-[10px] font-bold tracking-[0.1em] uppercase text-ink-3",
               )}
             >
               <span className="nav-label">{group.title}</span>
@@ -318,7 +405,8 @@ export function Nav(): React.JSX.Element {
 
             {group.items.map((item) => {
               const current = isCurrent(pathname, item.href);
-              const figure = data === undefined ? null : (item.figure?.(data) ?? null);
+              const figure =
+                data === undefined ? null : (item.figure?.(data, queue) ?? null);
 
               return (
                 <Link

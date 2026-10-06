@@ -53,6 +53,8 @@ export default function ReportsPage(): React.JSX.Element {
   const [report, setReport] = React.useState<Report>("sales");
   const [range, setRange] = React.useState<Range>("30");
   const days = Number.parseInt(range, 10);
+  // The widest window is a range option, so widening is just choosing it.
+  const widen = React.useCallback(() => setRange("90"), []);
 
   return (
     <div className={DECK_PAGE}>
@@ -73,11 +75,11 @@ export default function ReportsPage(): React.JSX.Element {
         />
       </Toolbar>
 
-      {report === "sales" ? <SalesReport days={days} /> : null}
-      {report === "restaurants" ? <RestaurantReport days={days} /> : null}
-      {report === "orders" ? <OrderReport days={days} /> : null}
-      {report === "customers" ? <CustomerReport days={days} /> : null}
-      {report === "commission" ? <CommissionReport days={days} /> : null}
+      {report === "sales" ? <SalesReport days={days} onWiden={widen} /> : null}
+      {report === "restaurants" ? <RestaurantReport days={days} onWiden={widen} /> : null}
+      {report === "orders" ? <OrderReport days={days} onWiden={widen} /> : null}
+      {report === "customers" ? <CustomerReport days={days} onWiden={widen} /> : null}
+      {report === "commission" ? <CommissionReport days={days} onWiden={widen} /> : null}
     </div>
   );
 }

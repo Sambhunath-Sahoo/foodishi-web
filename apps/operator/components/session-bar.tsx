@@ -58,7 +58,7 @@ export function SessionBar(): React.JSX.Element {
             <span className="font-sans text-[13px] font-medium text-ink">
               {account.name}
             </span>
-            <span className="font-mono text-[11px] text-ink-4">{account.email}</span>
+            <span className="font-mono text-[11px] text-ink-3">{account.email}</span>
           </span>
         </span>
       )}

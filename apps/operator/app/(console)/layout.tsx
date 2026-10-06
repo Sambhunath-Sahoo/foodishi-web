@@ -41,5 +41,12 @@ export default function ConsoleLayout({
   if (status === "loading") return <AuthSpinner />;
   if (status === "signed-out") return <AuthSpinner label="Taking you to sign in" />;
 
-  return <AppShell>{children}</AppShell>;
+  // The Suspense boundary is for `useSearchParams`: the order drawer lives in
+  // `?order=` on every board (lib/use-open-order.ts), and a route that reads
+  // search params outside a boundary cannot be prerendered.
+  return (
+    <AppShell>
+      <React.Suspense fallback={null}>{children}</React.Suspense>
+    </AppShell>
+  );
 }

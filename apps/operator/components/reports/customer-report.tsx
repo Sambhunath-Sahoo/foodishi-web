@@ -18,6 +18,7 @@ import {
 import { BoardSkeleton, RailSkeleton } from "../board-skeleton";
 import { MiniMeter } from "../mini-meter";
 import { QueryState } from "../query-state";
+import { WidenWindow } from "../widen-window";
 import {
   formatCount,
   formatDateTime,
@@ -48,8 +49,11 @@ const AVATAR_PX = 24;
  */
 export function CustomerReport({
   days,
+  onWiden,
 }: {
   readonly days: number;
+  /** Offered from the empty state when a wider window has orders (OP-5). */
+  readonly onWiden?: (days: number) => void;
 }): React.JSX.Element {
   const report = useCustomerReport(days);
 
@@ -57,6 +61,9 @@ export function CustomerReport({
     <QueryState
       query={report}
       errorTitle="The customer report could not load"
+      emptyAction={
+        onWiden === undefined ? undefined : <WidenWindow days={days} onWiden={onWiden} />
+      }
       emptyTitle="Nobody ordered in this window"
       emptyDetail="Widen the range and every customer who placed an order appears here, biggest spender first."
       isEmpty={(data) => data.rows.length === 0}
@@ -100,7 +107,7 @@ export function CustomerReport({
                 <Stat
                   label="Came back"
                   value={formatCount(data.returning_customers)}
-                  tone={returningShare >= 0.5 ? "ok" : "warn"}
+                  tone={returningShare >= 0.5 ? "ok" : "default"}
                   caption={`${formatRate(returningShare, 0)} had ordered before`}
                   hint="Customers who had ordered before this window and ordered again inside it. This is the number that says whether the platform keeps anybody."
                 />
@@ -113,7 +120,7 @@ export function CustomerReport({
                 <Stat
                   label="Never ordered"
                   value={formatCount(data.never_ordered)}
-                  tone={data.never_ordered > 0 ? "warn" : "default"}
+                  tone="default"
                   caption="Registered, never bought"
                   hint="Accounts that have never placed an order at all, in any window. They signed up and stopped."
                 />
@@ -160,12 +167,12 @@ export function CustomerReport({
                             <span className="block truncate font-medium">
                               {row.name}
                             </span>
-                            <span className="block truncate text-[11px] text-ink-4">
+                            <span className="block truncate text-[11px] text-ink-3">
                               {row.email}
                             </span>
                           </span>
                           {row.is_active ? null : (
-                            <Badge tone="warn" className="shrink-0">
+                            <Badge tone="mute" className="shrink-0">
                               Off
                             </Badge>
                           )}
@@ -178,7 +185,7 @@ export function CustomerReport({
                         {row.cancelled === 0 ? (
                           <span className="text-ink-4">—</span>
                         ) : (
-                          <span className="text-warn">{formatCount(row.cancelled)}</span>
+                          <span className="text-ink-2">{formatCount(row.cancelled)}</span>
                         )}
                       </DataTableCell>
                       <DataTableCell>

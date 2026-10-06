@@ -214,7 +214,7 @@ export function OrderRuleSettingsCard({
           <NumberField
             id="rules-refund-sla"
             label="Refund promise"
-            hint="How long the customer is told their money will take to come back. Every refund on the SLA watch is measured against this."
+            hint="How long the customer is told their money will take to come back. Every refund under Refunds is measured against this."
             value={value.refund_sla_hours}
             onChange={(next) => onChange({ ...value, refund_sla_hours: next })}
             min={1}

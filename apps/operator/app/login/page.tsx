@@ -68,12 +68,20 @@ function LoginForm(): React.JSX.Element {
   if (status === "signed-in") return <AuthSpinner label="Opening the console" />;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-5 px-4 py-10">
+    // id="main": the skip link in app/layout.tsx lands here too. Email has
+    // autoFocus, so on this one screen the first Tab goes to Password and the
+    // skip link sits behind the theme button — the form is the content, and
+    // there is nothing to skip.
+    <main
+      id="main"
+      tabIndex={-1}
+      className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-5 px-4 py-10 outline-none"
+    >
       <div className="flex flex-col gap-1">
         {/* On the sign-in screen too: the theme is a comfort setting, and making
             someone sign in on a bright page first defeats the point. */}
         <div className="flex items-center justify-between gap-3">
-          <span className="font-sans text-[11px] font-semibold tracking-widest uppercase text-ink-4">
+          <span className="font-sans text-[11px] font-semibold tracking-widest uppercase text-ink-3">
             Foodishi Operations
           </span>
           <ThemeSwitcher compact />
@@ -100,14 +108,21 @@ function LoginForm(): React.JSX.Element {
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="ops.admin@foodishi.internal"
+                // The shape of an address, not a real one. It used to be the
+                // seeded admin's own login, which is half a credential printed
+                // on the one public page of the console (OP-8).
+                placeholder="name@foodishi.internal"
               />
             </Field>
 
-            <Field label="Passphrase" htmlFor="login-passphrase">
+            {/* "Password", not "Passphrase": on the live API this is the
+                operator's Supabase password (lib/services/api/session.ts).
+                The sample-data build checks a shared dev passphrase, but the
+                field has to name what a real operator types. */}
+            <Field label="Password" htmlFor="login-password">
               <Input
-                id="login-passphrase"
-                name="passphrase"
+                id="login-password"
+                name="password"
                 type="password"
                 autoComplete="current-password"
                 required

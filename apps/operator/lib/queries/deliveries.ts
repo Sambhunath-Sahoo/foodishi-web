@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -12,6 +13,7 @@ import { services } from "../services";
 import type { DeliveryBoardRow, DeliveryQuery } from "../services/types";
 import { fingerprint, keys } from "./keys";
 import { LIVE_REFETCH_MS } from "./metrics";
+import { MAX_PAGE_SIZE } from "./orders";
 
 /** One page of the deliveries board. */
 export const DELIVERY_PAGE_SIZE = 40;
@@ -37,6 +39,31 @@ export function useDeliveries(
     queryFn: () => services.deliveries.listDeliveries(query),
     refetchInterval: LIVE_REFETCH_MS,
     staleTime: 0,
+  });
+}
+
+/**
+ * Every ride still on the road, for counting rather than for showing.
+ *
+ * `workload.deliveries_late` counts stuck rides as late (OP-3), and the server
+ * has no notion of stuck yet (AD-2), so the rail and the deliveries board split
+ * late from stuck themselves from these rows — one shared request, read by both.
+ * The board's own page cannot stand in for it: it is filtered and 40 rows long.
+ * Previous rows are kept while a repoll is in flight so the badge never blinks.
+ */
+export function useActiveRides(): UseQueryResult<Page<DeliveryBoardRow>> {
+  return useQuery({
+    queryKey: keys.deliveries.active(),
+    queryFn: () =>
+      services.deliveries.listDeliveries({
+        q: "",
+        status: "active",
+        limit: MAX_PAGE_SIZE,
+        offset: 0,
+      }),
+    refetchInterval: LIVE_REFETCH_MS,
+    staleTime: 0,
+    placeholderData: keepPreviousData,
   });
 }
 

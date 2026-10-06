@@ -23,6 +23,7 @@ import {
 } from "@repo/ui";
 import { BoardSkeleton, RailSkeleton } from "../board-skeleton";
 import { QueryState } from "../query-state";
+import { WidenWindow } from "../widen-window";
 import {
   formatCount,
   formatDay,
@@ -53,7 +54,14 @@ const SERIES_OPTIONS = [
  * delivered at 00:20 belongs to the evening somebody worked, not to the morning
  * after.
  */
-export function SalesReport({ days }: { readonly days: number }): React.JSX.Element {
+export function SalesReport({
+  days,
+  onWiden,
+}: {
+  readonly days: number;
+  /** Offered from the empty state when a wider window has orders (OP-5). */
+  readonly onWiden?: (days: number) => void;
+}): React.JSX.Element {
   const report = useSalesReport(days);
   const [series, setSeries] = React.useState<Series>("gross");
 
@@ -61,6 +69,9 @@ export function SalesReport({ days }: { readonly days: number }): React.JSX.Elem
     <QueryState
       query={report}
       errorTitle="The sales report could not load"
+      emptyAction={
+        onWiden === undefined ? undefined : <WidenWindow days={days} onWiden={onWiden} />
+      }
       emptyTitle="No orders in this window"
       emptyDetail="Widen the range and each day with at least one order becomes a row."
       isEmpty={(data) => data.days.length === 0}

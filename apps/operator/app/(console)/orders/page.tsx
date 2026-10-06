@@ -50,6 +50,7 @@ import {
 } from "../../../lib/queries";
 import { useNow } from "../../../lib/use-now";
 import type { OrderSort } from "../../../lib/services/types";
+import { useOpenOrder } from "../../../lib/use-open-order";
 
 /** Covers and avatars in a 38px row. */
 const THUMB_PX = 22;
@@ -75,10 +76,16 @@ const RANGE_WORDS: Record<Range, string> = {
 /** The three axes this board offers. `OrderSort` has a fourth nobody asked for. */
 type BoardSort = Extract<OrderSort, "newest" | "largest" | "latest_promise">;
 
+/**
+ * A select, labelled "Sort: …" in its own options, pinned right (OP-5). As a
+ * three-segment control it was the one thing that pushed the toolbar onto a
+ * second row at 1440; the order of rows is a setting you choose once, not an
+ * axis you flick between, so it does not need to be visible as three buttons.
+ */
 const SORT_OPTIONS: readonly { value: BoardSort; label: string }[] = [
-  { value: "newest", label: "Newest" },
-  { value: "largest", label: "Largest" },
-  { value: "latest_promise", label: "Oldest promise" },
+  { value: "newest", label: "Sort: Newest" },
+  { value: "largest", label: "Sort: Largest" },
+  { value: "latest_promise", label: "Sort: Oldest promise" },
 ];
 
 /** Plain words for the footer — never a column name (DENSITY.md §5, §6). */
@@ -111,7 +118,13 @@ export default function OrdersPage(): React.JSX.Element {
   const [range, setRange] = React.useState<Range>("7");
   const [sort, setSort] = React.useState<BoardSort>("newest");
   const [offset, setOffset] = React.useState(0);
-  const [openOrderId, setOpenOrderId] = React.useState<number | null>(null);
+  // In the URL as ?order=, so an open order survives a reload and can be
+  // pasted to a colleague (OP-4).
+  const {
+    orderId: openOrderId,
+    open: openOrder,
+    close: closeOrder,
+  } = useOpenOrder();
 
   const restaurants = useRestaurantDirectory();
   const customers = useCustomerDirectory();
@@ -126,6 +139,20 @@ export default function OrdersPage(): React.JSX.Element {
     limit: ORDER_PAGE_SIZE,
     offset,
   });
+
+  // The same filters over all time, one row, for the count on the empty state's
+  // button. Ignored when the window is already all time.
+  const allTime = useOrdersBoard({
+    q: query,
+    status: status === ANY ? null : (status as OrderStatus),
+    restaurantId: kitchen === ANY ? null : Number.parseInt(kitchen, 10),
+    liveOnly: false,
+    withinDays: 0,
+    sort,
+    limit: 1,
+    offset: 0,
+  });
+  const allTimeTotal = range === "0" ? 0 : (allTime.data?.total ?? 0);
 
   /** Any change to what is matched starts again at the first page. */
   const narrow = React.useCallback((apply: () => void) => {
@@ -164,6 +191,90 @@ export default function OrdersPage(): React.JSX.Element {
       ? null
       : (restaurants.data?.get(Number.parseInt(kitchen, 10))?.name ?? `#${kitchen}`);
 
+  // Built once and rendered in two places: above the table, and above the
+  // empty state. A search or a filter that matches nothing must leave the
+  // controls on screen to undo it — inside the results they vanished with the
+  // rows, and "clear the filters" pointed at filters nobody could see.
+  const filters = (
+    <Toolbar
+      ariaLabel="Order filters"
+      right={
+        <Select
+          aria-label="Sort the board by"
+          options={SORT_OPTIONS}
+          value={sort}
+          onChange={(event) =>
+            narrow(() => setSort(event.target.value as BoardSort))
+          }
+          className="h-8 w-[190px] text-[13px]"
+        />
+      }
+    >
+      <form onSubmit={submitSearch} className="flex items-center gap-2">
+        <Input
+          value={term}
+          onChange={(event) => setTerm(event.target.value)}
+          placeholder="Order, customer or kitchen"
+          aria-label="Search orders by order id, customer name or email, or kitchen name"
+          className="h-8 w-[230px] text-[13px]"
+        />
+        <Button type="submit" variant="outline" size="sm">
+          Search
+        </Button>
+      </form>
+      <SegmentedControl
+        ariaLabel="How far back to look"
+        options={RANGE_OPTIONS}
+        value={range}
+        onValueChange={(next) => narrow(() => setRange(next))}
+      />
+      <Select
+        aria-label="Show only one state"
+        options={statusOptions}
+        value={status}
+        onChange={(event) =>
+          narrow(() => setStatus(event.target.value))
+        }
+        className="h-8 w-[150px] text-[13px]"
+      />
+      <Select
+        aria-label="Show only one kitchen"
+        options={kitchenOptions}
+        value={kitchen}
+        onChange={(event) =>
+          narrow(() => setKitchen(event.target.value))
+        }
+        className="h-8 w-[170px] text-[13px]"
+      />
+      {query === "" ? null : (
+        <FilterChip
+          label="Matching"
+          value={query}
+          onDismiss={() =>
+            narrow(() => {
+              setTerm("");
+              setQuery("");
+            })
+          }
+        />
+      )}
+      {status === ANY ? null : (
+        <FilterChip
+          label="State"
+          value={getOrderStatusLabel(status as OrderStatus)}
+          onDismiss={() => narrow(() => setStatus(ANY))}
+        />
+      )}
+      {kitchenName === null ? null : (
+        <FilterChip
+          label="Kitchen"
+          value={kitchenName}
+          onDismiss={() => narrow(() => setKitchen(ANY))}
+        />
+      )}
+    </Toolbar>
+  );
+
   return (
     <div className={DECK_PAGE}>
       <PageTitle subtitle="Every order on the platform. Search by order, customer or kitchen.">
@@ -172,6 +283,7 @@ export default function OrdersPage(): React.JSX.Element {
 
       <QueryState
         query={orders}
+        emptyLead={filters}
         errorTitle="The orders board could not load"
         emptyTitle={
           query === ""
@@ -180,8 +292,17 @@ export default function OrdersPage(): React.JSX.Element {
         }
         emptyDetail={
           query === ""
-            ? "Widen the window or clear the filters to see more."
+            ? allTimeTotal > 0
+              ? "Nothing was placed in this window. The same filters over all time do match."
+              : "Widen the window or clear the filters to see more."
             : "The search matches an order id, a customer's name or email, and a kitchen's name."
+        }
+        emptyAction={
+          allTimeTotal > 0 ? (
+            <Button size="sm" onClick={() => narrow(() => setRange("0"))}>
+              Show all time · {formatCount(allTimeTotal)} orders
+            </Button>
+          ) : undefined
         }
         isEmpty={(page) => page.items.length === 0}
         skeleton={
@@ -234,8 +355,11 @@ export default function OrdersPage(): React.JSX.Element {
                     caption={`${formatCount(live)} still in flight`}
                     hint="The rows below. The four figures beside this one describe this page, not the whole match — page through to see the rest."
                   />
+                  {/* "This page ·" on every tile that counts the page and not
+                      the match: "Delivered 10" beside "Matching 153" read as
+                      ten delivered out of 153 (OP-5). */}
                   <Stat
-                    label="Delivered"
+                    label="This page · delivered"
                     value={formatCount(delivered)}
                     tone="ok"
                     caption={
@@ -246,14 +370,16 @@ export default function OrdersPage(): React.JSX.Element {
                     hint="Orders on this page that reached the customer. The caption counts the ones that arrived after the time they were promised."
                   />
                   <Stat
-                    label="Cancelled"
+                    label="This page · cancelled"
                     value={formatCount(cancelled)}
-                    tone={cancelled > 0 ? "warn" : "default"}
+                    // Neutral ink: warn means a clock is running, and nothing
+                    // about a cancelled order is still running (OP-7).
+                    tone="default"
                     caption="On this page"
                     hint="Cancelled orders earn nothing and often cost a refund on top."
                   />
                   <Stat
-                    label="Page value"
+                    label="This page · value"
                     value={formatMoneyWhole(value)}
                     caption="What these customers paid"
                     hint="The total of every order on this page, in any state — not revenue, which only counts delivered orders."
@@ -261,76 +387,7 @@ export default function OrdersPage(): React.JSX.Element {
                 </StatRail>
               </div>
 
-              <Toolbar ariaLabel="Order filters">
-                <form onSubmit={submitSearch} className="flex items-center gap-2">
-                  <Input
-                    value={term}
-                    onChange={(event) => setTerm(event.target.value)}
-                    placeholder="Order, customer or kitchen"
-                    aria-label="Search orders by order id, customer name or email, or kitchen name"
-                    className="h-8 w-[230px] text-[13px]"
-                  />
-                  <Button type="submit" variant="outline" size="sm">
-                    Search
-                  </Button>
-                </form>
-                <SegmentedControl
-                  ariaLabel="How far back to look"
-                  options={RANGE_OPTIONS}
-                  value={range}
-                  onValueChange={(next) => narrow(() => setRange(next))}
-                />
-                <Select
-                  aria-label="Show only one state"
-                  options={statusOptions}
-                  value={status}
-                  onChange={(event) =>
-                    narrow(() => setStatus(event.target.value))
-                  }
-                  className="h-8 w-[150px] text-[13px]"
-                />
-                <Select
-                  aria-label="Show only one kitchen"
-                  options={kitchenOptions}
-                  value={kitchen}
-                  onChange={(event) =>
-                    narrow(() => setKitchen(event.target.value))
-                  }
-                  className="h-8 w-[170px] text-[13px]"
-                />
-                <SegmentedControl
-                  ariaLabel="Sort the board by"
-                  options={SORT_OPTIONS}
-                  value={sort}
-                  onValueChange={(next) => narrow(() => setSort(next))}
-                />
-                {query === "" ? null : (
-                  <FilterChip
-                    label="Matching"
-                    value={query}
-                    onDismiss={() =>
-                      narrow(() => {
-                        setTerm("");
-                        setQuery("");
-                      })
-                    }
-                  />
-                )}
-                {status === ANY ? null : (
-                  <FilterChip
-                    label="State"
-                    value={getOrderStatusLabel(status as OrderStatus)}
-                    onDismiss={() => narrow(() => setStatus(ANY))}
-                  />
-                )}
-                {kitchenName === null ? null : (
-                  <FilterChip
-                    label="Kitchen"
-                    value={kitchenName}
-                    onDismiss={() => narrow(() => setKitchen(ANY))}
-                  />
-                )}
-              </Toolbar>
+              {filters}
 
               <DataTableScroll
                 className={DECK_PANEL}
@@ -376,7 +433,7 @@ export default function OrdersPage(): React.JSX.Element {
                         <DataTableRow
                           key={order.id}
                           selected={order.id === openOrderId}
-                          onClick={() => setOpenOrderId(order.id)}
+                          onClick={() => openOrder(order.id)}
                           className="cursor-pointer"
                         >
                           <SeverityCell tier={tier} title={SEVERITY_LABEL[tier]}>
@@ -384,7 +441,7 @@ export default function OrdersPage(): React.JSX.Element {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                setOpenOrderId(order.id);
+                                openOrder(order.id);
                               }}
                               aria-label={`Open order ${formatOrderRef(order.id)}`}
                               className="rounded-card font-mono text-[12px] font-medium text-accent underline underline-offset-2 hover:text-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
@@ -446,7 +503,7 @@ export default function OrdersPage(): React.JSX.Element {
         }}
       </QueryState>
 
-      <OrderDrawer orderId={openOrderId} onClose={() => setOpenOrderId(null)} />
+      <OrderDrawer orderId={openOrderId} onClose={() => closeOrder()} />
     </div>
   );
 }

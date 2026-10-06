@@ -65,14 +65,24 @@ export interface PipelineBoardProps {
   readonly statuses: readonly StatusCount[] | undefined;
   /** Accepted but not started — the fifth stage, carried in the line below. */
   readonly confirmed: number | undefined;
-  /** Live orders already past the time the customer was told. */
+  /**
+   * Live orders past the time the customer was told, but inside six hours of
+   * it — the ones a rider or a kitchen can still do something about.
+   */
   readonly late: number | undefined;
+  /**
+   * Live orders more than six hours past it (OP-3), counted apart from `late`
+   * and never in its red: "36 past their promise" read as 36 riders to chase
+   * when every one was a six-week-old order nobody can deliver now.
+   */
+  readonly stuck?: number;
 }
 
 export function PipelineBoard({
   statuses,
   confirmed,
   late,
+  stuck = 0,
 }: PipelineBoardProps): React.JSX.Element {
   const counts = React.useMemo(() => {
     const tally = new Map<string, number>();
@@ -142,7 +152,7 @@ export function PipelineBoard({
           <>
             <span className="font-medium text-ink-2">{formatCount(confirmed)}</span>{" "}
             accepted and not started yet
-            {late !== undefined && late > 0 ? (
+            {late === undefined ? null : late > 0 ? (
               <>
                 {" · "}
                 <Link
@@ -153,8 +163,15 @@ export function PipelineBoard({
                 </Link>
               </>
             ) : (
-              " · every live order is inside its promise"
+              " · nothing on the live queue is past its promise"
             )}
+            {stuck > 0 ? (
+              <>
+                {" · "}
+                <span className="font-medium text-ink-2">{formatCount(stuck)} stuck</span>{" "}
+                over 6 h — a refund decision, not a rider
+              </>
+            ) : null}
           </>
         ) : (
           "Counting live orders…"

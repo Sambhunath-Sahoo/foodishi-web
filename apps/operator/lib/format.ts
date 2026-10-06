@@ -3,9 +3,9 @@
  * decimal strings ("1960.15") so no float ever touches a rupee amount before
  * it is formatted.
  */
+import { formatSpan } from "@repo/ui";
 
 const MINUTES_PER_HOUR = 60;
-const HOURS_PER_DAY = 24;
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 3_600_000;
 
@@ -108,8 +108,29 @@ export function formatRate(rate: number, fractionDigits = 0): string {
   return `${(rate * 100).toFixed(fractionDigits)}%`;
 }
 
-export function formatClock(iso: string): string {
-  return clockTime.format(new Date(iso));
+const calendarDay = new Intl.DateTimeFormat("en-IN", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * "20:25" for a time today, "21 Aug, 20:25" for any other day.
+ *
+ * A bare clock used to be all this printed, which is right on an evening's
+ * board and wrong the moment an order is older than the evening: an order due
+ * "20:25" six weeks ago read exactly like one due in ten minutes (OP-3). The
+ * date appears only when it is not today, so the ordinary row stays five
+ * characters wide.
+ *
+ * `nowMs` is the caller's `useNow()` value when it has one, so "today" is the
+ * same instant the row's lateness was measured at. Without it the comparison
+ * falls back to the wall clock — still correct, just not pinned to the render.
+ */
+export function formatClock(iso: string, nowMs: number = Date.now()): string {
+  const at = new Date(iso);
+  const isToday = calendarDay.format(at) === calendarDay.format(new Date(nowMs));
+  return isToday ? clockTime.format(at) : dateAndTime.format(at);
 }
 
 export function formatDateTime(iso: string): string {
@@ -155,18 +176,25 @@ export function formatDuration(totalMinutes: number): string {
  * before they can act on it (DENSITY.md §3).
  */
 export function formatElapsed(totalMinutes: number): string {
-  const minutes = Math.max(0, Math.round(totalMinutes));
-  if (minutes < MINUTES_PER_HOUR) return `${minutes}m`;
+  return formatSpan(totalMinutes);
+}
 
-  const hours = Math.floor(minutes / MINUTES_PER_HOUR);
-  if (hours < HOURS_PER_DAY * 2) {
-    const rest = minutes % MINUTES_PER_HOUR;
-    return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
-  }
+/**
+ * How each payment method reads. Only UPI is an acronym, and "cod" is not a word
+ * a support agent should have to translate on a call — `humanizeEnum` turned
+ * them into "Upi" and "Cod" (OP-4). Unknown values still get the humanised
+ * enum rather than nothing.
+ */
+const PAYMENT_METHOD_LABEL: Readonly<Record<string, string>> = {
+  upi: "UPI",
+  card: "Card",
+  netbanking: "Netbanking",
+  wallet: "Wallet",
+  cod: "Cash on delivery",
+};
 
-  const days = Math.floor(hours / HOURS_PER_DAY);
-  const restHours = hours % HOURS_PER_DAY;
-  return restHours === 0 ? `${days}d` : `${days}d ${restHours}h`;
+export function formatPaymentMethod(method: string): string {
+  return PAYMENT_METHOD_LABEL[method] ?? humanizeEnum(method);
 }
 
 /** Order ids are shown as the API's integer, prefixed so they read as ids. */

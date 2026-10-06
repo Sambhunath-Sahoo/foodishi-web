@@ -25,6 +25,12 @@ export interface SheetProps {
   readonly title: React.ReactNode;
   readonly subtitle?: React.ReactNode;
   readonly children: React.ReactNode;
+  /**
+   * Pinned under the scrolling body: the panel's actions. Kept outside the
+   * scroller so the decision is on screen however far down the reader is —
+   * an action at the bottom of a 2,000px drawer is an action nobody finds.
+   */
+  readonly footer?: React.ReactNode;
 }
 
 /**
@@ -44,6 +50,7 @@ export function Sheet({
   title,
   subtitle,
   children,
+  footer,
 }: SheetProps): React.JSX.Element | null {
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const titleId = React.useId();
@@ -103,8 +110,13 @@ export function Sheet({
 
   if (!open) return null;
 
+  // z-40, one below the shared Dialog's content (z-50) and level with its
+  // overlay, which portals in later and so paints over this. A confirmation
+  // opened from the drawer — reassign, cancel — then dims the drawer behind it
+  // instead of floating half over an undimmed panel. Still above the sticky
+  // header at z-30.
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-40 flex justify-end">
       <button
         type="button"
         aria-label="Close this panel"
@@ -150,6 +162,9 @@ export function Sheet({
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
+        {footer === undefined ? null : (
+          <div className="shrink-0 border-t border-line bg-surface px-4 py-3">{footer}</div>
+        )}
       </div>
     </div>
   );

@@ -36,6 +36,7 @@ import {
 } from "../lib/queries";
 import { QueryState } from "./query-state";
 import { Sheet } from "./sheet";
+import { useOperatorSession } from "./session-provider";
 
 /** A person, so the avatar is a circle. */
 const AVATAR_PX = 36;
@@ -269,6 +270,10 @@ function AccountSection({
   readonly name: string;
 }): React.JSX.Element {
   const setActive = useSetCustomerActive();
+  // An operator who deactivated themselves would be signed out of the console
+  // mid-shift with nobody left to undo it from inside (OP-8).
+  const { account } = useOperatorSession();
+  const isSelf = account !== null && account.id === userId;
 
   return (
     <Section title="Account">
@@ -290,10 +295,17 @@ function AccountSection({
         size="sm"
         isPending={setActive.isPending}
         pendingLabel={isActive ? "Deactivating…" : "Reactivating…"}
+        disabled={isSelf}
+        aria-describedby={isSelf ? "own-account-note" : undefined}
         onClick={() => setActive.mutate({ userId, isActive: !isActive })}
       >
         {isActive ? "Deactivate this account" : "Let them order again"}
       </Button>
+      {isSelf ? (
+        <p id="own-account-note" className="mt-1.5 font-sans text-[12px] text-ink-3">
+          You can&apos;t deactivate your own account.
+        </p>
+      ) : null}
     </Section>
   );
 }
@@ -381,7 +393,7 @@ export function CustomerDrawer({
                 shape="circle"
               />
               <span className="truncate">{person.name}</span>
-              {person.is_active ? null : <Badge tone="warn">Deactivated</Badge>}
+              {person.is_active ? null : <Badge tone="mute">Deactivated</Badge>}
             </>
           )}
         </span>

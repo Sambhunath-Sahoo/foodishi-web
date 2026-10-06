@@ -54,6 +54,55 @@ export function getLateness(order: OrderRead, nowMs: number): Lateness {
   };
 }
 
+/**
+ * Past this, a live order is not late — it is stuck.
+ *
+ * Six hours is where `lateTier` already tops out at its worst grade, so beyond
+ * it the stripe and the sort stop carrying any signal: on the demo data every
+ * one of 36 live rows read "44d 20h late" with an identical stripe, and the one
+ * order that went late ten minutes ago would have been invisible among them
+ * (OP-3). Nothing a rider or a kitchen does in the next ten minutes changes a
+ * stuck order; somebody has to decide what happens to the money. So these rows
+ * leave the live queue and are worked as their own short list.
+ *
+ * Measured against the wall clock, never against a seed date, so it holds for
+ * both six-week-old demo data and a fresh order that stalls tonight. The
+ * server-side expiry that would make this list empty is AD-2.
+ */
+export const STALE_AFTER_MS = 6 * 60 * 60 * 1000;
+
+/** A live order more than `STALE_AFTER_MS` past its promise. */
+export function isStuck(order: Pick<OrderRead, "promised_at">, nowMs: number): boolean {
+  return nowMs - new Date(order.promised_at).getTime() > STALE_AFTER_MS;
+}
+
+export interface LateTally {
+  /** Past the promise but inside six hours — still worth chasing a rider for. */
+  readonly late: number;
+  /** Over six hours past it — a money decision, counted apart (OP-3). */
+  readonly stuck: number;
+}
+
+/**
+ * Late and stuck, split the one way every count in the console splits them.
+ *
+ * The server's `orders_late` and `deliveries_late` count every row past its
+ * promise, stuck ones included, so on the demo data the rail said "13 late" and
+ * the overview "36 past promised" in red while the live board — which takes
+ * stuck rows off the queue — showed nothing late at all. Counting both halves
+ * here, from the rows, is what lets every badge agree with the board.
+ */
+export function tallyLate(
+  orders: readonly Pick<OrderRead, "promised_at">[],
+  nowMs: number,
+): LateTally {
+  const stuck = orders.filter((order) => isStuck(order, nowMs)).length;
+  const pastPromise = orders.filter(
+    (order) => new Date(order.promised_at).getTime() < nowMs,
+  ).length;
+  return { late: pastPromise - stuck, stuck };
+}
+
 export interface PromiseOutcome {
   /** 0 on time or not applicable · 1..3 the lateness grade. */
   readonly tier: SeverityTier;
@@ -85,6 +134,14 @@ export function getPromiseOutcome(order: OrderRead, nowMs: number): PromiseOutco
     if (lateMinutes <= 0) return { tier: 0, label: "on time", isLate: false };
     const tier = lateTier(lateMinutes);
     return { tier, label: `${formatLate(lateMinutes)} late`, isLate: true };
+  }
+
+  // Stuck rather than late (OP-3): the same quiet treatment the live board's
+  // stuck list gives it — no stripe, because six weeks and seven hours are not
+  // a ranking anybody can act on, and the word says what the stripe cannot.
+  if (isStuck(order, nowMs)) {
+    const lateMinutes = minutesBetween(new Date(order.promised_at).getTime(), nowMs);
+    return { tier: 0, label: `stuck · ${formatLate(lateMinutes)}`, isLate: true };
   }
 
   const lateness = getLateness(order, nowMs);
@@ -130,13 +187,21 @@ export function refundStatusTone(status: RefundStatus): Tone {
   return REFUND_STATUS_TONE[status] ?? "mute";
 }
 
+/**
+ * Each tone keeps the one meaning DESIGN.md gives it (OP-7): ok is money that
+ * arrived, crit is money that did not, mute is waiting. Refunded used to be
+ * `cool` — which means "out for delivery" everywhere else in the product — and
+ * a partial refund was `warn`, which means the clock is running. Neither is
+ * true of money that has already gone back, so both are mute: settled, and
+ * nothing for anybody to do. The chip's word still says which one it is.
+ */
 const PAYMENT_STATUS_TONE: Record<PaymentStatus, Tone> = {
   pending: "mute",
   authorized: "accent",
   captured: "ok",
   failed: "crit",
-  refunded: "cool",
-  partially_refunded: "warn",
+  refunded: "mute",
+  partially_refunded: "mute",
 };
 
 export function paymentStatusTone(status: PaymentStatus): Tone {

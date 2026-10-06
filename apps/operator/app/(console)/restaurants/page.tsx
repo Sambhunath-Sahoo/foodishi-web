@@ -10,7 +10,6 @@ import {
   DataTableHeaderCell,
   DataTableRow,
   DataTableScroll,
-  FilterChip,
   PageTitle,
   SEVERITY_LABEL,
   SEVERITY_TEXT,
@@ -23,6 +22,7 @@ import {
 } from "@repo/ui";
 import { BoardSkeleton, RailSkeleton } from "../../../components/board-skeleton";
 import { QueryState } from "../../../components/query-state";
+import { ToolbarHint } from "../../../components/toolbar-hint";
 import { RestaurantDrawer } from "../../../components/restaurant-drawer";
 import { RowAction } from "../../../components/row-action";
 import { SortableHeader } from "../../../components/sortable-header";
@@ -37,6 +37,7 @@ import {
 import { DECK_PAGE, DECK_PANEL, DECK_RAIL } from "../../../lib/deck";
 import {
   divergenceTier,
+  formatAboveTypical,
   gapMinutes,
   gapScale,
   WARN_MINUTES_OVER_MEDIAN,
@@ -186,7 +187,9 @@ export default function RestaurantsPage(): React.JSX.Element {
                   <Stat
                     label="Switched off"
                     value={switchedOff === null ? "—" : formatCount(switchedOff)}
-                    tone={switchedOff !== null && switchedOff > 0 ? "warn" : "default"}
+                    // Neutral: a closed kitchen is a decision already taken, not
+                    // a clock running (OP-7).
+                    tone="default"
                     caption="Not taking new orders"
                     hint="Kitchens an operator has closed. They keep their history and still appear in the rows below, because what they did last week is still worth reading."
                   />
@@ -194,19 +197,12 @@ export default function RestaurantsPage(): React.JSX.Element {
               </div>
 
               <Toolbar ariaLabel="Kitchen table filters">
-                <FilterChip
-                  label="Every kitchen"
-                  tone="accent"
-                  title="All 25 kitchens are listed; the table is sorted, not filtered."
-                />
-                {flagged > 0 ? (
-                  <FilterChip
-                    label="Slipping"
-                    value={formatCount(flagged)}
-                    tone="warn"
-                    title={`More than ${formatDuration(WARN_MINUTES_OVER_MEDIAN)} above the typical overhead.`}
-                  />
-                ) : null}
+                <ToolbarHint>
+                  Every kitchen — sorted, not filtered
+                  {flagged > 0
+                    ? ` · ${formatCount(flagged)} slipping, more than ${formatDuration(WARN_MINUTES_OVER_MEDIAN)} above the typical overhead`
+                    : ""}
+                </ToolbarHint>
               </Toolbar>
 
               <DataTableScroll
@@ -323,7 +319,7 @@ export default function RestaurantsPage(): React.JSX.Element {
                           </DataTableCell>
                           <DataTableCell numeric>
                             {row.avg_delivery_minutes === null ? (
-                              <span className="text-ink-4">no deliveries yet</span>
+                              <span className="text-ink-3">no deliveries yet</span>
                             ) : (
                               formatDuration(row.avg_delivery_minutes)
                             )}
@@ -337,7 +333,7 @@ export default function RestaurantsPage(): React.JSX.Element {
                                   tier === 0 ? "text-ink-2" : SEVERITY_TEXT[tier]
                                 }
                               >
-                                +{formatDuration(gap)}
+                                {formatAboveTypical(gap, scale)}
                               </span>
                             )}
                           </DataTableCell>
@@ -347,7 +343,7 @@ export default function RestaurantsPage(): React.JSX.Element {
                             ) : place.is_active ? (
                               <Badge tone="ok">Open</Badge>
                             ) : (
-                              <Badge tone="warn">Switched off</Badge>
+                              <Badge tone="mute">Switched off</Badge>
                             )}
                           </DataTableCell>
                           <DataTableCell numeric>
