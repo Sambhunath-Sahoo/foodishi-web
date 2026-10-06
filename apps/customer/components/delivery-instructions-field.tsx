@@ -41,8 +41,8 @@ export function DeliveryInstructionsField(): React.JSX.Element {
                 onClick={() => setDraft(isOn ? "" : preset)}
                 className={
                   isOn
-                    ? "rounded-chip border border-accent bg-accent-soft px-3 py-1.5 text-[13px] font-medium text-accent"
-                    : "rounded-chip border border-line bg-surface px-3 py-1.5 text-[13px] text-ink-2 hover:bg-surface-2"
+                    ? "min-h-11 rounded-chip border border-accent bg-accent-soft px-3 py-1.5 text-[13px] font-medium text-accent"
+                    : "min-h-11 rounded-chip border border-line bg-surface px-3 py-1.5 text-[13px] text-ink-2 hover:bg-surface-2"
                 }
               >
                 {preset}

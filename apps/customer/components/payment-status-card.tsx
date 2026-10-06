@@ -54,7 +54,7 @@ function payButtonLabel(method: PaymentMethod, amount: string): string {
   // The consequence, with the real number, before the tap (DESIGN.md copy #1).
   return isCashOnDelivery(method)
     ? `Confirm ${formatMoneyShort(amount)} on delivery`
-    : `Authorize ${formatMoneyShort(amount)}`;
+    : `Pay ${formatMoney(amount)}`;
 }
 
 /**
@@ -77,17 +77,43 @@ function PayControl({
   readonly onAttempted: () => void;
 }): React.JSX.Element {
   const [method, setMethod] = React.useState<PaymentMethod>(DEFAULT_PAYMENT_METHOD);
+  const [isChoosing, setIsChoosing] = React.useState(false);
   const createPayment = useCreatePayment();
 
+  /* Collapsed to the method and one button. The five-row picker with a
+     sentence under every row sat open mid-page on every unpaid order, and the
+     default is right for most people; "Change" is there for the rest. */
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[13px] leading-snug text-ink-2">
         {hasFailedBefore
-          ? `Every attempt so far was declined, so nothing has been collected. Trying another method authorizes ${formatMoney(totalAmount)}.`
-          : `Nothing has been authorized for this order yet. Choosing a method holds ${formatMoney(totalAmount)}; the provider collects it when it settles.`}
+          ? "Every attempt so far was declined, so nothing has been collected."
+          : "Nothing has been paid for this order yet."}
       </p>
 
-      <PaymentMethodPicker value={method} onChange={setMethod} />
+      {isChoosing ? (
+        <PaymentMethodPicker
+          value={method}
+          onChange={(next) => {
+            setMethod(next);
+            setIsChoosing(false);
+          }}
+        />
+      ) : (
+        <div className="flex items-center justify-between gap-3 rounded-card border border-line px-3">
+          <span className="text-[14px] font-medium text-ink">
+            {paymentMethodLabel(method)}
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsChoosing(true)}
+            aria-label={`Change payment method, now ${paymentMethodLabel(method)}`}
+            className="-mr-2 inline-flex min-h-11 items-center rounded-card px-2 text-[14px] font-medium text-accent hover:bg-accent-soft"
+          >
+            Change
+          </button>
+        </div>
+      )}
 
       {createPayment.isError ? (
         // The server's own refusal, verbatim — it names what happened.
@@ -96,6 +122,8 @@ function PayControl({
 
       <Button
         block
+        size="lg"
+        className="sm:w-full"
         isPending={createPayment.isPending}
         pendingLabel="Authorizing…"
         onClick={() =>

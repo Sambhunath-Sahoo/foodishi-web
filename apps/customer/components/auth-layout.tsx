@@ -38,7 +38,10 @@ export function AuthLink({
   readonly children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <Link href={href} className="font-medium text-accent no-underline">
+    <Link
+      href={href}
+      className="inline-flex min-h-11 items-center font-medium text-accent no-underline"
+    >
       {children}
     </Link>
   );

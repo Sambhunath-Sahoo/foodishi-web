@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import * as React from "react";
 import { DevCredentialsPage } from "@repo/ui";
+
+export const metadata: Metadata = { title: "Sign-in credentials" };
 
 /**
  * /creds — every seeded login, in one place.

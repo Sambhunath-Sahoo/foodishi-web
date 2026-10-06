@@ -38,14 +38,21 @@ export function PromiseMeter({
   readonly state: PromiseState;
   readonly className?: string;
 }): React.JSX.Element {
+  // A settled order gets one quiet line and no bar. The meter, the 26px
+  // number and the tier's words ("running late") describe a wait that is
+  // still going; under "Delivered — enjoy" they contradicted the headline and
+  // read as an alarm about a dinner already eaten.
+  if (state.kind === "settled") {
+    return (
+      <p className={cn("font-mono text-[13px] tabular-nums text-ink-2", className)}>
+        {state.caption}
+      </p>
+    );
+  }
+
   const percent = Math.round(state.fill * PERCENT);
   const isGraded = state.tier > 0;
-  const valueClass =
-    isGraded
-      ? SEVERITY_TEXT[state.tier]
-      : state.kind === "settled"
-        ? "text-ok"
-        : "text-ink";
+  const valueClass = isGraded ? SEVERITY_TEXT[state.tier] : "text-ink";
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>

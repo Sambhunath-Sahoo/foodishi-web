@@ -4,6 +4,16 @@
 @import "tailwindcss";
 @import "@repo/ui/styles/theme.css";
 
+/* Layout, not colour: the heights of the two pieces of fixed chrome. The tab
+ * bar's is read by the bar, by every action bar stacked on it and by <main>'s
+ * bottom padding; the header's by the header and by anything that docks under
+ * it (lib/app-column.ts). One number each, so they can never disagree. Not
+ * tokens — they are this app's chrome, not the design system's. */
+:root {
+  --tab-bar-h: 64px;
+  --app-header-h: 57px;
+}
+
 /* Keyboard focus must be visible everywhere, including on elements a browser
  * would otherwise leave bare. The ring is the accent token, never a hex. */
 :focus-visible {

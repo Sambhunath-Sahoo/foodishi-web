@@ -187,3 +187,40 @@ export function paymentStanding(page: Page<Payment> | undefined): PaymentStandin
 export function hasOpenPayment(page: Page<Payment> | undefined): boolean {
   return (page?.items ?? []).some((row) => OPEN_STATUSES.includes(row.status));
 }
+
+/**
+ * The state in one word, for a chip beside a figure that already shows the
+ * amount. describePayment's headline repeats the amount ("Paid ₹929.05"),
+ * which is right on the tracking screen and noise in a list that has the
+ * amount in its own column.
+ */
+export function paymentStatusWord(payment: Payment): string {
+  switch (payment.status) {
+    case "captured":
+      return "Paid";
+    case "failed":
+      return "Failed";
+    case "authorized":
+      return isCashOnDelivery(payment.method) ? "Due on delivery" : "Held";
+    case "pending":
+      return "Pending";
+    case "refunded":
+      return "Refunded";
+    case "partially_refunded":
+      return "Part refunded";
+    default:
+      return "Recorded";
+  }
+}
+
+/**
+ * The gateway's name, when it is one a customer would recognise. The sandbox
+ * provider is called "mock" on the wire, and "UPI · mock" told a customer
+ * their payment was not real.
+ */
+const INTERNAL_PROVIDERS: readonly string[] = ["mock", "test", "sandbox"];
+
+export function customerProviderLabel(provider: string | null | undefined): string | null {
+  if (provider === null || provider === undefined || provider.trim() === "") return null;
+  return INTERNAL_PROVIDERS.includes(provider.trim().toLowerCase()) ? null : provider;
+}

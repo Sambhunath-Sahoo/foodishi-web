@@ -2,41 +2,32 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Skeleton, Thumb, buttonVariants, cn } from "@repo/ui";
 import { useAccount } from "../lib/use-account";
 import { toLoginHref } from "../lib/next-path";
 
 /**
- * The header's identity control — a real one. Signed out it is a link to
- * /login that remembers the current page; signed in it is your photo, who you
- * are, a way into /profile and the way out. This replaces the phase-1 dev
- * identity switcher, which the API no longer honours.
+ * The header's identity control. Signed out it is a link to /login that
+ * remembers the current page; signed in it is your photo and name, and one tap
+ * into /profile.
+ *
+ * ONE CONTROL, NOT THREE. This used to hold the photo, the name AND a Sign out
+ * button, which at 390px pushed the header 10px past the edge of the screen.
+ * Swiggy and Zomato settle it the same way: the header is a way into the
+ * account, and the account screen is where you leave — signing out is rare,
+ * and a rare action does not get space in a bar seen on every screen.
  */
 export function AccountMenu(): React.JSX.Element {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { isSignedIn, isReady, displayName, email, avatarUrl, status, signOut } =
+  const { isSignedIn, isReady, displayName, email, avatarUrl, status } =
     useAccount();
-  const [isSigningOut, setIsSigningOut] = React.useState(false);
 
   // Never offer to come back to the auth screens themselves.
   const isAuthRoute = pathname === "/login" || pathname === "/signup";
   const query = searchParams.toString();
   const here = query === "" ? pathname : `${pathname}?${query}`;
-
-  function handleSignOut(): void {
-    setIsSigningOut(true);
-    void (async () => {
-      try {
-        await signOut();
-        router.replace("/");
-      } finally {
-        setIsSigningOut(false);
-      }
-    })();
-  }
 
   if (status === "loading") {
     return <Skeleton className="h-8 w-24" label="Checking your session" />;
@@ -47,7 +38,10 @@ export function AccountMenu(): React.JSX.Element {
     return (
       <Link
         href={toLoginHref(here)}
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "no-underline")}
+        className={cn(
+          buttonVariants({ variant: "outline", size: "sm" }),
+          "h-11 px-4 no-underline",
+        )}
       >
         Sign in
       </Link>
@@ -55,33 +49,23 @@ export function AccountMenu(): React.JSX.Element {
   }
 
   const label = isReady ? (displayName ?? email ?? "Signed in") : email ?? "Signed in";
+  const isOnProfile = pathname === "/profile";
 
   return (
-    <div className="flex min-w-0 items-center gap-1">
-      {/* The photo is the tap target as much as the name is: at 390px a 12px
-          label alone is a poor one, and the circle gives the account screen a
-          landmark the three-tab bar has no room for. Initials are the ordinary
-          state here — most customers have no avatar. */}
-      <Link
-        href="/profile"
-        aria-label={`Your account, signed in as ${label}`}
-        title={email ?? undefined}
-        className="flex min-h-9 min-w-0 items-center gap-2 rounded-card px-1 no-underline hover:bg-surface-2"
-      >
-        <Thumb src={avatarUrl} name={label} size={24} shape="circle" />
-        <span className="min-w-0 truncate text-[12px] text-ink-3">{label}</span>
-      </Link>
-      <button
-        type="button"
-        onClick={handleSignOut}
-        disabled={isSigningOut}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "shrink-0 px-2",
-        )}
-      >
-        {isSigningOut ? "Signing out…" : "Sign out"}
-      </button>
-    </div>
+    // The control is the photo alone: a name squeezed beside the logo
+    // truncated to a few letters and said less than the initials do. It used to
+    // join the photo from `sm` up, but that breakpoint is the browser's width
+    // and this app is a 480px column at every width, so a desktop showed a
+    // header the phone never does. The aria-label carries the name. Initials
+    // are the ordinary state here — most customers have no avatar.
+    <Link
+      href="/profile"
+      aria-label={`Your account, signed in as ${label}`}
+      aria-current={isOnProfile ? "page" : undefined}
+      title={email ?? undefined}
+      className="flex min-h-11 min-w-11 items-center justify-center rounded-chip no-underline hover:bg-surface-2"
+    >
+      <Thumb src={avatarUrl} name={label} size={36} shape="circle" />
+    </Link>
   );
 }

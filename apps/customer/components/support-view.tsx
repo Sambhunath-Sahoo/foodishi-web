@@ -14,11 +14,14 @@ import {
   SegmentedControl,
 } from "@repo/ui";
 import { SupportTicketForm } from "./support-ticket-form";
+import { SupportContactCard } from "./support-contact-card";
+import { IS_TICKET_FORM_ENABLED } from "../lib/support-contact";
 import { LoadingLines } from "./data-states";
 import { formatDateTime } from "../lib/format";
 import { useAccount } from "../lib/use-account";
 import { useOrderHistory } from "../lib/queries/orders";
 import { topicLabel, useSupport, type SupportTicket } from "../lib/support";
+import { SEGMENTED_TAP_TARGET } from "../lib/tap-targets";
 
 const FILTERS = [
   { value: "open", label: "Open" },
@@ -48,46 +51,71 @@ export function SupportView(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageTitle subtitle="Report a problem with an order">Support</PageTitle>
+      <PageTitle subtitle="Reach a person about an order">Support</PageTitle>
 
-      <SupportTicketForm orderOptions={orderOptions} />
-
+      {/* A person first. The ticket form only ever stored on this device, so
+          it stays behind a flag until tickets reach an agent. */}
       <Card>
         <CardHeader>
-          <CardTitle>Your tickets</CardTitle>
+          <CardTitle>Talk to us</CardTitle>
         </CardHeader>
-        <CardBody className="flex flex-col gap-3">
-          <SegmentedControl<Filter>
-            options={FILTERS.map((row) => ({
-              value: row.value,
-              label: row.label,
-              count: tickets.filter((ticket) => ticket.status === row.value).length,
-            }))}
-            value={filter}
-            onValueChange={setFilter}
-            ariaLabel="Ticket status"
-          />
-
-          {!isReady ? (
-            <LoadingLines count={2} label="Loading tickets" />
-          ) : shown.length === 0 ? (
-            <EmptyState
-              title={filter === "open" ? "No open tickets" : "No closed tickets"}
-              detail={
-                filter === "open"
-                  ? "Anything you report shows up here with a reference."
-                  : "Tickets you close are kept here."
-              }
-            />
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {shown.map((ticket) => (
-                <TicketRow key={ticket.id} ticket={ticket} onClose={close} />
-              ))}
-            </ul>
-          )}
+        <CardBody>
+          <SupportContactCard />
+          <p className="mt-3 text-[13px] text-ink-2">
+            About one order? Open it and tap Get help, so we know which one.
+          </p>
+          <Link
+            href="/orders"
+            className="inline-flex min-h-11 items-center text-[13px] font-medium text-accent"
+          >
+            Your orders
+          </Link>
         </CardBody>
       </Card>
+
+      {IS_TICKET_FORM_ENABLED ? <SupportTicketForm orderOptions={orderOptions} /> : null}
+
+      {/* Shown with the form on, or to keep tickets raised before it was
+          switched off readable. */}
+      {IS_TICKET_FORM_ENABLED || tickets.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your tickets</CardTitle>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-3">
+            <SegmentedControl<Filter>
+              options={FILTERS.map((row) => ({
+                value: row.value,
+                label: row.label,
+                count: tickets.filter((ticket) => ticket.status === row.value).length,
+              }))}
+              value={filter}
+              onValueChange={setFilter}
+              ariaLabel="Ticket status"
+              className={SEGMENTED_TAP_TARGET}
+            />
+
+            {!isReady ? (
+              <LoadingLines count={2} label="Loading tickets" />
+            ) : shown.length === 0 ? (
+              <EmptyState
+                title={filter === "open" ? "No open tickets" : "No closed tickets"}
+                detail={
+                  filter === "open"
+                    ? "Anything you report shows up here with a reference."
+                    : "Tickets you close are kept here."
+                }
+              />
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {shown.map((ticket) => (
+                  <TicketRow key={ticket.id} ticket={ticket} onClose={close} />
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      ) : null}
     </div>
   );
 }
@@ -116,7 +144,7 @@ function TicketRow({
         {ticket.orderId !== null ? (
           <Link
             href={`/orders/${ticket.orderId}`}
-            className="text-[12px] font-medium text-accent"
+            className="inline-flex min-h-11 items-center text-[12px] font-medium text-accent"
           >
             {`Order #${ticket.orderId}`}
           </Link>
@@ -132,7 +160,7 @@ function TicketRow({
 
       {ticket.status === "open" ? (
         <div className="mt-3">
-          <Button variant="outline" size="sm" onClick={() => onClose(ticket.id)}>
+          <Button variant="outline" size="sm" className="h-11" onClick={() => onClose(ticket.id)}>
             Close ticket
           </Button>
         </div>

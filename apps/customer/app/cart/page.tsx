@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import * as React from "react";
 import { Skeleton } from "@repo/ui";
 import { CartView } from "../../components/cart-view";
+
+export const metadata: Metadata = { title: "Your cart" };
 
 /**
  * CartView reads `?dropped=N` — the count of dishes a reorder had to leave out —

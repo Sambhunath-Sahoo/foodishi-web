@@ -9,6 +9,7 @@ import { ProfileLinkForm } from "./profile-link-form";
 import { useAccount } from "../lib/use-account";
 import { isFixtureSource } from "../lib/services";
 import { toLoginHref } from "../lib/next-path";
+import { takeSignOutIntent } from "../lib/sign-out-intent";
 
 /**
  * The gate on /checkout, /orders and /orders/[id].
@@ -28,9 +29,11 @@ export function RequireAccount({
   const router = useRouter();
 
   // A soft replace keeps the React tree — and therefore the in-memory cart —
-  // alive across the bounce to /login.
+  // alive across the bounce to /login. A sign-out the customer asked for is
+  // not a lost session, so it goes to Discover instead (lib/sign-out-intent).
   const redirect = React.useCallback(
-    (destination: string) => router.replace(destination),
+    (destination: string) =>
+      router.replace(takeSignOutIntent() ? "/" : destination),
     [router],
   );
 
@@ -69,7 +72,8 @@ function FixtureGate({
   const here = query === "" ? pathname : `${pathname}?${query}`;
 
   React.useEffect(() => {
-    if (isReady && !isSignedIn) router.replace(toLoginHref(here));
+    if (!isReady || isSignedIn) return;
+    router.replace(takeSignOutIntent() ? "/" : toLoginHref(here));
   }, [isReady, isSignedIn, here, router]);
 
   if (!isReady) return <AuthSpinner label="Loading your account" />;

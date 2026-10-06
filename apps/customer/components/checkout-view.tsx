@@ -23,7 +23,10 @@ import { CheckoutPaymentStep } from "./checkout-payment-step";
 import { PaymentMethodPicker } from "./payment-method-picker";
 import { QuoteSummary } from "./quote-summary";
 import { VegMark } from "./dish-marks";
+import { StickyActionBar } from "./sticky-action-bar";
 import { useCart } from "../lib/cart";
+import { useRestaurant } from "../lib/queries/catalog";
+import { minimumOrderGap } from "../lib/minimum-order";
 import { toQuoteRequest } from "../lib/quote-request";
 import { usePlaceOrder, useQuote } from "../lib/queries/orders";
 import {
@@ -34,7 +37,13 @@ import {
 } from "../lib/payment";
 import { useAccount } from "../lib/use-account";
 import { newIdempotencyKey } from "../lib/idempotency";
-import { formatMinutes, formatMoney, formatTimeOnly } from "../lib/format";
+import {
+  formatMinutes,
+  formatMoney,
+  formatMoneyShort,
+  formatTimeOnly,
+  withRupee,
+} from "../lib/format";
 import type { OrderDetail } from "../lib/types";
 
 /** The order, once it exists, plus the one thing clearing the cart takes away. */
@@ -64,6 +73,7 @@ export function CheckoutView(): React.JSX.Element {
 
   const request = React.useMemo(() => toQuoteRequest(cart), [cart]);
   const quote = useQuote(request, userId);
+  const kitchen = useRestaurant(cart.restaurantId);
   const placeOrder = usePlaceOrder();
   const { draft, attachDraftToOrder } = useDeliveryNotes();
 
@@ -121,7 +131,7 @@ export function CheckoutView(): React.JSX.Element {
           title="There is nothing to check out"
           detail="Add dishes to your cart and the address, the bill and the Place order button appear here."
           action={
-            <Link href="/" className={cn(buttonVariants({ size: "md" }), "no-underline")}>
+            <Link href="/" className={cn(buttonVariants({ size: "lg" }), "w-auto no-underline")}>
               Find a kitchen
             </Link>
           }
@@ -189,6 +199,21 @@ export function CheckoutView(): React.JSX.Element {
     quote.data !== undefined &&
     !quote.isError &&
     !isQuoteStale;
+  /**
+   * Why Place order is disabled, printed directly above it. The server's own
+   * refusal used to sit in the bill ~1100px up the page while the button sat
+   * grey under the thumb with nothing beside it.
+   */
+  const gap = minimumOrderGap(cart.lines, kitchen.data?.policy?.min_order_value);
+  const blockedReason = canPlace
+    ? null
+    : cart.addressId === null
+      ? "Choose a delivery address above to place the order."
+      : gap !== null
+        ? `Add ${formatMoneyShort(gap.shortBy)} more to order from ${cart.restaurantName ?? "this kitchen"} — the minimum is ${formatMoneyShort(gap.minimum)}.`
+        : quote.isError
+          ? withRupee(toUserMessage(quote.error))
+          : "Updating the total for your latest changes…";
   const freeWindowMinutes =
     quote.data === undefined
       ? 0
@@ -200,13 +225,16 @@ export function CheckoutView(): React.JSX.Element {
         );
 
   return (
-    <div className="flex flex-col gap-5 pb-24">
+    <div className="flex flex-col gap-5">
       <PageTitle subtitle={cart.restaurantName ?? undefined}>Checkout</PageTitle>
 
       <Card>
         <CardHeader>
           <CardTitle>Order</CardTitle>
-          <Link href="/cart" className="text-[13px] font-medium text-accent no-underline">
+          <Link
+            href="/cart"
+            className="-my-3 -mr-2 inline-flex min-h-11 min-w-11 items-center justify-center px-2 text-[13px] font-medium text-accent no-underline"
+          >
             Edit
           </Link>
         </CardHeader>
@@ -301,8 +329,8 @@ export function CheckoutView(): React.JSX.Element {
         />
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-[56px] z-20 border-t border-line bg-surface px-4 py-3 shadow-card">
-        <div className="mx-auto flex w-full max-w-[560px] flex-col gap-2">
+      <StickyActionBar label="Place the order">
+        <div className="flex w-full flex-col gap-2">
           {/* The two facts the tap commits to — how much, and by what means —
               sit above the button rather than inside its label, which cannot
               wrap and must not push the page sideways at 390px. */}
@@ -325,9 +353,34 @@ export function CheckoutView(): React.JSX.Element {
               </span>
             </div>
           ) : null}
+          {blockedReason !== null && !placeOrder.isPending ? (
+            <p
+              id="checkout-blocked-reason"
+              aria-live="polite"
+              className="text-[13px] leading-snug text-ink-2"
+            >
+              {blockedReason}
+              {gap !== null ? (
+                <>
+                  {" "}
+                  <Link
+                    href="/cart"
+                    className="inline-flex min-h-11 items-center font-medium text-accent"
+                  >
+                    Back to your cart
+                  </Link>
+                </>
+              ) : null}
+            </p>
+          ) : null}
           <Button
             block
             size="lg"
+            // `lg` shrinks to its label from the sm breakpoint, which keys off
+            // the browser, not this 480px column: on a desktop the bar's one
+            // action collapsed to a small button in a wide bar.
+            className="sm:w-full"
+            aria-describedby={blockedReason === null ? undefined : "checkout-blocked-reason"}
             disabled={!canPlace}
             isPending={placeOrder.isPending}
             pendingLabel="Placing your order…"
@@ -336,7 +389,7 @@ export function CheckoutView(): React.JSX.Element {
             {isCashOnDelivery(method) ? "Place order — pay on delivery" : "Place order & pay"}
           </Button>
         </div>
-      </div>
+      </StickyActionBar>
     </div>
   );
 }

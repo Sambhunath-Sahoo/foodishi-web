@@ -4,20 +4,26 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@repo/ui";
-import { ThemeSwitcher } from "@repo/ui";
 import { AccountMenu } from "./account-menu";
 import { useCart } from "../lib/cart";
+import { TabIcon, type TabIconName } from "./tab-icons";
+import { APP_COLUMN, APP_COLUMN_EDGE, CLEAR_TAB_BAR } from "../lib/app-column";
 
 /**
  * Phone chrome: a thin brand bar at the top, a thumb-reachable tab bar at the
  * bottom. Targets are 44px+ because this is read one-handed at 390px.
  */
-const TABS = [
-  { href: "/", label: "Discover", match: (path: string) => path === "/" || path.startsWith("/r/") },
-  { href: "/favorites", label: "Saved", match: (path: string) => path.startsWith("/favorites") },
-  { href: "/cart", label: "Cart", match: (path: string) => path.startsWith("/cart") || path.startsWith("/checkout") },
-  { href: "/orders", label: "Orders", match: (path: string) => path.startsWith("/orders") },
-] as const;
+const TABS: readonly {
+  readonly href: string;
+  readonly label: string;
+  readonly icon: TabIconName;
+  readonly match: (path: string) => boolean;
+}[] = [
+  { href: "/", label: "Discover", icon: "discover", match: (path: string) => path === "/" || path.startsWith("/r/") },
+  { href: "/favorites", label: "Saved", icon: "saved", match: (path: string) => path.startsWith("/favorites") },
+  { href: "/cart", label: "Cart", icon: "cart", match: (path: string) => path.startsWith("/cart") || path.startsWith("/checkout") },
+  { href: "/orders", label: "Orders", icon: "orders", match: (path: string) => path.startsWith("/orders") },
+];
 
 export function AppShell({
   children,
@@ -28,19 +34,21 @@ export function AppShell({
   const { itemCount, isReady } = useCart();
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[560px] items-center justify-between gap-3 px-4 py-2.5">
+    <div className={cn(APP_COLUMN, APP_COLUMN_EDGE, "flex min-h-dvh flex-col")}>
+      <header className="sticky top-0 z-30 h-[var(--app-header-h)] border-b border-line bg-surface/95 backdrop-blur">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-1.5">
           <Link
             href="/"
-            className="font-title text-2xl leading-none text-ink no-underline"
+            className="flex min-h-11 shrink-0 items-center font-title text-2xl leading-none text-ink no-underline"
           >
             Foodishi
           </Link>
-          <div className="flex items-center gap-2">
-            {/* Compact at 390px — three labelled options would push the
-                account menu off the edge on a phone. */}
-            <ThemeSwitcher compact />
+          {/* One control on the right, at every width. The theme switcher
+              used to sit here too: three 22px icons that overflowed 390px and
+              competed with the account for a bar seen on every screen. It lives
+              on /profile under Appearance now, where Swiggy and Zomato keep
+              theirs. */}
+          <div className="flex min-w-0 items-center">
             <React.Suspense fallback={null}>
               <AccountMenu />
             </React.Suspense>
@@ -48,15 +56,23 @@ export function AppShell({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[560px] flex-1 px-4 pt-4 pb-28">
+      {/* The bottom padding is the tab bar, the home indicator and 16px, read
+          from the same --tab-bar-h the bar uses. A flat pb-28 left "Sign out",
+          the last thing on /profile, under the bar at full scroll. */}
+      <main className={cn("w-full flex-1 px-4 pt-4", CLEAR_TAB_BAR)}>
         {children}
       </main>
 
       <nav
         aria-label="Sections"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface"
+        className={cn(
+          APP_COLUMN,
+          APP_COLUMN_EDGE,
+          "fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface",
+          "pb-[env(safe-area-inset-bottom)]",
+        )}
       >
-        <ul className="mx-auto flex w-full max-w-[560px] items-stretch">
+        <ul className="flex w-full items-stretch">
           {TABS.map((tab) => {
             const isCurrent = tab.match(pathname);
             const showCount = tab.href === "/cart" && isReady && itemCount > 0;
@@ -66,19 +82,22 @@ export function AppShell({
                   href={tab.href}
                   aria-current={isCurrent ? "page" : undefined}
                   className={cn(
-                    "flex min-h-[56px] flex-col items-center justify-center gap-1 px-2 py-2",
+                    "flex h-[var(--tab-bar-h)] flex-col items-center justify-center gap-0.5 px-2",
                     "text-[12px] font-medium no-underline transition-colors",
                     isCurrent ? "text-accent" : "text-ink-3 hover:text-ink-2",
                   )}
                 >
-                  <span className="flex items-center gap-1.5">
-                    {tab.label}
+                  {/* The count rides on the icon's corner, so the label never
+                      shifts sideways when the cart fills. */}
+                  <span className="relative">
+                    <TabIcon name={tab.icon} />
                     {showCount ? (
-                      <span className="inline-flex min-w-5 items-center justify-center rounded-chip bg-accent px-1.5 py-0.5 text-[11px] tabular-nums text-on-accent">
+                      <span className="absolute -top-1.5 left-4 inline-flex min-w-5 items-center justify-center rounded-chip bg-accent px-1.5 py-0.5 text-[11px] leading-none tabular-nums text-on-accent">
                         {itemCount}
                       </span>
                     ) : null}
                   </span>
+                  <span>{tab.label}</span>
                   <span
                     aria-hidden="true"
                     className={cn(

@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import * as React from "react";
 import { SignupView } from "../../components/signup-view";
 import { toSafeReturnPath } from "../../lib/next-path";
+
+export const metadata: Metadata = { title: "Create an account" };
 
 export default async function SignupPage({
   searchParams,

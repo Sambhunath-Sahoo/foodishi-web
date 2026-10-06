@@ -119,7 +119,7 @@ export function ReviewForm({
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <Button type="submit" disabled={!isValid || !isReady}>
+            <Button type="submit" size="lg" className="w-auto" disabled={!isValid || !isReady}>
               {existing === null ? "Post review" : "Save changes"}
             </Button>
             {isSaved ? (

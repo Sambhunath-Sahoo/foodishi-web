@@ -4,7 +4,7 @@ import * as React from "react";
 import { Card, CardBody, CardHeader, CardTitle } from "@repo/ui";
 import { PriceBreakdown, PriceBreakdownSkeleton } from "./price-breakdown";
 import { QueryError } from "./data-states";
-import { formatTimeOnly } from "../lib/format";
+import { formatTimeOnly, withRupee } from "../lib/format";
 import type { Quote } from "../lib/types";
 
 /**
@@ -48,6 +48,7 @@ export function QuoteSummary({
             title="This order cannot be priced yet"
             error={error}
             onRetry={onRetry}
+            formatMessage={withRupee}
           />
         ) : isPending || quote === undefined ? (
           <PriceBreakdownSkeleton />

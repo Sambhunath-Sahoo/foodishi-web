@@ -33,7 +33,24 @@ interface Overlay {
 
 // The list rows carry no `items`; the detail map does, and covers every id.
 const SEED_LIST = ordersSeed as readonly OrderRead[];
-const SEED_DETAILS = orderDetailsSeed as Readonly<Record<string, OrderDetail>>;
+type SeedDetail = Omit<OrderDetail, "items"> & {
+  readonly items: ReadonlyArray<Omit<OrderDetail["items"][number], "modifiers">>;
+};
+
+/**
+ * The seed JSON predates `OrderItemRead.modifiers`, so its lines have none.
+ * Filled in once here, as the API now always sends it, rather than every
+ * reader guarding against a field the type says is always present.
+ */
+function withLineModifiers(order: SeedDetail): OrderDetail {
+  return { ...order, items: order.items.map((item) => ({ ...item, modifiers: [] })) };
+}
+
+const SEED_DETAILS: Readonly<Record<string, OrderDetail>> = Object.fromEntries(
+  Object.entries(orderDetailsSeed as unknown as Readonly<Record<string, SeedDetail>>).map(
+    ([id, order]) => [id, withLineModifiers(order)],
+  ),
+);
 const SEED_ORDERS: readonly OrderDetail[] = SEED_LIST.map(
   (row) => SEED_DETAILS[String(row.id)],
 ).filter((row): row is OrderDetail => row !== undefined);

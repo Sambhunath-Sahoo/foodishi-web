@@ -64,7 +64,7 @@ export function AddressPicker({
         action={
           <Link
             href={toLoginHref(returnPath)}
-            className={cn(buttonVariants({ size: "md" }), "no-underline")}
+            className={cn(buttonVariants({ size: "md" }), "h-11 no-underline")}
           >
             Sign in
           </Link>

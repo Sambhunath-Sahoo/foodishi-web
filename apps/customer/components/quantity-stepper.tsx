@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@repo/ui";
 
 const CONTROL = [
-  "inline-flex size-9 items-center justify-center rounded-card",
+  "inline-flex size-11 items-center justify-center rounded-card",
   "text-base font-semibold leading-none text-accent",
   "transition-colors cursor-pointer",
   "hover:bg-accent-soft disabled:cursor-not-allowed disabled:text-ink-4",
@@ -12,7 +12,7 @@ const CONTROL = [
 ].join(" ");
 
 /**
- * 36px targets, because this is tapped with a thumb. The count is announced
+ * 44px targets, because this is tapped with a thumb. The count is announced
  * politely so a screen reader hears the new quantity without stealing focus.
  */
 export function QuantityStepper({

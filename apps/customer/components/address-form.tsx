@@ -4,7 +4,9 @@ import * as React from "react";
 import { toUserMessage } from "@repo/api-client";
 import { Button, Dialog, ErrorBanner, Field, Input } from "@repo/ui";
 import { useCreateAddress } from "../lib/queries/addresses";
+import { FIELD_TAP_TARGET } from "../lib/tap-targets";
 import type { Address } from "../lib/types";
+import { APP_DIALOG } from "../lib/app-column";
 
 /**
  * The form behind "Add a new address".
@@ -70,11 +72,13 @@ export function AddressForm({
 
   return (
     <>
-      <Button variant="outline" size="md" onClick={() => setIsOpen(true)}>
+      <Button variant="outline" size="md" className="h-11" onClick={() => setIsOpen(true)}>
         Add a new address
       </Button>
 
       <Dialog
+
+        className={APP_DIALOG}
         open={isOpen}
         onOpenChange={(next) => (next ? setIsOpen(true) : close())}
         title="Add a delivery address"
@@ -90,6 +94,7 @@ export function AddressForm({
 
           <Field label="Label" htmlFor="address-label">
             <Input
+              className={FIELD_TAP_TARGET}
               id="address-label"
               name="label"
               required
@@ -101,6 +106,7 @@ export function AddressForm({
 
           <Field label="Flat, building, street" htmlFor="address-line1">
             <Input
+              className={FIELD_TAP_TARGET}
               id="address-line1"
               name="line1"
               required
@@ -112,6 +118,7 @@ export function AddressForm({
 
           <Field label="Landmark (optional)" htmlFor="address-line2">
             <Input
+              className={FIELD_TAP_TARGET}
               id="address-line2"
               name="line2"
               maxLength={240}
@@ -123,6 +130,7 @@ export function AddressForm({
             <div className="flex-1">
               <Field label="City" htmlFor="address-city">
                 <Input
+                  className={FIELD_TAP_TARGET}
                   id="address-city"
                   name="city"
                   required
@@ -135,6 +143,7 @@ export function AddressForm({
             <div className="w-32">
               <Field label="Pincode" htmlFor="address-pincode">
                 <Input
+                  className={FIELD_TAP_TARGET}
                   id="address-pincode"
                   name="pincode"
                   required
@@ -147,12 +156,13 @@ export function AddressForm({
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="md" onClick={close}>
+            <Button type="button" variant="ghost" size="md" className="h-11" onClick={close}>
               Cancel
             </Button>
             <Button
               type="submit"
               size="md"
+              className="h-11"
               isPending={create.isPending}
               pendingLabel="Saving…"
             >

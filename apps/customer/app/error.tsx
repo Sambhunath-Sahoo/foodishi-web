@@ -39,7 +39,7 @@ export default function RouteError({
         title="Something went wrong on this screen"
         message="Your cart and your orders are safe. Try again, or head back to the menu."
         action={
-          <Button size="sm" variant="ghost" onClick={reset}>
+          <Button size="sm" variant="ghost" className="h-11" onClick={reset}>
             Try again
           </Button>
         }
@@ -52,7 +52,7 @@ export default function RouteError({
       <Button
         size="sm"
         variant="ghost"
-        className="self-start"
+        className="h-11 self-start"
         onClick={() => {
           window.location.assign("/");
         }}

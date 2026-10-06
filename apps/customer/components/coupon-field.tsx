@@ -7,6 +7,7 @@ import { toUserMessage } from "@repo/api-client";
 import { useValidateCoupon } from "../lib/queries/coupons";
 import { toLoginHref } from "../lib/next-path";
 import { formatMoney, toNumber } from "../lib/format";
+import { FIELD_TAP_TARGET } from "../lib/tap-targets";
 
 /**
  * Coupons are checked by POST /coupons/validate before they are applied, so a
@@ -96,7 +97,7 @@ export function CouponField({
                   : "Working out what this is worth…"}
             </span>
           </div>
-          <Button variant="ghost" size="sm" onClick={onRemove}>
+          <Button variant="ghost" size="sm" className="h-11" onClick={onRemove}>
             Remove
           </Button>
         </div>
@@ -125,12 +126,13 @@ export function CouponField({
             placeholder="Coupon code"
             value={code}
             onChange={(event) => setCode(event.target.value)}
-            className="uppercase"
+            className={cn(FIELD_TAP_TARGET, "uppercase")}
           />
         </div>
         <Button
           type="submit"
           variant="outline"
+          className="h-11"
           disabled={code.trim() === "" || userId === null}
           isPending={validate.isPending}
           pendingLabel="Checking…"

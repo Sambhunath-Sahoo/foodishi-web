@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import * as React from "react";
 import { RequireAccount } from "../../components/require-account";
 import { CheckoutView } from "../../components/checkout-view";
+
+export const metadata: Metadata = { title: "Checkout" };
 
 /**
  * The sign-in wall. Reaching it signed out is a soft replace to

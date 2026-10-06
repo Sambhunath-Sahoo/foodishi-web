@@ -140,7 +140,9 @@ export function CheckoutPaymentStep({
               </p>
               <Button
                 block
+                size="lg"
                 variant="outline"
+                className="sm:w-full"
                 onClick={() =>
                   authorize(
                     { orderId: order.id, method },
@@ -166,7 +168,7 @@ export function CheckoutPaymentStep({
 
       <Link
         href={trackHref}
-        className={cn(buttonVariants({ size: "lg", block: true }), "no-underline")}
+        className={cn(buttonVariants({ size: "lg", block: true }), "no-underline sm:w-full")}
       >
         Track order #{order.id}
       </Link>

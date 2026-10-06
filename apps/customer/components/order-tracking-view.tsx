@@ -3,7 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
+import { isNotFound } from "@repo/api-client";
 import {
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -12,19 +14,18 @@ import {
   Skeleton,
   StatusChip,
   Timeline,
-  buttonVariants,
-  cn,
   getOrderStatusLabel,
   getOrderStatusTone,
   type TimelineEntry,
 } from "@repo/ui";
 import { LoadingLines, QueryError } from "./data-states";
+import { OrderNotFound } from "./order-not-found";
 import { LifecycleStepper } from "./lifecycle-stepper";
 import { CancelOrderControl } from "./cancel-order-control";
 import { PaymentStatusCard } from "./payment-status-card";
 import { PriceBreakdown } from "./price-breakdown";
 import { ReviewForm } from "./review-form";
-import { SupportTicketForm } from "./support-ticket-form";
+import { OrderHelpSheet, useHelpSheet } from "./order-help-sheet";
 import { useDeliveryNotes } from "../lib/delivery-notes";
 import { PromiseMeter } from "./promise-meter";
 import { useRestaurant } from "../lib/queries/catalog";
@@ -38,9 +39,11 @@ import {
 import { useAccount } from "../lib/use-account";
 import { useNow } from "../lib/use-now";
 import { isSettled, lifecycleHeadline } from "../lib/lifecycle";
-import { describePromise } from "../lib/promise-time";
-import { formatDateTime, formatMoney } from "../lib/format";
+import { describePromise, isLongOverdue, resolveDeliveredAt } from "../lib/promise-time";
+import { useReviews } from "../lib/reviews";
+import { formatClockAndDay, formatDateTime, formatMoney } from "../lib/format";
 import type { OrderDetail, OrderEvent, Quote } from "../lib/types";
+import { LineChoices } from "./line-choices";
 
 /**
  * Tracking — the screen that matters.
@@ -63,6 +66,20 @@ export function OrderTrackingView({
   const queryClient = useQueryClient();
   const { userId, displayName } = useAccount();
   const { noteForOrder } = useDeliveryNotes();
+  const help = useHelpSheet();
+  const reviews = useReviews();
+  /**
+   * Which slot the review form takes, decided ONCE, the first time storage
+   * answers. Read live, posting a review flipped "unrated" to "rated" and the
+   * form unmounted under the thumb and remounted ~1000px down, taking its
+   * "Saved" confirmation with it.
+   */
+  const [reviewSlot, setReviewSlot] = React.useState<"top" | "bottom" | null>(null);
+  const hasReview = reviews.forOrder(orderId) !== null;
+  React.useEffect(() => {
+    if (!reviews.isReady || reviewSlot !== null) return;
+    setReviewSlot(hasReview ? "bottom" : "top");
+  }, [reviews.isReady, reviewSlot, hasReview]);
 
   const order = useOrder(isValidId ? orderId : null);
   const status = useOrderStatus(isValidId ? orderId : null);
@@ -104,12 +121,7 @@ export function OrderTrackingView({
   }, [polledStatus, detailStatus, orderId, queryClient]);
 
   if (!isValidId) {
-    return (
-      <QueryError
-        title="That is not an order number"
-        error={new Error(`"${rawOrderId}" is not an order id. Open the order from your history instead.`)}
-      />
-    );
+    return <OrderNotFound />;
   }
 
   if (order.isPending) {
@@ -123,6 +135,9 @@ export function OrderTrackingView({
   }
 
   if (order.isError) {
+    // A 404 is an order number that was never issued; retrying will not mint
+    // it. Someone else's order is a 403, which keeps the server's own words.
+    if (isNotFound(order.error)) return <OrderNotFound />;
     return (
       <QueryError
         title="Could not load this order"
@@ -141,27 +156,65 @@ export function OrderTrackingView({
   const currentStatus = live?.status ?? detail.status;
   const isCancelled = currentStatus === "cancelled";
   const hasSettled = isSettled(currentStatus);
+  const isDelivered = currentStatus === "delivered";
+  /**
+   * The arrival is read off the trail printed lower down, so the meter, the
+   * stepper and the trail state one time (lib/promise-time.ts,
+   * resolveDeliveredAt). The trail lands after the detail — and right after
+   * the poll flips to delivered it is still the previous status's copy — so
+   * until it answers the arrival is held back rather than shown from
+   * delivered_at and then corrected under the customer's eye.
+   */
+  const isArrivalPending = isDelivered && (events.isPending || events.isPlaceholderData);
+  const deliveredAt = resolveDeliveredAt(
+    events.isSuccess ? events.data : undefined,
+    detail.delivered_at,
+  );
   const promise = describePromise({
     placedAt: detail.placed_at,
     promisedAt: detail.promised_at,
     now,
-    deliveredAt: detail.delivered_at,
+    deliveredAt,
     isSettled: hasSettled,
   });
   // The server's own verdict wins while the order is live; the clock only
   // fills the gap between polls.
   const isLate = (live?.is_late ?? promise.kind === "overdue") && !hasSettled;
+  /**
+   * Hours past the promise and still open: treated as an order that did not
+   * arrive. The meter's "44d 19h late" and "the kitchen is still on it" are
+   * replaced by the promise itself and the way to a person. Judged on the
+   * clock against promised_at, so a fresh order an hour late keeps the meter.
+   */
+  const isStale = isLongOverdue({
+    promisedAt: detail.promised_at,
+    now,
+    isSettled: hasSettled,
+  });
+  // The review leads a delivered, unrated order — it is the one thing left to
+  // do — and sits at the bottom when there is already a review to edit.
+  // Storage is read after mount, so neither slot renders until it answers.
+  const isUnrated = reviewSlot === "top";
+  const reviewForm =
+    isDelivered && reviewSlot !== null ? (
+      <ReviewForm
+        orderId={detail.id}
+        restaurantId={detail.restaurant_id}
+        restaurantName={restaurant.data?.name ?? `Restaurant #${detail.restaurant_id}`}
+        authorName={displayName ?? "You"}
+      />
+    ) : null;
 
   return (
     <div className="flex flex-col gap-3">
       <header className="flex flex-col gap-1.5">
         <PageTitle subtitle={restaurant.data?.name ?? "Loading the kitchen…"}>
-          {lifecycleHeadline(currentStatus, isLate)}
+          {lifecycleHeadline(currentStatus, isLate, isStale)}
         </PageTitle>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <StatusChip
-            status={isLate ? "late" : currentStatus}
-            label={isLate ? "Running late" : undefined}
+            status={isLate || isStale ? "late" : currentStatus}
+            label={isStale ? "Not arrived" : isLate ? "Running late" : undefined}
           />
           <span className="font-mono text-[12px] tabular-nums text-ink-3">
             #{detail.id}
@@ -204,13 +257,33 @@ export function OrderTrackingView({
            without a scroll. */
         <Card>
           <div className="px-4 pt-3.5 pb-3">
-            <LifecycleStepper status={currentStatus} />
+            <LifecycleStepper
+              status={currentStatus}
+              deliveredAt={isArrivalPending ? null : deliveredAt}
+            />
           </div>
           <div className="border-t border-line px-4 py-3.5">
-            <PromiseMeter state={promise} />
+            {isStale ? (
+              // The promise, stated once. No counter and no bar: a number
+              // that only grows tells the customer nothing they can act on.
+              <p className="font-mono text-[13px] tabular-nums text-ink-2">
+                Promised by {formatClockAndDay(detail.promised_at)}
+              </p>
+            ) : isArrivalPending ? (
+              <Skeleton className="h-4 w-3/4" label="Loading when it arrived" />
+            ) : (
+              <PromiseMeter state={promise} />
+            )}
           </div>
           {!hasSettled ? (
-            <div className="border-t border-line px-4 py-3">
+            <div className="flex flex-col gap-2 border-t border-line px-4 py-3">
+              {/* Past the point of waiting, help is the main action and the
+                  cancel — outlined, with its consequence — sits under it. */}
+              {isStale ? (
+                <Button block size="lg" className="sm:w-full" onClick={help.open}>
+                  Get help with this order
+                </Button>
+              ) : null}
               <CancelOrderControl
                 orderId={detail.id}
                 userId={userId}
@@ -228,6 +301,8 @@ export function OrderTrackingView({
           ) : null}
         </Card>
       )}
+
+      {isUnrated ? reviewForm : null}
 
       <Card>
         <CardHeader className="py-2.5">
@@ -249,6 +324,7 @@ export function OrderTrackingView({
                     × {item.quantity}
                   </span>
                 </span>
+                <LineChoices modifiers={item.modifiers} />
                 {/* What one costs, when the line is more than one — the frozen
                     unit price off the order, not a division of the total. */}
                 {item.quantity > 1 ? (
@@ -332,35 +408,41 @@ export function OrderTrackingView({
         </CardBody>
       </Card>
 
-      {currentStatus === "delivered" ? (
-        <ReviewForm
-          orderId={detail.id}
-          restaurantId={detail.restaurant_id}
-          restaurantName={restaurant.data?.name ?? `Restaurant #${detail.restaurant_id}`}
-          authorName={displayName ?? "You"}
-        />
+      {!isUnrated ? reviewForm : null}
+
+      {/* Help is a sheet, not a form left open on every order. A stale order
+          already offers it, filled, at the top; this is the quiet way in. */}
+      {!isStale ? (
+        <Button variant="outline" block size="lg" className="sm:w-full" onClick={help.open}>
+          Get help with this order
+        </Button>
       ) : null}
 
-      <SupportTicketForm
-        orderId={detail.id}
-        defaultTopic="missing_item"
-        title="Something wrong with this order?"
-      />
-
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-x-5">
         <Link
           href={`/orders/${detail.id}/receipt`}
-          className={cn(buttonVariants({ variant: "outline", size: "md" }), "no-underline")}
+          className="inline-flex min-h-11 items-center text-[14px] font-medium text-accent"
         >
           Receipt
         </Link>
         <Link
           href="/orders"
-          className={cn(buttonVariants({ variant: "outline", size: "md" }), "no-underline")}
+          className="inline-flex min-h-11 items-center text-[14px] font-medium text-accent"
         >
           All your orders
         </Link>
       </div>
+
+      <OrderHelpSheet
+        open={help.isOpen}
+        onClose={help.close}
+        orderId={detail.id}
+        summary={
+          isStale
+            ? `Promised by ${formatClockAndDay(detail.promised_at)} and still not delivered. Get in touch and we will chase the kitchen for you.`
+            : undefined
+        }
+      />
     </div>
   );
 }
@@ -377,6 +459,7 @@ function toBreakdown(order: OrderDetail): Quote {
       unit_price: item.unit_price,
       quantity: item.quantity,
       line_total: item.line_total,
+      modifiers: item.modifiers,
     })),
     subtotal: order.subtotal,
     packaging_fee: order.packaging_fee,

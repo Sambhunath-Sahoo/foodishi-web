@@ -8,6 +8,7 @@ import { useSignIn } from "../lib/use-sign-in";
 import { AuthLayout, AuthLink } from "./auth-layout";
 import { QueryError } from "./data-states";
 import { toLoginHref } from "../lib/next-path";
+import { FIELD_TAP_TARGET } from "../lib/tap-targets";
 
 /**
  * Real sign-in: supabase-js `signInWithPassword`, an ES256 access token, and
@@ -80,6 +81,7 @@ export function LoginView({
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <Field label="Email" htmlFor="login-email">
           <Input
+            className={FIELD_TAP_TARGET}
             id="login-email"
             name="email"
             type="email"
@@ -96,6 +98,7 @@ export function LoginView({
 
         <Field label="Password" htmlFor="login-password">
           <Input
+            className={FIELD_TAP_TARGET}
             id="login-password"
             name="password"
             type="password"
@@ -114,6 +117,7 @@ export function LoginView({
           type="submit"
           size="lg"
           block
+          className="sm:w-full"
           disabled={!canSubmit}
           isPending={isPending}
           pendingLabel="Signing you in…"

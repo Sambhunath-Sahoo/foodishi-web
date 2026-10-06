@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Badge, Button, Card, CardBody, CardHeader, CardTitle, Select } from "@repo/ui";
 import { TICKET_TOPICS, useSupport, type TicketTopic } from "../lib/support";
+import { FIELD_TAP_TARGET } from "../lib/tap-targets";
 
 const MAX_DETAIL = 1000;
 const MAX_SUBJECT = 100;
@@ -80,6 +81,7 @@ export function SupportTicketForm({
                 setTopic(event.target.value as TicketTopic);
                 setReference(null);
               }}
+              className={FIELD_TAP_TARGET}
             />
             <p className="mt-1.5 text-[12px] text-ink-3">{hint}</p>
           </div>
@@ -103,6 +105,7 @@ export function SupportTicketForm({
                 ]}
                 value={attachedOrder}
                 onChange={(event) => setAttachedOrder(event.target.value)}
+                className={FIELD_TAP_TARGET}
               />
             </div>
           ) : null}
@@ -129,7 +132,7 @@ export function SupportTicketForm({
                 setSubject(event.target.value);
                 setReference(null);
               }}
-              className="h-10 w-full rounded-card border border-line bg-surface px-3 text-[14px] text-ink placeholder:text-ink-4 focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-accent"
+              className="h-11 w-full rounded-card border border-line bg-surface px-3 text-[14px] text-ink placeholder:text-ink-4 focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-accent"
             />
           </div>
 
@@ -158,19 +161,17 @@ export function SupportTicketForm({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Button type="submit" disabled={!isValid} block>
+            <Button type="submit" size="lg" disabled={!isValid} block className="sm:w-full">
               Submit ticket
             </Button>
+            {/* Only a confirmation, and no promise of a reply: tickets are
+                kept on this device until a support API exists, which is why
+                this form is behind IS_TICKET_FORM_ENABLED at all. */}
             {reference !== null ? (
               <p aria-live="polite" className="text-[13px] text-ok">
-                {`Logged as ${reference}. Saved on this device — no agent has seen it yet.`}
+                {`Logged as ${reference}. Keep it handy if you call or email support.`}
               </p>
-            ) : (
-              <p className="text-[12px] leading-relaxed text-ink-3">
-                Tickets are stored on this device. There is no support endpoint
-                yet, so nothing is sent and nobody will reply.
-              </p>
-            )}
+            ) : null}
           </div>
         </form>
       </CardBody>

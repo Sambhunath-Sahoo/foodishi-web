@@ -16,16 +16,21 @@ import {
   buttonVariants,
   cn,
 } from "@repo/ui";
+import { toUserMessage } from "@repo/api-client";
 import { AddressPicker } from "./address-picker";
 import { CartLines } from "./cart-lines";
 import { CouponField } from "./coupon-field";
 import { QuoteSummary } from "./quote-summary";
+import { StickyActionBar } from "./sticky-action-bar";
+import { MinimumOrderGap } from "./minimum-order-gap";
 import { useCart } from "../lib/cart";
+import { useRestaurant } from "../lib/queries/catalog";
+import { minimumOrderGap } from "../lib/minimum-order";
 import { toQuoteRequest } from "../lib/quote-request";
 import { useQuote } from "../lib/queries/orders";
 import { useAccount } from "../lib/use-account";
 import { toLoginHref } from "../lib/next-path";
-import { formatMoney } from "../lib/format";
+import { formatMoney, withRupee } from "../lib/format";
 
 /**
  * THE cart screen.
@@ -64,6 +69,8 @@ export function CartView(): React.JSX.Element {
 
   const request = React.useMemo(() => toQuoteRequest(cart), [cart]);
   const quote = useQuote(request, userId);
+  const kitchen = useRestaurant(cart.restaurantId);
+  const gap = minimumOrderGap(cart.lines, kitchen.data?.policy?.min_order_value);
 
   const onSelectAddress = React.useCallback(
     (addressId: number | null) => setAddressId(addressId),
@@ -88,7 +95,7 @@ export function CartView(): React.JSX.Element {
           title="Your cart is empty"
           detail="Dishes you add from a kitchen's menu land here — Hyderabadi Dum Biryani, Masala Dosa, Mirchi Ka Salan — with the live bill underneath them."
           action={
-            <Link href="/" className={cn(buttonVariants({ size: "md" }), "no-underline")}>
+            <Link href="/" className={cn(buttonVariants({ size: "lg" }), "w-auto no-underline")}>
               Find a kitchen
             </Link>
           }
@@ -113,8 +120,20 @@ export function CartView(): React.JSX.Element {
   const canCheckout =
     quote.data !== undefined && quote.isError === false && cart.addressId !== null;
 
+  /**
+   * Why Checkout is disabled, said beside it. A grey button with the reason
+   * somewhere up the page — or under this very bar — is a dead end on a phone.
+   * The minimum is handled above this, as its own state with a way forward.
+   */
+  const blockedReason =
+    cart.addressId === null
+      ? "Choose a delivery address to see the total."
+      : quote.isError
+        ? withRupee(toUserMessage(quote.error))
+        : "Pricing your order…";
+
   return (
-    <div className="flex flex-col gap-5 pb-24">
+    <div className="flex flex-col gap-5">
       <PageTitle subtitle={cart.restaurantName ?? undefined}>Your cart</PageTitle>
 
       {/* Reorder promises, in its own words, that "whatever survives goes in the
@@ -133,7 +152,7 @@ export function CartView(): React.JSX.Element {
           }
           message="They were left out of your cart, so this total is lower than your original order. Add anything else you want from the menu."
           action={
-            <Button variant="ghost" size="sm" onClick={dismissDropNotice}>
+            <Button variant="ghost" size="sm" className="h-11" onClick={dismissDropNotice}>
               Got it
             </Button>
           }
@@ -143,11 +162,14 @@ export function CartView(): React.JSX.Element {
       <Card>
         <CardHeader>
           <CardTitle>
-            <Link href={menuHref} className="text-accent no-underline">
+            <Link
+              href={menuHref}
+              className="inline-flex min-h-11 items-center text-accent no-underline"
+            >
               {cart.restaurantName ?? "This kitchen"}
             </Link>
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={clear}>
+          <Button variant="ghost" size="sm" className="h-11" onClick={clear}>
             Empty cart
           </Button>
         </CardHeader>
@@ -199,38 +221,62 @@ export function CartView(): React.JSX.Element {
       />
 
       {/* Thumb-reachable, above the tab bar, showing the server's total. */}
-      <div className="fixed inset-x-0 bottom-[56px] z-20 border-t border-line bg-surface px-4 py-3 shadow-card">
-        <div className="mx-auto flex w-full max-w-[560px] items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="text-[11px] text-ink-3">To pay</span>
-            <span className="text-base font-semibold tabular-nums text-ink">
-              {quote.data === undefined ? "—" : formatMoney(quote.data.total_amount)}
-            </span>
+      <StickyActionBar label="Your cart">
+        {gap !== null ? (
+          // Under the minimum, the quote refuses and there is no total to show.
+          // The bar says what would fix it and offers the fix, instead of a
+          // "To pay —" beside a grey Checkout with no reason.
+          <MinimumOrderGap
+            gap={gap}
+            kitchenName={cart.restaurantName ?? "this kitchen"}
+            menuHref={menuHref}
+          />
+        ) : (
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-col">
+              <span className="text-[11px] text-ink-3">To pay</span>
+              <span className="text-base font-semibold tabular-nums text-ink">
+                {quote.data === undefined ? "—" : formatMoney(quote.data.total_amount)}
+              </span>
+            </div>
+            {/* Signed out, the button is still live: it goes to /login carrying
+                ?next=/checkout, and the cart is in localStorage, so signing in
+                lands back on checkout with every line still there. */}
+            {!isSignedIn ? (
+              <Link
+                href={toLoginHref("/checkout")}
+                className={cn(buttonVariants({ size: "lg" }), "w-auto no-underline")}
+              >
+                Sign in to check out
+              </Link>
+            ) : canCheckout ? (
+              <Link
+                href="/checkout"
+                className={cn(buttonVariants({ size: "lg" }), "w-auto no-underline")}
+              >
+                Checkout
+              </Link>
+            ) : (
+              <div className="flex min-w-0 flex-col items-end gap-1">
+                <Button
+                  size="lg"
+                  className="w-auto"
+                  disabled
+                  aria-describedby="cart-blocked-reason"
+                >
+                  Checkout
+                </Button>
+                <p
+                  id="cart-blocked-reason"
+                  className="text-right text-[12px] leading-snug text-ink-2"
+                >
+                  {blockedReason}
+                </p>
+              </div>
+            )}
           </div>
-          {/* Signed out, the button is still live: it goes to /login carrying
-              ?next=/checkout, and the cart is in localStorage, so signing in
-              lands back on checkout with every line still there. */}
-          {!isSignedIn ? (
-            <Link
-              href={toLoginHref("/checkout")}
-              className={cn(buttonVariants({ size: "md" }), "no-underline")}
-            >
-              Sign in to check out
-            </Link>
-          ) : canCheckout ? (
-            <Link
-              href="/checkout"
-              className={cn(buttonVariants({ size: "md" }), "no-underline")}
-            >
-              Checkout
-            </Link>
-          ) : (
-            <Button size="md" disabled>
-              Checkout
-            </Button>
-          )}
-        </div>
-      </div>
+        )}
+      </StickyActionBar>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export function StarRating({
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <span aria-hidden="true" className="text-[13px] leading-none tracking-[0.1em]">
         {STARS.map((star) => (
-          <span key={star} className={star <= rounded ? "text-warn" : "text-ink-4"}>
+          <span key={star} className={star <= rounded ? "text-warn" : "text-ink-3"}>
             ★
           </span>
         ))}
@@ -73,7 +73,7 @@ export function StarPicker({
                 "border text-xl leading-none transition-colors",
                 isOn
                   ? "border-warn/30 bg-warn-soft text-warn"
-                  : "border-line bg-surface text-ink-4 hover:text-ink-3",
+                  : "border-line bg-surface text-ink-3 hover:text-ink-2",
                 "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent",
               )}
             >

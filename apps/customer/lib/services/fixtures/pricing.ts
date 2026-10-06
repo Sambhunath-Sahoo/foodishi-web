@@ -115,6 +115,8 @@ export function buildQuote(input: BuildQuoteInput): Quote {
       unit_price: money(toAmount(item.price)),
       quantity,
       line_total: money(toAmount(item.price) * quantity),
+      // The cart offers no dish choices yet, so a fixture line never has any.
+      modifiers: [],
     };
   });
 

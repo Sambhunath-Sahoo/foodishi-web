@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Button, Dialog } from "@repo/ui";
 import type { MenuItem } from "../lib/types";
+import { APP_DIALOG } from "../lib/app-column";
 
 /**
  * The consequence of adding a dish from a second kitchen, stated before the
@@ -29,6 +30,7 @@ export function CartSwitchDialog({
 }): React.JSX.Element {
   return (
     <Dialog
+      className={APP_DIALOG}
       open={pending !== null}
       onOpenChange={(open) => {
         if (!open) onCancel();

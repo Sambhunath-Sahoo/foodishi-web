@@ -11,6 +11,7 @@ import {
 } from "../lib/cancellation";
 import { formatDateTime, formatMoney } from "../lib/format";
 import type { CancelResult } from "../lib/types";
+import { APP_DIALOG } from "../lib/app-column";
 
 /**
  * Cancelling, with the consequence stated before the tap.
@@ -109,6 +110,11 @@ export function CancelOrderControl({
       <Button
         variant="danger"
         block
+        size="lg"
+        // The label carries the consequence and can run long ("Cancel — no
+        // fee, nothing has been charged yet"); it wraps rather than spilling
+        // out of a 358px button.
+        className="h-auto min-h-12 py-2 leading-snug whitespace-normal sm:w-full"
         onClick={() => setIsConfirming(true)}
         isPending={cancel.isPending}
         pendingLabel="Cancelling…"
@@ -125,17 +131,20 @@ export function CancelOrderControl({
       ) : null}
 
       <Dialog
+
+        className={APP_DIALOG}
         open={isConfirming}
         onOpenChange={setIsConfirming}
         title="Cancel this order?"
         description={cancelConsequence(preview)}
         footer={
           <>
-            <Button variant="outline" onClick={() => setIsConfirming(false)}>
+            <Button variant="outline" className="h-11" onClick={() => setIsConfirming(false)}>
               Keep it
             </Button>
             <Button
               variant="danger"
+              className="h-11"
               isPending={cancel.isPending}
               pendingLabel="Cancelling…"
               onClick={() =>

@@ -3,11 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { Badge, Button, Card, CardBody, PageTitle, StatusChip } from "@repo/ui";
+import { isNotFound } from "@repo/api-client";
 import { LoadingLines, QueryError } from "./data-states";
+import { OrderNotFound } from "./order-not-found";
 import { formatDateTime, formatMoney } from "../lib/format";
-import { useOrder, useOrderPayments } from "../lib/queries/orders";
+import { useOrder, useOrderEvents, useOrderPayments } from "../lib/queries/orders";
+import { resolveDeliveredAt } from "../lib/promise-time";
 import { useAccount } from "../lib/use-account";
 import { paymentMethodLabel } from "../lib/payment";
+import { LineChoices } from "./line-choices";
 
 /**
  * A printable receipt for one order.
@@ -31,22 +35,30 @@ export function ReceiptView({
   const orderId = Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
   const order = useOrder(orderId);
   const payments = useOrderPayments(orderId);
+  // The same arrival the tracking screen and its trail print, not the order
+  // row's delivered_at, which can disagree with both (resolveDeliveredAt).
+  const events = useOrderEvents(orderId, order.data?.status);
 
-  if (orderId === null) {
-    return (
-      <QueryError
-        title="No such receipt"
-        error={new Error(`"${rawOrderId}" is not an order number.`)}
-      />
-    );
-  }
+  if (orderId === null) return <OrderNotFound />;
   if (order.isPending) return <LoadingLines count={5} label="Loading receipt" />;
   if (order.error !== null) {
-    return <QueryError title="Could not load that receipt" error={order.error} />;
+    // Same not-found as the tracking screen: a receipt is that order, printed.
+    if (isNotFound(order.error)) return <OrderNotFound />;
+    return (
+      <QueryError
+        title="Could not load that receipt"
+        error={order.error}
+        onRetry={() => void order.refetch()}
+      />
+    );
   }
   if (order.data === undefined) return <LoadingLines count={5} label="Loading receipt" />;
 
   const row = order.data;
+  const deliveredAt = resolveDeliveredAt(
+    events.isSuccess ? events.data : undefined,
+    row.delivered_at,
+  );
   const captured = (payments.data?.items ?? []).find(
     (payment) => payment.status === "captured",
   );
@@ -57,7 +69,7 @@ export function ReceiptView({
         <PageTitle subtitle={`Order #${row.id}`}>Receipt</PageTitle>
         {/* print: styles live in globals.css so the chrome drops away. */}
         <div className="flex gap-2 print:hidden">
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Button variant="outline" size="sm" className="h-11" onClick={() => window.print()}>
             Print / save PDF
           </Button>
         </div>
@@ -77,7 +89,15 @@ export function ReceiptView({
             <Line label="Placed" value={formatDateTime(row.placed_at)} />
             <Line
               label="Delivered"
-              value={row.delivered_at === null ? "—" : formatDateTime(row.delivered_at)}
+              value={
+                // Held until the trail answers, so the time never visibly
+                // jumps from delivered_at to the trail's.
+                row.status === "delivered" && events.isPending
+                  ? "…"
+                  : deliveredAt === null
+                    ? "—"
+                    : formatDateTime(deliveredAt)
+              }
             />
             <Line label="Billed to" value={displayName ?? email ?? "—"} />
             <Line label="Order" value={`#${row.id}`} mono />
@@ -96,7 +116,10 @@ export function ReceiptView({
               <tbody>
                 {row.items.map((item) => (
                   <tr key={item.id} className="border-t border-line">
-                    <td className="py-2 pr-2 text-ink">{item.item_name}</td>
+                    <td className="py-2 pr-2 text-ink">
+                      {item.item_name}
+                      <LineChoices modifiers={item.modifiers} className="text-[12px]" />
+                    </td>
                     <td className="py-2 text-right tabular-nums text-ink-2">
                       {item.quantity}
                     </td>
@@ -142,7 +165,7 @@ export function ReceiptView({
 
       <Link
         href={`/orders/${row.id}`}
-        className="text-[13px] font-medium text-accent print:hidden"
+        className="inline-flex min-h-11 items-center self-start text-[13px] font-medium text-accent print:hidden"
       >
         Back to the order
       </Link>

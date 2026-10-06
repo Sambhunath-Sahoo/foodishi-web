@@ -41,7 +41,7 @@ export function CartLines({
             <Button
               variant="ghost"
               size="sm"
-              className="mt-1 -ml-3"
+              className="mt-0.5 -ml-3 h-11"
               onClick={() => onRemove(line.menuItemId)}
             >
               Remove

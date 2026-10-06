@@ -31,10 +31,21 @@ export function isSettled(status: string | undefined): boolean {
   return status === "delivered" || status === "cancelled";
 }
 
-/** One line telling the customer what is happening right now. */
-export function lifecycleHeadline(status: string, isLate: boolean): string {
+/**
+ * One line telling the customer what is happening right now.
+ *
+ * `isStale` is an order hours past its promise (lib/promise-time.ts,
+ * isLongOverdue). "The kitchen is still on it" is a reassurance, and six hours
+ * on the screen has no grounds for it, so the headline states the failure.
+ */
+export function lifecycleHeadline(
+  status: string,
+  isLate: boolean,
+  isStale = false,
+): string {
   if (status === "cancelled") return "This order was cancelled";
   if (status === "delivered") return "Delivered — enjoy";
+  if (isStale) return "This order hasn’t arrived";
   if (isLate) return "Running late — the kitchen is still on it";
   const step = LIFECYCLE.find((entry) => entry.status === status);
   return step === undefined ? "Tracking this order" : step.done;

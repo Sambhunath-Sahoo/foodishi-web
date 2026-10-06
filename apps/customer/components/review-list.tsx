@@ -92,10 +92,6 @@ export function ReviewList({
           </ul>
         )}
 
-        <p className="text-[12px] leading-relaxed text-ink-3">
-          Reviews you write are saved on this device only — there is no reviews
-          endpoint yet, so they do not move the kitchen&apos;s public score.
-        </p>
       </CardBody>
     </Card>
   );

@@ -3,10 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { Badge, Button, Card, PageTitle, Skeleton, cn } from "@repo/ui";
-import { QueryError } from "./data-states";
+import { isNotFound } from "@repo/api-client";
+import { NotFoundState, QueryError } from "./data-states";
 import { CartSwitchDialog } from "./cart-switch-dialog";
 import { SpiceMeter, VegMark } from "./dish-marks";
 import { QuantityStepper } from "./quantity-stepper";
+import { StickyActionBar } from "./sticky-action-bar";
 import {
   useMenuItem,
   useMenuItemImages,
@@ -84,13 +86,11 @@ export function MenuItemView({
 
   if (!isValidId) {
     return (
-      <QueryError
-        title="That is not a dish"
-        error={
-          new Error(
-            `"${itemParam}" is not a dish id. Open the dish from a kitchen's menu instead.`,
-          )
-        }
+      <NotFoundState
+        title="That link isn’t a dish"
+        detail={`"${itemParam}" is not a dish number. Open the dish from the kitchen’s menu instead.`}
+        backHref={backHref}
+        backLabel="Back to the menu"
       />
     );
   }
@@ -106,8 +106,19 @@ export function MenuItemView({
   }
 
   if (item.isError) {
-    // A 404 here says which dish, in the server's own words — the kitchen may
-    // simply have taken it off the menu since the link was shared.
+    // A 404 is the kitchen having taken the dish off its menu since the link
+    // was shared. Asking again will not bring it back, so it is a not-found
+    // state pointing at the menu, not a banner with a retry.
+    if (isNotFound(item.error)) {
+      return (
+        <NotFoundState
+          title="This dish isn’t on the menu any more"
+          detail="The kitchen may have taken it off since the link was shared. The rest of their menu is a tap away."
+          backHref={backHref}
+          backLabel="Back to the menu"
+        />
+      );
+    }
     return (
       <div className="flex flex-col gap-4">
         <QueryError
@@ -115,7 +126,10 @@ export function MenuItemView({
           error={item.error}
           onRetry={() => void item.refetch()}
         />
-        <Link href={backHref} className="text-sm font-medium text-accent">
+        <Link
+          href={backHref}
+          className="inline-flex min-h-11 items-center self-start text-sm font-medium text-accent"
+        >
           Back to the menu
         </Link>
       </div>
@@ -134,7 +148,7 @@ export function MenuItemView({
     <div className="flex flex-col gap-5 pb-6">
       <Link
         href={backHref}
-        className="self-start text-[13px] font-medium text-accent no-underline"
+        className="inline-flex min-h-11 items-center self-start text-[13px] font-medium text-accent no-underline"
       >
         ← {kitchen?.name ?? "Back to the menu"}
       </Link>
@@ -230,13 +244,8 @@ export function MenuItemView({
       {/* Sits above the tab bar, the same place the menu's cart bar sits, so the
           Add control is under the thumb rather than wherever the page scrolled
           to. */}
-      <div
-        className={cn(
-          "fixed inset-x-0 bottom-[56px] z-20 border-t border-line bg-surface",
-          "px-4 py-3 shadow-card",
-        )}
-      >
-        <div className="mx-auto flex w-full max-w-[560px] items-center justify-between gap-3">
+      <StickyActionBar label="Add this dish">
+        <div className="flex w-full items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold tabular-nums text-ink">
               {formatMoney(dish.price)}
@@ -259,7 +268,8 @@ export function MenuItemView({
             />
           ) : (
             <Button
-              size="md"
+              size="lg"
+              className="w-auto"
               disabled={asCartRestaurant === null}
               onClick={() => add(dish)}
             >
@@ -267,7 +277,7 @@ export function MenuItemView({
             </Button>
           )}
         </div>
-      </div>
+      </StickyActionBar>
 
       <CartSwitchDialog
         pending={pendingSwitch}

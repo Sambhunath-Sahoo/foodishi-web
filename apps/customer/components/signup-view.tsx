@@ -10,6 +10,7 @@ import { AuthLayout, AuthLink } from "./auth-layout";
 import { QueryError } from "./data-states";
 import { ProfileLinkForm } from "./profile-link-form";
 import { toLoginHref } from "../lib/next-path";
+import { FIELD_TAP_TARGET } from "../lib/tap-targets";
 
 /**
  * A brand-new customer, in two steps that are both real.
@@ -136,7 +137,7 @@ export function SignupView({
   return (
     <AuthLayout
       title="Create an account"
-      subtitle="Two steps: an address and a password, then where to deliver."
+      subtitle="Two steps: your email and a password, then where we deliver."
       footer={
         <>
           Already have one?{" "}
@@ -147,6 +148,7 @@ export function SignupView({
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <Field label="Email" htmlFor="signup-email">
           <Input
+            className={FIELD_TAP_TARGET}
             id="signup-email"
             name="email"
             type="email"
@@ -167,6 +169,7 @@ export function SignupView({
           hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
         >
           <Input
+            className={FIELD_TAP_TARGET}
             id="signup-password"
             name="password"
             type="password"
@@ -186,6 +189,7 @@ export function SignupView({
           type="submit"
           size="lg"
           block
+          className="sm:w-full"
           disabled={!canSubmit}
           isPending={isPending}
           pendingLabel="Creating your account…"

@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import * as React from "react";
 import { LoginView } from "../../components/login-view";
 import { toSafeReturnPath } from "../../lib/next-path";
+
+export const metadata: Metadata = { title: "Sign in" };
 
 /**
  * `?next=` is read here rather than with useSearchParams so the form is in the

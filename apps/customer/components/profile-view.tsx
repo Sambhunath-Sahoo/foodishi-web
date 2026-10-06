@@ -11,9 +11,12 @@ import {
   Field,
   Input,
   PageTitle,
+  ThemeSwitcher,
   Thumb,
 } from "@repo/ui";
 import { QueryError } from "./data-states";
+import { SignOutButton } from "./sign-out-button";
+import { FIELD_TAP_TARGET } from "../lib/tap-targets";
 import { useSupport } from "../lib/support";
 import { useFavorites } from "../lib/favorites";
 import { useAccount } from "../lib/use-account";
@@ -97,10 +100,6 @@ export function ProfileView(): React.JSX.Element {
             </p>
           </div>
         </div>
-        <p className="mt-3 text-[12px] text-ink-3">
-          Your photo would sit here. Uploading one is not wired up yet, so this
-          shows your initials until it is.
-        </p>
       </Card>
 
       <Card>
@@ -120,6 +119,7 @@ export function ProfileView(): React.JSX.Element {
                 onChange={(event) => edit("name", event.target.value)}
                 error={shown.name}
                 required
+                className={FIELD_TAP_TARGET}
               />
             </Field>
 
@@ -141,6 +141,7 @@ export function ProfileView(): React.JSX.Element {
                 onChange={(event) => edit("phone", event.target.value)}
                 error={shown.phone}
                 required
+                className={FIELD_TAP_TARGET}
               />
             </Field>
 
@@ -159,6 +160,7 @@ export function ProfileView(): React.JSX.Element {
                 onChange={(event) => edit("city", event.target.value)}
                 error={shown.city}
                 required
+                className={FIELD_TAP_TARGET}
               />
             </Field>
 
@@ -193,6 +195,8 @@ export function ProfileView(): React.JSX.Element {
               type="submit"
               size="lg"
               block
+              // `lg` keys its sm:w-auto off the browser, not the 480px column.
+              className="sm:w-full"
               disabled={!isDirty}
               isPending={update.isPending}
               pendingLabel="Saving…"
@@ -240,6 +244,28 @@ export function ProfileView(): React.JSX.Element {
           </ul>
         </CardBody>
       </Card>
+
+      {/* Moved here from the header, full-size: at 390px the header had no room
+          for it, and three labelled 44px options are easier to hit than three
+          22px icons ever were. The choice is stored on this device and shared
+          by every Foodishi app on it. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+        </CardHeader>
+        <CardBody className="flex flex-col gap-2 py-4">
+          {/* The switcher renders nothing until it has read localStorage, so
+              the slot holds its height and the card does not jump. */}
+          <div className="min-h-[50px]">
+            <ThemeSwitcher className="flex w-full [&>button]:min-h-11 [&>button]:flex-1 [&>button]:justify-center" />
+          </div>
+          <p className="text-[12px] text-ink-3">
+            System follows your phone’s own light or dark setting.
+          </p>
+        </CardBody>
+      </Card>
+
+      <SignOutButton />
     </div>
   );
 }

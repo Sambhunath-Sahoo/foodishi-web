@@ -8,7 +8,11 @@ import "@repo/ui/styles/tokens.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Foodishi",
+  // Every route names itself ("Orders · Foodishi"), so a reader with
+  // several tabs open can tell them apart. The default is for the few routes
+  // that cannot: the home page, which shares this segment and so never gets
+  // the template, and anything Next renders without a page of its own.
+  title: { template: "%s · Foodishi", default: "Foodishi" },
   description: "Order from the kitchens near you.",
 };
 
@@ -58,13 +62,34 @@ export default function RootLayout({
         className="min-h-dvh bg-bg font-sans text-ink antialiased"
         suppressHydrationWarning
       >
+        {/* The first thing a keyboard reaches, so nobody has to tab through the
+            whole header and section rail on every page to get to the work. A
+            plain <a>, not next/link: it is an in-page jump, and it has to work
+            before hydration too. Hidden until focused, then pinned above the
+            sticky header (z-30) in the same accent ring every control uses. The
+            padding is focus: too, because not-sr-only resets padding to 0. */}
+        <a
+          href="#main"
+          className="sr-only rounded-card border border-line-2 bg-surface font-sans text-[13px] font-medium text-accent shadow-card focus:not-sr-only focus:fixed focus:px-3 focus:py-2 focus:top-3 focus:left-3 focus:z-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Skip to content
+        </a>
         <ApiProvider>
           {/* Auth sits inside the query client and outside the cart: every
               request needs the bearer token, and the cart belongs to the
               browser whether or not anyone is signed in. */}
           <SessionProvider>
             <CartProvider>
-              <AppShell>{children}</AppShell>
+              <AppShell>
+                {/* The skip link's target. It wraps the page rather than sitting
+                    on the shell's <main> so it also exists on routes that render
+                    without the chrome. tabIndex -1 is what makes the jump move
+                    focus and not just scroll; outline-none because a ring round
+                    the whole page says nothing the next Tab does not. */}
+                <div id="main" tabIndex={-1} className="outline-none">
+                  {children}
+                </div>
+              </AppShell>
             </CartProvider>
           </SessionProvider>
         </ApiProvider>

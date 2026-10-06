@@ -100,6 +100,8 @@ export function ReorderButton({
       <Button
         variant="outline"
         size={size}
+        // 44px on a phone whatever the size: this sits on every history card.
+        className="min-h-11"
         disabled={isLoading}
         onClick={() => {
           setProblem(null);

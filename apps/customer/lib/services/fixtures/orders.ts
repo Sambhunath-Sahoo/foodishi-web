@@ -197,6 +197,7 @@ export const fixtureOrders: OrdersService = {
         quantity: line.quantity,
         line_total: line.line_total,
         notes: null,
+        modifiers: line.modifiers,
       })),
     };
 

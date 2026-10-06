@@ -12,8 +12,70 @@
  */
 import { formatLate, lateTier, type SeverityTier } from "@repo/ui";
 import { formatMinutes, formatTimeOnly } from "./format";
+import type { OrderEvent } from "./types";
 
 const MS_PER_MINUTE = 60_000;
+
+/**
+ * Past this, a live order has stopped being "late" and become one that did not
+ * arrive. Six hours is the edge of the shared grading's worst tier (lateTier 3,
+ * "beyond six"): nobody is still waiting at the door for dinner at that point,
+ * and a counter reading "44d 19h late" over "the kitchen is still on it" is a
+ * claim the screen has no evidence for. The server never expires an order
+ * (AD-2), so the customer app has to recognise one itself.
+ *
+ * Keyed on promised_at and the caller's clock only — never on a calendar date
+ * or on how long ago the order was placed — so a fresh order 2h late keeps its
+ * live meter, and seed data that is time-shifted later moves with it.
+ */
+export const STALE_LATE_MINUTES = 360;
+
+/** Minutes past the promise; negative while it is still being kept. */
+export function minutesPastPromise(promisedAt: string, now: Date): number {
+  return (now.getTime() - toTime(promisedAt)) / MS_PER_MINUTE;
+}
+
+/**
+ * True for an order that is still open on paper but is far enough past its
+ * promise that it should be treated as failed: help first, no countdown.
+ * A settled order is never stale — it got its answer.
+ */
+export function isLongOverdue({
+  promisedAt,
+  now,
+  isSettled,
+}: {
+  readonly promisedAt: string;
+  readonly now: Date;
+  readonly isSettled: boolean;
+}): boolean {
+  if (isSettled) return false;
+  const past = minutesPastPromise(promisedAt, now);
+  return Number.isFinite(past) && past > STALE_LATE_MINUTES;
+}
+
+/**
+ * When the order actually arrived, as the customer is shown it.
+ *
+ * The order row's `delivered_at` and the trail's "delivered" event are written
+ * separately, and they disagree: the seeder stamps `delivered_at` at
+ * promised_at ± a few minutes while the trail walks forward from placed_at, so
+ * #664 read "Arrived 17:57 · 5 min after the promise" directly above a trail
+ * saying Delivered 17:37. The trail is the record the screen prints, row by
+ * row with who did it, so it wins; `delivered_at` is the fallback for an order
+ * whose trail has no delivered row (or could not be read).
+ *
+ * The LAST delivered event, in case a status was ever re-recorded.
+ */
+export function resolveDeliveredAt(
+  events: readonly OrderEvent[] | undefined,
+  deliveredAt: string | null | undefined,
+): string | null {
+  const fromTrail = events
+    ?.filter((event) => event.to_status === "delivered")
+    .at(-1);
+  return fromTrail?.created_at ?? deliveredAt ?? null;
+}
 
 /** What the meter is saying, which decides how loud the number is allowed to be. */
 export type PromiseKind = "waiting" | "overdue" | "settled" | "unknown";
@@ -92,20 +154,13 @@ export function describePromise({
   const promisedClock = formatTimeOnly(promisedAt);
 
   if (isSettled) {
-    const arrived =
-      deliveredAt === null || deliveredAt === undefined
-        ? undefined
-        : formatTimeOnly(deliveredAt);
     return {
       kind: "settled",
       tier,
       fill,
-      label: arrived === undefined ? "Promised by" : "Delivered",
+      label: "Delivered",
       value: tier === 0 ? "on time" : `${formatLate(minutesLate)} late`,
-      caption:
-        arrived === undefined
-          ? `promised by ${promisedClock}`
-          : `arrived ${arrived} · promised ${promisedClock}`,
+      caption: arrivalLine(deliveredAt, promisedClock, minutesLate),
     };
   }
 
@@ -130,4 +185,25 @@ export function describePromise({
     value: formatMinutes(minutesLeft),
     caption: `promised by ${promisedClock}`,
   };
+}
+
+/**
+ * A settled order's one line: "Arrived 17:37 · 15 min before the promised
+ * 17:52", or "Arrived 17:52 · on time". The meter and its "running late" grade are for an order still on
+ * its way; once the food is on the table the lateness is a fact to state
+ * quietly, not an alarm, so this is the whole of what a delivered order says.
+ */
+function arrivalLine(
+  deliveredAt: string | null | undefined,
+  promisedClock: string,
+  minutesLate: number,
+): string {
+  if (deliveredAt === null || deliveredAt === undefined) {
+    return `Promised by ${promisedClock}`;
+  }
+  const arrived = formatTimeOnly(deliveredAt);
+  const gap = Math.round(Math.abs(minutesLate));
+  if (gap === 0) return `Arrived ${arrived} · on time`;
+  const direction = minutesLate > 0 ? "after" : "before";
+  return `Arrived ${arrived} · ${formatMinutes(gap)} ${direction} the promised ${promisedClock}`;
 }

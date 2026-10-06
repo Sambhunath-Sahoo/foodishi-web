@@ -123,6 +123,8 @@ export function ProfileLinkForm({
         type="submit"
         size="lg"
         block
+        // `lg` keys its sm:w-auto off the browser, not the 480px column.
+        className="sm:w-full"
         disabled={!canSubmit}
         isPending={isPending}
         pendingLabel="Linking your profile…"

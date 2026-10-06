@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  Badge,
   Card,
   CardBody,
   CardHeader,
@@ -15,9 +14,11 @@ import {
 } from "@repo/ui";
 import { FavoriteButton } from "./favorite-button";
 import { VegMark } from "./dish-marks";
+import { RatingBadge } from "./rating-badge";
 import { LoadingLines } from "./data-states";
-import { formatMoney, formatRating } from "../lib/format";
+import { formatMoney } from "../lib/format";
 import { useFavorites } from "../lib/favorites";
+import { SEGMENTED_TAP_TARGET } from "../lib/tap-targets";
 
 const TABS = [
   { value: "restaurants", label: "Kitchens" },
@@ -39,7 +40,7 @@ export function FavoritesView(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageTitle subtitle="Saved on this device">Favourites</PageTitle>
+      <PageTitle subtitle="Kitchens and dishes you’ve hearted">Favourites</PageTitle>
 
       <SegmentedControl<Tab>
         options={TABS.map((row) => ({
@@ -53,6 +54,7 @@ export function FavoritesView(): React.JSX.Element {
         value={tab}
         onValueChange={setTab}
         ariaLabel="Favourite type"
+        className={SEGMENTED_TAP_TARGET}
       />
 
       {!isReady ? (
@@ -85,7 +87,7 @@ export function FavoritesView(): React.JSX.Element {
                         </span>
                       </span>
                     </Link>
-                    <Badge tone="ok">{`★ ${formatRating(row.rating)}`}</Badge>
+                    <RatingBadge rating={row.rating} />
                     <FavoriteButton
                       isSaved
                       size="sm"

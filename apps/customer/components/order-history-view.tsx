@@ -25,8 +25,10 @@ import { HISTORY_PAGE_SIZE, useOrderHistory } from "../lib/queries/orders";
 import { useAccount } from "../lib/use-account";
 import { useNow } from "../lib/use-now";
 import { isSettled } from "../lib/lifecycle";
-import { describePromise } from "../lib/promise-time";
-import { formatDateTime, formatMoney } from "../lib/format";
+import { describePromise, isLongOverdue } from "../lib/promise-time";
+import { HELP_HASH } from "./order-help-sheet";
+import { formatClockAndDay, formatDateTime, formatMoney } from "../lib/format";
+import { SEGMENTED_TAP_TARGET } from "../lib/tap-targets";
 import type { OrderRead, RestaurantSummary } from "../lib/types";
 
 type Scope = "all" | "live";
@@ -74,6 +76,14 @@ export function OrderHistoryView(): React.JSX.Element {
   const rows = orders.data?.items ?? [];
   const hasLiveRow = rows.some((order) => !isSettled(order.status));
   const now = useNow(hasLiveRow, LIVE_TICK_MS);
+  const isStaleRow = (order: OrderRead): boolean =>
+    isLongOverdue({
+      promisedAt: order.promised_at,
+      now,
+      isSettled: isSettled(order.status),
+    });
+  const needsAttention = rows.filter(isStaleRow);
+  const everythingElse = rows.filter((order) => !isStaleRow(order));
 
   return (
     <div className="flex flex-col gap-5">
@@ -84,7 +94,7 @@ export function OrderHistoryView(): React.JSX.Element {
         options={SCOPES}
         value={scope}
         onValueChange={setScope}
-        className="w-full"
+        className={cn("w-full", SEGMENTED_TAP_TARGET)}
       />
 
       {!isReady || orders.isPending ? <LoadingCards count={3} /> : null}
@@ -112,7 +122,7 @@ export function OrderHistoryView(): React.JSX.Element {
           action={
             <Link
               href="/"
-              className={cn(buttonVariants({ size: "md" }), "no-underline")}
+              className={cn(buttonVariants({ size: "lg" }), "w-auto no-underline")}
             >
               Find a kitchen
             </Link>
@@ -120,13 +130,42 @@ export function OrderHistoryView(): React.JSX.Element {
         />
       ) : null}
 
-      <ul className="flex flex-col gap-3">
-        {rows.map((order) => (
+      {/* Orders hours past their promise and still open go first, under
+          their own heading. They used to sit in date order offering "Track
+          it", indistinguishable from tonight's dinner. */}
+      {needsAttention.length > 0 ? (
+        <section aria-labelledby="orders-attention" className="flex flex-col gap-3">
+          <h2 id="orders-attention" className="text-[13px] font-semibold tracking-wide text-ink-2 uppercase">
+            Needs attention
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {needsAttention.map((order) => (
+              <li key={order.id}>
+                <OrderHistoryRow
+                  order={order}
+                  kitchen={kitchens.get(order.restaurant_id)}
+                  now={now}
+                  isStale
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* aria-label, not a heading: with nothing needing attention this is
+          the whole list, and a second heading over it would say nothing. */}
+      <ul
+        aria-label={needsAttention.length > 0 ? "Your other orders" : undefined}
+        className="flex flex-col gap-3"
+      >
+        {everythingElse.map((order) => (
           <li key={order.id}>
             <OrderHistoryRow
               order={order}
               kitchen={kitchens.get(order.restaurant_id)}
               now={now}
+              isStale={false}
             />
           </li>
         ))}
@@ -146,14 +185,20 @@ export function OrderHistoryView(): React.JSX.Element {
   );
 }
 
+/** A text link at thumb height: Receipt is a way out, not a second button. */
+const TEXT_LINK = "inline-flex min-h-11 items-center text-[13px] font-medium text-accent";
+
 function OrderHistoryRow({
   order,
   kitchen,
   now,
+  isStale,
 }: {
   readonly order: OrderRead;
   readonly kitchen: RestaurantSummary | undefined;
   readonly now: Date;
+  /** Hours past its promise and still open — see isLongOverdue. */
+  readonly isStale: boolean;
 }): React.JSX.Element {
   const live = !isSettled(order.status);
   /* The order row carries only an id; the name and the cover both come from
@@ -168,7 +213,7 @@ function OrderHistoryRow({
   });
 
   return (
-    <Card stripe={order.status === "cancelled" ? "crit" : undefined}>
+    <Card stripe={order.status === "cancelled" || isStale ? "crit" : undefined}>
       <Link
         href={`/orders/${order.id}`}
         className="flex gap-3 px-4 py-3.5 no-underline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
@@ -193,7 +238,14 @@ function OrderHistoryRow({
           {/* The countdown this list's own empty state promises. Graded like
               the tracking meter, and the words carry the grade on their own —
               "18m late" reads late without any colour (DESIGN.md #3). */}
-          {live ? (
+          {isStale ? (
+            <p className="mt-2 text-[13px] leading-snug">
+              <span className="font-semibold text-crit">Didn’t arrive</span>
+              <span className="font-mono text-[12px] tabular-nums text-ink-3">
+                {" · "}promised {formatClockAndDay(order.promised_at)}
+              </span>
+            </p>
+          ) : live ? (
             <p className="mt-2 text-[13px] leading-snug">
               <span className="text-ink-3">{promise.label} </span>
               <span
@@ -210,7 +262,7 @@ function OrderHistoryRow({
           <div className="mt-2 flex items-center justify-between gap-3">
             <StatusChip status={order.status} />
             <span className="text-[12px] font-medium text-accent">
-              {live ? "Track it" : "View"}
+              {live && !isStale ? "Track it" : "View"}
             </span>
           </div>
         </div>
@@ -218,15 +270,24 @@ function OrderHistoryRow({
 
       {/* Outside the link: a card-wide <a> cannot hold buttons, and Reorder
           must never be a mis-tap on the way to the order. */}
-      <CardFooter className="justify-start gap-2">
-        <ReorderButton orderId={order.id} restaurantId={order.restaurant_id} />
-        <Link
-          href={`/orders/${order.id}/receipt`}
-          className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "no-underline",
-          )}
-        >
+      {/* One bordered button at most, and only for the next thing to do:
+          help for an order that never came, Reorder for one that did. Receipt
+          is a text link beside it. */}
+      <CardFooter className="justify-start gap-4">
+        {isStale ? (
+          <Link
+            href={`/orders/${order.id}${HELP_HASH}`}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "md" }),
+              "h-11 no-underline",
+            )}
+          >
+            Get help
+          </Link>
+        ) : !live ? (
+          <ReorderButton orderId={order.id} restaurantId={order.restaurant_id} />
+        ) : null}
+        <Link href={`/orders/${order.id}/receipt`} className={TEXT_LINK}>
           Receipt
         </Link>
       </CardFooter>

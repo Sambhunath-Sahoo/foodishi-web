@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import * as React from "react";
 import { MenuView } from "../../../components/menu-view";
+
+export const metadata: Metadata = { title: "Menu" };
 
 /**
  * The URL carries `{id}-{slug}` so the menu can be fetched in one request,
