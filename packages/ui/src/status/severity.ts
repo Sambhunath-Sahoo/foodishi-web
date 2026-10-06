@@ -40,6 +40,8 @@ const TIER_3_FROM_MINUTES = 360;
 /** Above this a raw minute count stops being readable (DENSITY.md §3). */
 const RAW_MINUTES_CEILING = 90;
 const MINUTES_PER_HOUR = 60;
+const HOURS_PER_DAY = 24;
+const HOURS_BEFORE_DAYS = HOURS_PER_DAY * 2;
 
 /**
  * Grade a lateness in minutes.
@@ -65,10 +67,27 @@ export function formatLate(minutes: number): string {
   const whole = Math.round(minutes);
   if (whole <= 0) return "on time";
   if (whole <= RAW_MINUTES_CEILING) return `${whole}m`;
+  return formatSpan(whole);
+}
+
+/**
+ * Any elapsed span, one house style for all three apps: `42m`, `6h 30m`,
+ * `4d 8h`. Days take over past two days — "1076h 36m late" is a number the
+ * reader has to divide by 24 before it means anything (it means 44 days).
+ */
+export function formatSpan(minutes: number): string {
+  const whole = Math.max(0, Math.round(minutes));
+  if (whole < MINUTES_PER_HOUR) return `${whole}m`;
 
   const hours = Math.floor(whole / MINUTES_PER_HOUR);
-  const rest = whole % MINUTES_PER_HOUR;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+  if (hours < HOURS_BEFORE_DAYS) {
+    const rest = whole % MINUTES_PER_HOUR;
+    return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+  }
+
+  const days = Math.floor(hours / HOURS_PER_DAY);
+  const restHours = hours % HOURS_PER_DAY;
+  return restHours === 0 ? `${days}d` : `${days}d ${restHours}h`;
 }
 
 /**

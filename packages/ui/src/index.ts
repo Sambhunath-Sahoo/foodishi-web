@@ -15,6 +15,7 @@ export {
 /* Command Deck — severity grading (DENSITY.md §3). */
 export {
   formatLate,
+  formatSpan,
   lateTier,
   SEVERITY_LABEL,
   SEVERITY_SOFT,

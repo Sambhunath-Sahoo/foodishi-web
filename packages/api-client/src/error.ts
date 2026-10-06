@@ -131,6 +131,30 @@ export function requiresProfileLink(error: unknown): boolean {
   return isApiError(error) && error.requiresProfileLink;
 }
 
+/**
+ * Statuses where asking again can give a different answer: the network
+ * dropped or timed out (0), the server was busy or failing, or a rate limit
+ * lifted. 501 is deliberately absent — "this route does not exist yet" is a
+ * fact about the build, and a Try again button beside it is a lie.
+ */
+const RETRYABLE_STATUSES: ReadonlySet<number> = new Set([0, 408, 429, 500, 502, 503, 504]);
+
+/** True when offering "Try again" is honest. A 404 or a 501 never changes on retry. */
+export function isRetryable(error: unknown): boolean {
+  if (!isApiError(error)) return true;
+  return RETRYABLE_STATUSES.has(error.status);
+}
+
+/** True when the thing asked for does not exist — show a not-found state, not an error. */
+export function isNotFound(error: unknown): boolean {
+  return isApiError(error) && error.status === 404 && error.action !== "link-profile";
+}
+
+/** True when the screen has no route behind it yet (lib/services/api/unsupported.ts). */
+export function isUnsupported(error: unknown): boolean {
+  return isApiError(error) && error.status === 501;
+}
+
 /** What the UI should show for any thrown value, API error or not. */
 export function toUserMessage(error: unknown): string {
   if (isApiError(error)) return error.detail;

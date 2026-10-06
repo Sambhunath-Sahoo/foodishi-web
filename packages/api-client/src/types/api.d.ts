@@ -87,6 +87,16 @@ export interface paths {
          *     restaurant reachable but leaves them holding a live owner login on somebody
          *     else's kitchen until they hand it over — POST /restaurants/{id}/staff to
          *     appoint the partner, then PATCH /staff/{id} to revoke themselves.
+         *
+         *     The restaurant is created DORMANT unless the body says otherwise: customers
+         *     cannot see it until somebody turns it on with PUT
+         *     /restaurants/{id}/availability. Creating and publishing are two decisions,
+         *     and the second one belongs after the policy and the menu exist.
+         *
+         *     This is the operator-driven path. A restaurant that asked to join arrives
+         *     instead through POST /restaurant-applications and is created by an approval
+         *     — app/routers/admin_applications.py — which mints the same two rows this
+         *     route does.
          */
         post: operations["create_restaurant_restaurants_post"];
         delete?: never;
@@ -365,6 +375,42 @@ export interface paths {
         head?: never;
         /** Update User */
         patch: operations["update_user_users__user_id__patch"];
+        trace?: never;
+    };
+    "/users/{user_id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Deactivate or restore a customer (Foodishi staff only)
+         * @description Turn a customer's account off, or back on.
+         *
+         *     A SEPARATE route rather than a field on UserUpdate, and the reason is the
+         *     comment already on that schema: is_active and created_at "are the server's to
+         *     set, not the client's". Adding it there would have let a customer deactivate
+         *     themselves through the same PATCH they use to fix their own phone number,
+         *     because that route admits the account's owner.
+         *
+         *     So this is the same shape of decision as PUT /restaurants/{id}/availability:
+         *     one column, one route, one guard. Platform admin ONLY -- not the customer,
+         *     and not restaurant staff, who see the customer on an order they are cooking
+         *     and have no business closing their account.
+         *
+         *     Deactivating deletes nothing. identity.py refuses a deactivated account at
+         *     sign-in with "This account is deactivated", and the row, its orders and its
+         *     addresses all stay where they were. That is the difference between this and
+         *     DELETE below.
+         */
+        put: operations["set_user_active_users__user_id__active_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/users/{user_id}/addresses": {
@@ -890,7 +936,7 @@ export interface paths {
         };
         /**
          * The caller's own profile
-         * @description The profile, plus whether this person may act for Tadka itself.
+         * @description The profile, plus whether this person may act for Foodishi itself.
          *
          *     Every frontend calls this on boot, which is why the platform role rides
          *     along here instead of behind a second request: the operations console has to
@@ -970,7 +1016,7 @@ export interface paths {
          *     Nor is is_active the platform's own suspension switch, which is the thing
          *     to check before letting a partner flip it: no platform route writes it
          *     after onboarding. This route and that PATCH are both admin_of_restaurant,
-         *     and Tadka's operators staff no restaurant, so require_staff refuses them
+         *     and Foodishi's operators staff no restaurant, so require_staff refuses them
          *     here. The column belongs to the restaurant, and this is a restaurant admin
          *     acting on their own kitchen.
          *
@@ -1575,6 +1621,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/restaurant-applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply to put a restaurant on Foodishi
+         * @description Ask for a restaurant. Nothing is created but the request itself.
+         *
+         *     This route deliberately cannot produce a restaurant, a menu, or a login that
+         *     reaches either. It writes one row in one table that no catalog query, scope
+         *     check or report reads — approval is what mints a tenancy, and that is
+         *     platform staff's to grant (app/routers/admin_applications.py).
+         *
+         *     The slug is checked against live restaurants here as a courtesy, not as a
+         *     guarantee. It is the one field an applicant cannot fix later without the
+         *     address changing under their customers, so finding out at submission beats
+         *     finding out in a rejection a day later — but two applicants can still
+         *     propose the same unused slug and only the first approval gets it. The
+         *     approval reports that; see services/onboarding.approve.
+         */
+        post: operations["submit_application_restaurant_applications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/restaurant-applications/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The caller's own applications
+         * @description Every application this account has sent, newest first.
+         *
+         *     Unpaginated, like GET /me/restaurants and for the same reason: one person
+         *     applies a handful of times, and a list that arrives in pages is worse than
+         *     one that arrives whole.
+         *
+         *     This is what the partner console reads when an account has no restaurant
+         *     yet. "Nobody has given you access to a kitchen" and "your application is
+         *     with Foodishi" are different sentences, and only this route can tell them
+         *     apart.
+         */
+        get: operations["list_my_applications_restaurant_applications_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/metrics/summary": {
         parameters: {
             query?: never;
@@ -1633,7 +1740,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Restaurant Metrics */
+        /**
+         * Get Restaurant Metrics
+         * @description Every kitchen that exists, busiest first.
+         *
+         *     Paged in Python rather than in SQL, and that is a deliberate downgrade: the
+         *     aggregate is twenty-five rows wide because it is one row per restaurant, and
+         *     windowing it in the database would mean either duplicating the roll-up here
+         *     or pushing a LIMIT into a shared service for one caller's benefit. If the
+         *     platform ever has enough kitchens for that to matter, `kitchen_rows` grows a
+         *     page parameter and this reverts.
+         *
+         *     Busiest first, as before — the ordering is this endpoint's, not the shared
+         *     aggregate's, which returns rows in id order.
+         */
         get: operations["get_restaurant_metrics_admin_metrics_restaurants_get"];
         put?: never;
         post?: never;
@@ -1894,6 +2014,13 @@ export interface paths {
          *     Attempts, not payments: a failed row is a customer who tried to pay and
          *     could not, and it is the most useful row on the list. Filtering it out by
          *     default would hide the only thing here anybody has to act on.
+         *
+         *     `status` is a LIST because one of the console's stage cards is honestly two
+         *     statuses: "Sent back" counts `refunded` and `partially_refunded` together,
+         *     since as a card they are one idea — money went back. Taking a single status
+         *     forced the client to either send one of the two and under-report, or filter
+         *     after paging and disagree with its own total. A repeated query parameter
+         *     costs nothing and removes the choice.
          */
         get: operations["list_payments_admin_payments_get"];
         put?: never;
@@ -1982,6 +2109,26 @@ export interface paths {
          *     empty" is a real question and a row that vanished cannot answer it.
          */
         get: operations["get_commission_ledger_admin_commission_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/refunds/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count Refunds
+         * @description The refund queue's shape: per status, plus what is breached and owed.
+         */
+        get: operations["count_refunds_admin_refunds_count_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2126,6 +2273,135 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/restaurant-applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Restaurants waiting to join
+         * @description The queue, oldest first.
+         *
+         *     Oldest first and not newest: this is a worklist, not a feed. Sorting the
+         *     newest to the top means the application that has been waiting longest sinks
+         *     out of sight, which is the one failure mode a queue must not have.
+         *
+         *     `status` defaults to every state rather than to pending. A default filter
+         *     that hides the answered ones would make "did we already turn these people
+         *     down" unanswerable from the screen that has to answer it, and the console
+         *     asks for `pending` explicitly on the tab that wants the queue.
+         */
+        get: operations["list_applications_admin_restaurant_applications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/restaurant-applications/{application_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One application in full */
+        get: operations["get_application_admin_restaurant_applications__application_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/restaurant-applications/{application_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve an application and create the restaurant
+         * @description Say yes: the restaurant is created, dormant, and handed to the applicant.
+         *
+         *     What the applicant has afterwards is an admin membership on a restaurant
+         *     that customers cannot see — because is_active is false and discovery filters
+         *     on it. They write their policy and their menu through the partner console,
+         *     then turn the kitchen on themselves with PUT
+         *     /restaurants/{id}/availability. Approving is not publishing; see
+         *     services/onboarding.approve for why those are two decisions.
+         *
+         *     A POST rather than a PATCH with a status field: this is not an edit to a row,
+         *     it is an act that writes three tables, and a client that could PATCH the
+         *     status could mark an application approved without any of it happening.
+         */
+        post: operations["approve_application_admin_restaurant_applications__application_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/restaurant-applications/{application_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turn an application down, with a reason
+         * @description Say no. The reason is required and the applicant reads it verbatim.
+         *
+         *     Nothing is deleted: the row stays, so a resubmission arrives beside the
+         *     answer it already had.
+         */
+        post: operations["reject_application_admin_restaurant_applications__application_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/restaurants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every restaurant, trading or not
+         * @description The catalogue as Foodishi sees it: trading, closed and never-opened alike.
+         *
+         *     Answers the same `RestaurantSummary` as the customer listing, on purpose.
+         *     The console renders one kind of row whichever call filled it, and a
+         *     platform-only shape here would have meant a second card component that drifts
+         *     from the first.
+         *
+         *     `is_active` is a filter and never a default. Omitting it returns everything —
+         *     the opposite of the customer route, where the filter is not optional and not
+         *     a parameter.
+         */
+        get: operations["list_all_restaurants_admin_restaurants_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2198,6 +2474,82 @@ export interface components {
             longitude?: number | string | null;
         };
         /**
+         * AdminApplicationRow
+         * @description The queue's row: the application, and the person behind it.
+         *
+         *     Read from the joined users row rather than copied onto the application when
+         *     it was submitted, so an operator writing back uses the address that works
+         *     today.
+         */
+        AdminApplicationRow: {
+            /** Id */
+            id: number;
+            status: components["schemas"]["ApplicationStatus"];
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Description */
+            description: string | null;
+            /** City */
+            city: string;
+            /** Area */
+            area: string;
+            /** Address Line */
+            address_line: string;
+            /** Latitude */
+            latitude: string;
+            /** Longitude */
+            longitude: string;
+            /** Phone */
+            phone: string;
+            /** Price For Two */
+            price_for_two: string;
+            /** Avg Prep Minutes */
+            avg_prep_minutes: number;
+            /**
+             * Opens At
+             * Format: time
+             */
+            opens_at: string;
+            /**
+             * Closes At
+             * Format: time
+             */
+            closes_at: string;
+            /** Note */
+            note: string | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Restaurant Id */
+            restaurant_id: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Applicant User Id */
+            applicant_user_id: number;
+            /** Applicant Name */
+            applicant_name: string;
+            /**
+             * Applicant Email
+             * Format: email
+             */
+            applicant_email: string;
+            /** Applicant Phone */
+            applicant_phone: string;
+            /** Is Applicant Active */
+            is_applicant_active: boolean;
+        };
+        /**
          * AdminDeliveryRow
          * @description A ride with the order it belongs to, and the rider carrying it.
          *
@@ -2239,6 +2591,150 @@ export interface components {
          * @enum {string}
          */
         AdminOrderSort: "newest" | "oldest" | "largest" | "oldest_promise";
+        /**
+         * ApplicationApprove
+         * @description Optionally, a line about why — for the record, not for the applicant.
+         *
+         *     Approval needs no input at all: everything the restaurant will be was
+         *     settled when the application was submitted, and asking the operator to
+         *     retype any of it is asking them to introduce a typo.
+         */
+        ApplicationApprove: {
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * ApplicationRead
+         * @description An application as its own applicant sees it.
+         *
+         *     reviewed_by_user_id is absent deliberately: which operator said no is not
+         *     something the person told no gets to know. decision_note IS present — it is
+         *     written for them.
+         */
+        ApplicationRead: {
+            /** Id */
+            id: number;
+            status: components["schemas"]["ApplicationStatus"];
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Description */
+            description: string | null;
+            /** City */
+            city: string;
+            /** Area */
+            area: string;
+            /** Address Line */
+            address_line: string;
+            /** Latitude */
+            latitude: string;
+            /** Longitude */
+            longitude: string;
+            /** Phone */
+            phone: string;
+            /** Price For Two */
+            price_for_two: string;
+            /** Avg Prep Minutes */
+            avg_prep_minutes: number;
+            /**
+             * Opens At
+             * Format: time
+             */
+            opens_at: string;
+            /**
+             * Closes At
+             * Format: time
+             */
+            closes_at: string;
+            /** Note */
+            note: string | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Restaurant Id */
+            restaurant_id: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * ApplicationReject
+         * @description Why not, in words the applicant will read.
+         *
+         *     Required, and that is the whole design of this model. A refusal with no
+         *     reason produces an applicant who resubmits the same form and waits again,
+         *     and an operator who answers the same application twice.
+         */
+        ApplicationReject: {
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * ApplicationStatus
+         * @description Where a restaurant's request to join Foodishi has got to.
+         *
+         *     Three states and no more: `pending` is the queue an operator works through,
+         *     and the other two are terminal. There is deliberately no `changes_requested`
+         *     tier — a half-refused application is a conversation, and this table holds
+         *     no messages to have it in. An operator who wants changes rejects with the
+         *     reason, and the applicant submits again.
+         * @enum {string}
+         */
+        ApplicationStatus: "pending" | "approved" | "rejected";
+        /**
+         * ApplicationSubmit
+         * @description The details of the restaurant, from the person who runs it.
+         *
+         *     Every field the `restaurants` table needs, validated exactly as the
+         *     operator-facing create route validates it — same base model, so an applicant
+         *     cannot get a slug or a latitude past this that POST /restaurants would have
+         *     refused, and an approval can never fail on a value this accepted.
+         */
+        ApplicationSubmit: {
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Description */
+            description?: string | null;
+            /** City */
+            city: string;
+            /** Area */
+            area: string;
+            /** Address Line */
+            address_line: string;
+            /** Latitude */
+            latitude: number | string;
+            /** Longitude */
+            longitude: number | string;
+            /** Phone */
+            phone: string;
+            /** Price For Two */
+            price_for_two: number | string;
+            /** Avg Prep Minutes */
+            avg_prep_minutes: number;
+            /**
+             * Opens At
+             * Format: time
+             */
+            opens_at: string;
+            /**
+             * Closes At
+             * Format: time
+             */
+            closes_at: string;
+            /** Note */
+            note?: string | null;
+        };
         /** CancelResult */
         CancelResult: {
             order: components["schemas"]["OrderRead"];
@@ -2431,6 +2927,15 @@ export interface components {
          * @enum {string}
          */
         CouponScope: "global" | "restaurant" | "cuisine";
+        /**
+         * CouponState
+         * @description Which slice of the coupon table a listing wants.
+         *
+         *     A StrEnum rather than a bare bool so a third state (say 'expired' on its own)
+         *     is an added member rather than a second flag that can contradict the first.
+         * @enum {string}
+         */
+        CouponState: "redeemable" | "all";
         /** CouponUpdate */
         CouponUpdate: {
             /** Code */
@@ -2814,7 +3319,7 @@ export interface components {
          * @description The caller's profile plus the one thing only they may be told about it.
          *
          *     Separate from UserRead because this answer is nobody else's: GET /users/{id}
-         *     and the staff list have no business publishing who works for Tadka.
+         *     and the staff list have no business publishing who works for Foodishi.
          */
         MeProfile: {
             /** Id */
@@ -3262,6 +3767,26 @@ export interface components {
             quantity: number;
             /** Notes */
             notes?: string | null;
+            /** Option Ids */
+            option_ids?: number[];
+        };
+        /**
+         * OrderItemModifierRead
+         * @description One answer on a line, as the customer chose it and as it was priced.
+         *
+         *     Read from the FROZEN copy on order_item_modifiers, never joined to the live
+         *     option: renaming "Half plate" on the menu must not rewrite a ticket the
+         *     kitchen is cooking from or a receipt the customer already has.
+         */
+        OrderItemModifierRead: {
+            /** Option Id */
+            option_id: number | null;
+            /** Group Name */
+            group_name: string;
+            /** Option Name */
+            option_name: string;
+            /** Price Delta */
+            price_delta: string;
         };
         /** OrderItemRead */
         OrderItemRead: {
@@ -3279,6 +3804,8 @@ export interface components {
             line_total: string;
             /** Notes */
             notes: string | null;
+            /** Modifiers */
+            modifiers: components["schemas"]["OrderItemModifierRead"][];
         };
         /** OrderRead */
         OrderRead: {
@@ -3453,6 +3980,17 @@ export interface components {
             order_count: number;
             /** Revenue */
             revenue: string;
+        };
+        /** Page[AdminApplicationRow] */
+        Page_AdminApplicationRow_: {
+            /** Items */
+            items: components["schemas"]["AdminApplicationRow"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** Page[AdminDeliveryRow] */
         Page_AdminDeliveryRow_: {
@@ -3705,7 +4243,7 @@ export interface components {
         };
         /**
          * PlatformRole
-         * @description Who works for Tadka itself. Unrelated to StaffRole, which is per-restaurant.
+         * @description Who works for Foodishi itself. Unrelated to StaffRole, which is per-restaurant.
          *
          *     One role today, deliberately. A read-only support tier and a coupons-and-
          *     onboarding ops tier were both sketched and removed: nobody holds them yet,
@@ -3795,6 +4333,8 @@ export interface components {
             quantity: number;
             /** Line Total */
             line_total: string;
+            /** Modifiers */
+            modifiers: components["schemas"]["OrderItemModifierRead"][];
         };
         /** QuoteRead */
         QuoteRead: {
@@ -3922,6 +4462,29 @@ export interface components {
          * @enum {string}
          */
         RefundStatus: "initiated" | "processing" | "completed" | "failed";
+        /**
+         * RefundTally
+         * @description The refund queue's shape, in one round trip.
+         *
+         *     Mirrors GET /admin/payments/count and GET /admin/deliveries/count, which
+         *     exist for the same reason: a rail needs several counts, and one list call per
+         *     count is one round trip per number Postgres can group in a single query.
+         *
+         *     `breached` and `owed` are also on GET /admin/workload, deliberately — that
+         *     route answers "what needs attention across the whole platform" and this one
+         *     answers "what does the refund queue look like". Both read the same predicate
+         *     (not completed, past sla_due_at), so they cannot disagree.
+         */
+        RefundTally: {
+            /** By Status */
+            by_status: {
+                [key: string]: number;
+            };
+            /** Breached */
+            breached: number;
+            /** Owed */
+            owed: string;
+        };
         /**
          * RestaurantAvailabilityRead
          * @description The switch, plus the hours it is not.
@@ -4079,7 +4642,7 @@ export interface components {
             closes_at: string;
             /**
              * Is Active
-             * @default true
+             * @default false
              */
             is_active: boolean;
             /** Owner User Id */
@@ -4652,6 +5215,21 @@ export interface components {
              */
             content_type: string;
         };
+        /** UserActiveRead */
+        UserActiveRead: {
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /**
+         * UserActiveUpdate
+         * @description Deactivate or restore a customer's account.
+         */
+        UserActiveUpdate: {
+            /** Is Active */
+            is_active: boolean;
+        };
         /** UserCreate */
         UserCreate: {
             /** Name */
@@ -4731,6 +5309,8 @@ export interface components {
         Workload: {
             /** Live Orders */
             live_orders: number;
+            /** Orders Late */
+            orders_late: number;
             /** Deliveries Out */
             deliveries_out: number;
             /** Deliveries Late */
@@ -4745,6 +5325,8 @@ export interface components {
             refunds_breached: number;
             /** Refunds Owed */
             refunds_owed: string;
+            /** Applications Pending */
+            applications_pending: number;
         };
         /**
          * SalesDay
@@ -5069,7 +5651,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5594,6 +6176,8 @@ export interface operations {
     list_coupons_coupons_get: {
         parameters: {
             query?: {
+                /** @description Which codes to list. 'redeemable' (the default) is what a customer could use right now. 'all' includes expired, not-yet-started and switched-off codes. */
+                state?: components["schemas"]["CouponState"];
                 limit?: number;
                 offset?: number;
             };
@@ -5696,7 +6280,9 @@ export interface operations {
     validate_coupon_coupons_validate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5986,6 +6572,13 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            /** @description An upstream provider refused the request */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     reorder_images_menu_items__item_id__images_order_put: {
@@ -6116,7 +6709,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -6255,7 +6848,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -6336,6 +6929,57 @@ export interface operations {
             };
             /** @description Email is already registered */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_active_users__user_id__active_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserActiveUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserActiveRead"];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not permitted for this restaurant */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6759,7 +7403,7 @@ export interface operations {
                 placed_to?: string | null;
                 limit?: number;
                 offset?: number;
-                /** @description Restrict to one restaurant. Must be one you are staff of, unless you are Tadka platform staff. Omit it to get every restaurant you work for — or, for platform staff, the whole platform. */
+                /** @description Restrict to one restaurant. Must be one you are staff of, unless you are Foodishi platform staff. Omit it to get every restaurant you work for — or, for platform staff, the whole platform. */
                 restaurant_id?: number | null;
             };
             header?: {
@@ -7574,7 +8218,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9716,7 +10360,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9765,8 +10409,109 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_application_restaurant_applications_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationSubmit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationRead"];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No user profile linked to this account */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A restaurant already trades under that web address */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_applications_restaurant_applications_mine_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationRead"][];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No user profile linked to this account */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9810,7 +10555,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9857,7 +10602,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9902,7 +10647,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9950,7 +10695,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9995,7 +10740,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10040,7 +10785,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10089,7 +10834,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10134,7 +10879,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10185,7 +10930,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10248,7 +10993,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10298,7 +11043,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10349,7 +11094,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10414,7 +11159,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10475,7 +11220,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10497,7 +11242,8 @@ export interface operations {
         parameters: {
             query?: {
                 q?: string | null;
-                status?: components["schemas"]["PaymentStatus"] | null;
+                /** @description Repeatable. `?status=refunded&status=partially_refunded` lists both. Omit for every status. */
+                status?: components["schemas"]["PaymentStatus"][] | null;
                 method?: components["schemas"]["PaymentMethod"] | null;
                 limit?: number;
                 offset?: number;
@@ -10526,7 +11272,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10578,7 +11324,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10625,7 +11371,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10686,7 +11432,52 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    count_refunds_admin_refunds_count_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundTally"];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10733,7 +11524,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10780,7 +11571,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10827,7 +11618,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10874,7 +11665,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10921,7 +11712,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -10968,7 +11759,291 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Requires Tadka platform staff access */
+            /** @description Requires Foodishi platform staff access */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_applications_admin_restaurant_applications_get: {
+        parameters: {
+            query?: {
+                /** @description Only applications in this state. Omit for every state. */
+                status?: components["schemas"]["ApplicationStatus"] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_AdminApplicationRow_"];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires Foodishi platform staff access */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_application_admin_restaurant_applications__application_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminApplicationRow"];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires Foodishi platform staff access */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_application_admin_restaurant_applications__application_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationApprove"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminApplicationRow"];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires Foodishi platform staff access */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflicts with current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_application_admin_restaurant_applications__application_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path: {
+                application_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationReject"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminApplicationRow"];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires Foodishi platform staff access */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Resource does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflicts with current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_all_restaurants_admin_restaurants_get: {
+        parameters: {
+            query?: {
+                /** @description Only kitchens in this state. Omit for every kitchen, which is what this route exists for. */
+                is_active?: boolean | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                "X-Dev-User-Id"?: number | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_RestaurantSummary_"];
+                };
+            };
+            /** @description Missing or invalid access token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Requires Foodishi platform staff access */
             403: {
                 headers: {
                     [name: string]: unknown;

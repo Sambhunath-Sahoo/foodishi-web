@@ -20,7 +20,7 @@ something.
 | `--warn` | `#946200` | preparing, SLA approaching its due time |
 | `--crit` | `#9B1C2E` | late, breached, cancelled, failed |
 | `--cool` | `#3F6070` | out for delivery |
-| `--mute` | `#6B7280` | pending |
+| `--mute` | `#636A77` | pending |
 
 ## Type
 

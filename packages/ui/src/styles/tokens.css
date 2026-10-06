@@ -14,7 +14,12 @@
   /* ink */
   --ink: #16181d;
   --ink-2: #3e434e;
-  --ink-3: #6b7280;
+  /* #6b7280 measured 4.43:1 on --bg and 4.20:1 on --surface-2: under WCAG AA's
+     4.5:1 for the 12-13px secondary text it sets. Same hue, slightly darker:
+     5.21 / 4.77 / 4.52 on surface / bg / surface-2. (2026-10-05) */
+  --ink-3: #666d7a;
+  /* Under 3:1 on every light surface. Disabled text and placeholders only —
+     never text or an icon someone has to read. */
   --ink-4: #9ba1ac;
 
   /* ground */
@@ -39,7 +44,10 @@
   --crit-soft: #f7e2e4;
   --cool: #3f6070;        /* out for delivery */
   --cool-soft: #e3edf1;
-  --mute: #6b7280;        /* pending */
+  /* Was #6b7280: 4.04:1 on --mute-soft, so the Pending chip's own label failed
+     WCAG AA. Same hue, darker: 4.55 on --mute-soft, 4.72 on --surface-2, 4.99
+     on --bg, 5.44 on --surface. (2026-10-05) */
+  --mute: #636a77;        /* pending */
   --mute-soft: #ececd8;
 
   /* type — one superfamily, three roles. The faces are self-hosted by

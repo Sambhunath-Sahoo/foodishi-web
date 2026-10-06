@@ -87,7 +87,10 @@ export function FilterChip({
         className,
       )}
     >
-      <span className="opacity-70">{label}</span>
+      {/* text-ink-2, not the tone at reduced opacity: a faded label measured
+          2.7–3.7:1 (SH-2). ink-2 clears 4.5:1 on every tone's soft ground in
+          both themes; the value keeps the tone colour and carries the meaning. */}
+      <span className="text-ink-2">{label}</span>
       {value !== undefined ? <span className="font-medium">{value}</span> : null}
       {onDismiss !== undefined ? (
         <button
